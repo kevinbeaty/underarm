@@ -1,0 +1,28 @@
+{
+  "name": "underarm",
+  "version": "0.0.0",
+  "description": "Underscore Meets Reactive Extensions",
+  "main": "underarm.js",
+  "homepage": "http://simplectic.com/underarm",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/simplectic/underarm.git"
+  },
+  "keywords": [
+    "underscore",
+    "reactive",
+    "rx"
+  ],
+  "author": "Kevin Beaty",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+      "uglify-js": "*",
+      "mocha": "*",
+      "expect.js": "*",
+      "node-static": "*"
+  }
+}

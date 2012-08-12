@@ -1,0 +1,6 @@
+--no-colors
+--require expect.js
+--require ./test/common.js
+--ui bdd
+--reporter tap
+
