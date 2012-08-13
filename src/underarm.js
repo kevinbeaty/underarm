@@ -1,6 +1,18 @@
 ;(function(root){
 "use strict";
 
+var _r = {}
+if(typeof exports === 'undefined'){
+  var _rOld = root._r
+  _r.noConflict = function(){
+    root._r = _rOld
+    return _r
+  }
+  root._r = _r
+} else {
+  _r = exports
+}
+
 var Producer = (function(){
   function Producer(){
     this.subscribers = []
@@ -21,9 +33,9 @@ var Subscriber = (function(){
     this.producer = producer
     producer.subscribers.push(this)
 
-    if(next) this.next = next
-    if(complete) this.complete = complete
-    if(error) this.error = error
+    if(next) this.next = this._wrap(this.next, next)
+    if(complete) this.complete = this._wrap(this.complete, complete)
+    if(error) this.error = this._wrap(this.error, error)
   }
   var P = Subscriber.prototype
 
@@ -46,6 +58,15 @@ var Subscriber = (function(){
     var idx = this.producer.subscribers.indexOf(this)
     if(idx >= 0){
       this.producer.subscribers.splice(idx, 1)
+    }
+  }
+
+  P._wrap = _wrap
+  function _wrap(func, wrapped){
+    var self = this
+    return function(arg){
+      wrapped.call(self, arg)
+      func.call(self, arg) 
     }
   }
 
@@ -94,7 +115,7 @@ var Subject = (function(){
 
   return Subject
 })()
-exports.subject = function(){return new Subject}
+_r.subject = function(){return new Subject}
 
 function produce(delegate, next, complete, error){
   var subj = new Subject() 
@@ -118,7 +139,7 @@ produce.defaults = {
   , error: function(err){this.error(err)}
 }
 
-exports.each = each
+_r.each = each
 function each(subject, iterator, context){
   return produce(subject, function(value){
     iterator.call(context, value)
@@ -126,14 +147,14 @@ function each(subject, iterator, context){
   })
 }
 
-exports.map = map
+_r.map = map
 function map(subject, iterator, context){
   return produce(subject, function(value){
     this.next(iterator.call(context, value))
   })
 }
 
-exports.reduce = reduce
+_r.reduce = reduce
 function reduce(subject, iterator, memo, context){
   return produce(
       subject
@@ -146,7 +167,7 @@ function reduce(subject, iterator, memo, context){
     })
 }
 
-exports.reduceRight = reduceRight
+_r.reduceRight = reduceRight
 function reduceRight(subject, iterator, memo, context){
   var values = []
   return produce(
@@ -166,7 +187,7 @@ function reduceRight(subject, iterator, memo, context){
     })
 }
 
-exports.find = find
+_r.find = find
 function find(subject, iterator, context){
   return produce(subject, function(value){
     if(iterator.call(context, value)){
@@ -176,7 +197,7 @@ function find(subject, iterator, context){
   })
 }
 
-exports.filter = filter
+_r.filter = filter
 function filter(subject, iterator, context){
   return produce(subject, function(value){
     if(iterator.call(context, value)){
@@ -185,7 +206,7 @@ function filter(subject, iterator, context){
   })
 }
 
-exports.reject = reject
+_r.reject = reject
 function reject(subject, iterator, context){
   return produce(subject, function(value){
     if(!iterator.call(context, value)){
@@ -194,7 +215,7 @@ function reject(subject, iterator, context){
   })
 }
 
-exports.every = every
+_r.every = every
 function every(subject, iterator, context){
   var result = true
   return produce(
@@ -214,7 +235,7 @@ function every(subject, iterator, context){
     })
 }
 
-exports.any = any
+_r.any = any
 function any(subject, iterator, context){
   var result = false
   return produce(
@@ -234,7 +255,7 @@ function any(subject, iterator, context){
     })
 }
 
-exports.contains = contains
+_r.contains = contains
 function contains(subject, obj, context){
   return any(
       subject

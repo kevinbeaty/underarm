@@ -2,5 +2,5 @@
 --require expect.js
 --require ./test/common.js
 --ui bdd
---reporter tap
+--reporter spec
 
