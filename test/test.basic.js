@@ -5,8 +5,6 @@ describe('basic tests', function(){
       expect(_r.subject).to.be.a('function')
       expect(_r.each).to.be.a('function')
       expect(_r.map).to.be.a('function')
-      expect(_r.reduce).to.be.a('function')
-      expect(_r.reduceRight).to.be.a('function')
       expect(_r.find).to.be.a('function')
       expect(_r.filter).to.be.a('function')
       expect(_r.reject).to.be.a('function')
@@ -14,6 +12,7 @@ describe('basic tests', function(){
       expect(_r.any).to.be.a('function')
       expect(_r.contains).to.be.a('function')
     })
+
     describe('subject', function(){
       it('should have methods', function(){
         var subject = _r.subject()
@@ -388,7 +387,71 @@ describe('basic tests', function(){
         expect(finished).to.be(false)
         expect(errors).to.be.empty()
       })
+      it('should allow multiple subscriptions', function(){
+        var subject = _r.subject()
+          , values1 = []
+          , values2 = []
+          , finished1 = false
+          , finished2 = false
+          , errors1 = []
+          , errors2 = []
+          , next1 = function(value){
+            values1.push(value)
+          }
+          , next2 = function(value){
+            values2.push(value)
+          }
+          , complete1 = function(){
+            finished1 = true
+          }
+          , complete2 = function(){
+            finished2 = true
+          }
+          , error1 = function(err){
+            errors1.push(err)
+          }
+          , error2 = function(err){
+            errors2.push(err)
+          }
+          , d1 = subject.subscribe(next1, complete1, error1)
+          , d2 = subject.subscribe(next2, complete2, error2)
+
+        subject.next(1)
+        expect(values1).to.eql([1])
+        expect(values2).to.eql([1])
+        expect(errors1).to.be.empty()
+        expect(errors2).to.be.empty()
+        expect(finished1).to.be(false)
+        expect(finished2).to.be(false)
+
+        subject.next(2)
+        expect(values1).to.eql([1, 2])
+        expect(values2).to.eql([1, 2])
+        expect(errors1).to.be.empty()
+        expect(errors2).to.be.empty()
+        expect(finished1).to.be(false)
+        expect(finished2).to.be(false)
+
+        d2.dispose()
+
+        subject.next(3)
+        expect(values1).to.eql([1, 2, 3])
+        expect(values2).to.eql([1, 2])
+        expect(errors1).to.be.empty()
+        expect(errors2).to.be.empty()
+        expect(finished1).to.be(false)
+        expect(finished2).to.be(false)
+        
+        subject.complete()
+        subject.next(4)
+        expect(values1).to.eql([1, 2, 3])
+        expect(values2).to.eql([1, 2])
+        expect(errors1).to.be.empty()
+        expect(errors2).to.be.empty()
+        expect(finished1).to.be(true)
+        expect(finished2).to.be(false)
+
+      })
     })
   })
-
 })

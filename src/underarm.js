@@ -13,6 +13,25 @@ if(typeof exports === 'undefined'){
   _r = exports
 }
 
+var ObjProto = Object.prototype
+  , toString = ObjProto.toString
+  , hasOwnProperty = ObjProto.hasOwnProperty
+  , isArray = Array.isArray || function(obj) {
+      return toString.call(obj) == '[object Array]'
+  }
+  , isUndefined = function(obj) {
+      return obj === void 0
+  }
+  , isObject = function(obj) {
+      return obj === Object(obj)
+  }
+  , isFunction = function(obj){
+      return toString.call(obj) == '[object Function]'
+  }
+  , has = function(obj, key) {
+    return hasOwnProperty.call(obj, key)
+  }
+
 var Producer = (function(){
   function Producer(){
     this.subscribers = []
@@ -117,12 +136,13 @@ var Subject = (function(){
 })()
 _r.subject = function(){return new Subject}
 
-function produce(delegate, next, complete, error){
+
+function produce(delegate, context, next, complete, error){
   var subj = new Subject() 
     , defaults = produce.defaults
     , wrap = function(wrapped){
         return function(value){
-          wrapped.call(subj, value)
+          wrapped.call(context, value, subj)
         }
       } 
 
@@ -134,135 +154,132 @@ function produce(delegate, next, complete, error){
   return subj 
 }
 produce.defaults = {
-    next: function(value){this.next(value)} 
-  , complete: function(){this.complete()} 
-  , error: function(err){this.error(err)}
+    next: function(value, producer){producer.next(value)} 
+  , complete: function(producer){producer.complete()} 
+  , error: function(err, producer){producer.error(err)}
+}
+
+function produceWithIterator(subject, context, iterator, iterate, complete, error){
+  var next = function(value, producer){
+    var cb = function(result){
+        try {
+          iterate(value, producer, result)
+        } catch (e){
+          producer.error(e)
+        }
+      }
+    , result
+    
+    try {
+      result = iterator.call(context, value, cb) 
+    } catch (e2){
+      producer.error(e2)
+    }
+
+    if(!isUndefined(result)){
+      cb(result)
+    }
+  }
+  return produce(subject, context, next, complete, error)
 }
 
 _r.each = each
 function each(subject, iterator, context){
-  return produce(subject, function(value){
-    iterator.call(context, value)
-    this.next(value)
-  })
+  return produceWithIterator(
+      subject
+    , context
+    , iterator
+    , function(value, producer){
+        producer.next(value)
+      })
 }
 
 _r.map = map
 function map(subject, iterator, context){
-  return produce(subject, function(value){
-    this.next(iterator.call(context, value))
-  })
-}
-
-_r.reduce = reduce
-function reduce(subject, iterator, memo, context){
-  return produce(
+  return produceWithIterator(
       subject
-    , function(value){
-        memo = iterator.call(context, memo, value)
-    }
-    , function(){
-        this.next(memo)
-        this.complete()
-    })
-}
-
-_r.reduceRight = reduceRight
-function reduceRight(subject, iterator, memo, context){
-  var values = []
-  return produce(
-      subject
-    , function(value){
-        values.push(value)
-    }
-    , function(){
-        var len = values.length
-          , i = len - 1
-        for(; i >=0; i--){
-          memo = iterator.call(context, memo, values[i])
-        }
-        this.next(memo)
-        this.complete()
-        values = null
-    })
+    , context
+    , iterator
+    , function(value, producer, result){
+        producer.next(result)
+      })
 }
 
 _r.find = find
 function find(subject, iterator, context){
-  return produce(subject, function(value){
-    if(iterator.call(context, value)){
-      this.next(value)
-      this.complete()
-    }
-  })
+  return produceWithIterator(
+      subject
+    , context
+    , iterator
+    , function(value, producer, found){
+        if(found){
+          producer.next(value)
+          producer.complete()
+        }
+      })
 }
 
 _r.filter = filter
 function filter(subject, iterator, context){
-  return produce(subject, function(value){
-    if(iterator.call(context, value)){
-      this.next(value)
-    }
-  })
+  return produceWithIterator(
+      subject
+    , context
+    , iterator
+    , function(value, producer, keep){
+        if(keep) producer.next(value)
+      })
 }
 
 _r.reject = reject
 function reject(subject, iterator, context){
-  return produce(subject, function(value){
-    if(!iterator.call(context, value)){
-      this.next(value)
-    }
-  })
+  return produceWithIterator(
+      subject
+    , context
+    , iterator
+    , function(value, producer, ignore){
+        if(!ignore) producer.next(value)
+      })
 }
 
 _r.every = every
 function every(subject, iterator, context){
-  var result = true
-  return produce(
+  return produceWithIterator(
       subject
-    , function(value){
-        if(!iterator.call(context, value)){
-          result = false
-          this.next(false)
-          this.complete()
+    , context
+    , iterator
+    , function(value, producer, passes){
+        if(!passes){
+          producer.next(false)
+          producer.complete()
         }
-    }
-    , function(){
-        if(result){
-          this.next(true)
-          this.complete()
-        }
+      }
+    , function(producer){
+        producer.next(true)
+        producer.complete()
     })
 }
 
 _r.any = any
 function any(subject, iterator, context){
-  var result = false
-  return produce(
+  return produceWithIterator(
       subject
-    , function(value){
-        if(iterator.call(context, value)){
-          result = true
-          this.next(true)
-          this.complete()
+    , context
+    , iterator
+    , function(value, producer, passes){
+        if(passes){
+          producer.next(true)
+          producer.complete()
         }
-    }
-    , function(){
-        if(!result){
-          this.next(false)
-          this.complete()
-        }
+      }
+    , function(producer){
+        producer.next(false)
+        producer.complete()
     })
 }
 
 _r.contains = contains
 function contains(subject, obj, context){
-  return any(
-      subject
-    , function(value){
-      return value === obj
-    }
-    , context)
+  return any(subject, function(value){return value === obj}, context)
 }
 
 })(this)
