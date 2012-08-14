@@ -13,9 +13,10 @@ if(typeof exports === 'undefined'){
   _r = exports
 }
 
-var ObjProto = Object.prototype
-  , toString = ObjProto.toString
-  , hasOwnProperty = ObjProto.hasOwnProperty
+var ObjectProto = Object.prototype
+  , ArrayProto = Array.prototype
+  , toString = ObjectProto.toString
+  , hasOwnProperty = ObjectProto.hasOwnProperty
   , isArray = Array.isArray || function(obj) {
       return toString.call(obj) == '[object Array]'
   }
@@ -31,6 +32,22 @@ var ObjProto = Object.prototype
   , has = function(obj, key) {
     return hasOwnProperty.call(obj, key)
   }
+  , indexOf = ArrayProto.indexOf || function(obj){
+    var i = 0
+      , len = this.length
+    for(; i < len; i++){
+      if(this[i] === obj){
+        return i
+      }
+    }
+    return -1
+  }
+  , removeFrom = function(array, value){
+      var idx = indexOf.call(array, value)
+      if(idx >= 0){
+        array.splice(idx, 1)
+      }
+  }
 
 var Producer = (function(){
   function Producer(){
@@ -38,23 +55,34 @@ var Producer = (function(){
   }
   var P = Producer.prototype
 
+  P.onSubscribe = null
+
   P.subscribe = subscribe
   function subscribe(next, complete, error){
     var subscriber = new Subscriber(this, next, complete, error)
-    return subscriber 
-  }
 
+    if(this.onSubscribe){
+      this.onSubscribe(subscriber)
+    }
+    this.subscribers.push(subscriber)
+
+    return subscriber
+  }
+  
+  P.unsubscribe = unsubscribe
+  function unsubscribe(subscriber){
+    removeFrom(this.subscribers, subscriber)
+  }
+  
   return Producer
 })()
 
 var Subscriber = (function(){
   function Subscriber(producer, next, complete, error){
     this.producer = producer
-    producer.subscribers.push(this)
-
-    if(next) this.next = this._wrap(this.next, next)
-    if(complete) this.complete = this._wrap(this.complete, complete)
-    if(error) this.error = this._wrap(this.error, error)
+    if(isFunction(next)) this.next = this._wrap(this.next, next)
+    if(isFunction(complete)) this.complete = this._wrap(this.complete, complete)
+    if(isFunction(error)) this.error = this._wrap(this.error, error)
   }
   var P = Subscriber.prototype
 
@@ -74,10 +102,7 @@ var Subscriber = (function(){
 
   P.dispose = dispose
   function dispose(){
-    var idx = this.producer.subscribers.indexOf(this)
-    if(idx >= 0){
-      this.producer.subscribers.splice(idx, 1)
-    }
+    this.producer.unsubscribe(this)
   }
 
   P._wrap = _wrap
@@ -134,36 +159,38 @@ var Subject = (function(){
 
   return Subject
 })()
-_r.subject = function(){return new Subject}
-
+_r.subject = function(){return new Subject()}
 
 function produce(delegate, context, next, complete, error){
-  var subj = new Subject() 
-    , defaults = produce.defaults
-    , wrap = function(wrapped){
+  var producer = new Producer()
+
+  producer.onSubscribe = function(subscriber){
+    var wrap = function(wrapped){
         return function(value){
-          wrapped.call(context, value, subj)
+          wrapped.call(context, subscriber, value)
         }
       } 
+    , defaults = produce.defaults
+    , nextW = wrap(isFunction(next) ? next : defaults.next)
+    , completeW = wrap(isFunction(complete) ? complete : defaults.complete)
+    , errorW = wrap(isFunction(error) ? error : defaults.error)
 
-  delegate.subscribe(
-        wrap(next || defaults.next)
-      , wrap(complete || defaults.complete)
-      , wrap(error || defaults.error))
+    delegate.subscribe(nextW, completeW, errorW)
+  }
 
-  return subj 
+  return producer
 }
 produce.defaults = {
-    next: function(value, producer){producer.next(value)} 
+    next: function(producer, value){producer.next(value)} 
   , complete: function(producer){producer.complete()} 
-  , error: function(err, producer){producer.error(err)}
+  , error: function(producer, err){producer.error(err)}
 }
 
 function produceWithIterator(subject, context, iterator, iterate, complete, error){
-  var next = function(value, producer){
+  var next = function(producer, value){
     var cb = function(result){
         try {
-          iterate(value, producer, result)
+          iterate(producer, value, result)
         } catch (e){
           producer.error(e)
         }
@@ -189,7 +216,7 @@ function each(subject, iterator, context){
       subject
     , context
     , iterator
-    , function(value, producer){
+    , function(producer, value){
         producer.next(value)
       })
 }
@@ -200,7 +227,7 @@ function map(subject, iterator, context){
       subject
     , context
     , iterator
-    , function(value, producer, result){
+    , function(producer, value, result){
         producer.next(result)
       })
 }
@@ -211,7 +238,7 @@ function find(subject, iterator, context){
       subject
     , context
     , iterator
-    , function(value, producer, found){
+    , function(producer, value, found){
         if(found){
           producer.next(value)
           producer.complete()
@@ -225,7 +252,7 @@ function filter(subject, iterator, context){
       subject
     , context
     , iterator
-    , function(value, producer, keep){
+    , function(producer, value, keep){
         if(keep) producer.next(value)
       })
 }
@@ -236,7 +263,7 @@ function reject(subject, iterator, context){
       subject
     , context
     , iterator
-    , function(value, producer, ignore){
+    , function(producer, value, ignore){
         if(!ignore) producer.next(value)
       })
 }
@@ -247,7 +274,7 @@ function every(subject, iterator, context){
       subject
     , context
     , iterator
-    , function(value, producer, passes){
+    , function(producer, value, passes){
         if(!passes){
           producer.next(false)
           producer.complete()
@@ -265,7 +292,7 @@ function any(subject, iterator, context){
       subject
     , context
     , iterator
-    , function(value, producer, passes){
+    , function(producer, value, passes){
         if(passes){
           producer.next(true)
           producer.complete()

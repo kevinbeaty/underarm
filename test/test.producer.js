@@ -5,6 +5,7 @@ describe('producer tests', function(){
         , values = []
         , each = _r.each(subject, function(val){values.push(val)})
 
+      each.subscribe()
       subject.next(1)
       subject.next('2')
       subject.next({a: 3})
@@ -64,6 +65,7 @@ describe('producer tests', function(){
         , values = []
         , map = _r.map(subject, function(val){values.push(val); return val})
 
+      map.subscribe()
       subject.next(1)
       subject.next('2')
       subject.next({a: 3})
@@ -123,6 +125,7 @@ describe('producer tests', function(){
         , values = []
         , filter = _r.filter(subject, function(val){values.push(val); return val})
 
+      filter.subscribe()
       subject.next(1)
       subject.next('2')
       subject.next({a: 3})
@@ -182,6 +185,7 @@ describe('producer tests', function(){
         , values = []
         , reject = _r.reject(subject, function(val){values.push(val); return val})
 
+      reject.subscribe()
       subject.next(1)
       subject.next('2')
       subject.next({a: 3})
