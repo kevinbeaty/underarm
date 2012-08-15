@@ -68,12 +68,12 @@ var Producer = (function(){
 
     return subscriber
   }
-  
+
   P.unsubscribe = unsubscribe
   function unsubscribe(subscriber){
     removeFrom(this.subscribers, subscriber)
   }
-  
+
   return Producer
 })()
 
@@ -110,7 +110,7 @@ var Subscriber = (function(){
     var self = this
     return function(arg){
       wrapped.call(self, arg)
-      func.call(self, arg) 
+      func.call(self, arg)
     }
   }
 
@@ -118,7 +118,7 @@ var Subscriber = (function(){
 })()
 
 
-var Subject = (function(){ 
+var Subject = (function(){
   function Subject(){
     this.producer = new Producer()
   }
@@ -128,7 +128,7 @@ var Subject = (function(){
   function subscribe(next, complete, error){
     return this.producer.subscribe(next, complete, error)
   }
-  
+
   P.next = next
   function next(value){
     eachSubscriber(this, 'next', value)
@@ -138,7 +138,7 @@ var Subject = (function(){
   function error(error){
     eachSubscriber(this, 'error', error)
   }
-  
+
   P.complete = complete
   function complete(){
     eachSubscriber(this, 'complete')
@@ -169,7 +169,7 @@ function produce(delegate, context, next, complete, error){
         return function(value){
           wrapped.call(context, subscriber, value)
         }
-      } 
+      }
     , defaults = produce.defaults
     , nextW = wrap(isFunction(next) ? next : defaults.next)
     , completeW = wrap(isFunction(complete) ? complete : defaults.complete)
@@ -181,30 +181,33 @@ function produce(delegate, context, next, complete, error){
   return producer
 }
 produce.defaults = {
-    next: function(producer, value){producer.next(value)} 
-  , complete: function(producer){producer.complete()} 
+    next: function(producer, value){producer.next(value)}
+  , complete: function(producer){producer.complete()}
   , error: function(producer, err){producer.error(err)}
 }
 
 function produceWithIterator(subject, context, iterator, iterate, complete, error){
   var next = function(producer, value){
-    var cb = function(result){
+    var callback = function(result, finished){
         try {
           iterate(producer, value, result)
+
+          if(finished){
+            producer.complete()
+          }
         } catch (e){
           producer.error(e)
         }
       }
+    , errback = function(err){
+      producer.error(err)
+    }
     , result
-    
+
     try {
-      result = iterator.call(context, value, cb) 
+      result = iterator.call(context, value, callback, errback)
     } catch (e2){
       producer.error(e2)
-    }
-
-    if(!isUndefined(result)){
-      cb(result)
     }
   }
   return produce(subject, context, next, complete, error)

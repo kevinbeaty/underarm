@@ -13,22 +13,7 @@ describe('producer tests', function(){
 
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
-    it('should allow subscription (return)', function(){
-      var subject = _r.subject()
-        , values = []
-        , each = _r.each(subject, function(val){values.push(val); return true})
-        , values2 = []
-        , s = each.subscribe(function(val){values2.push(val)})
-
-      subject.next(1)
-      subject.next('2')
-      subject.next({a: 3})
-      subject.next([4, 5])
-
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-      expect(values2).to.be.eql([1, '2', {a: 3}, [4, 5]])
-    })
-    it('should allow subscription (cb)', function(){
+    it('should allow subscription', function(){
       var subject = _r.subject()
         , values = []
         , each = _r.each(subject, function(val, cb){values.push(val); cb()})
@@ -46,7 +31,7 @@ describe('producer tests', function(){
     it('should pass through original values', function(){
       var subject = _r.subject()
         , values = []
-        , each = _r.each(subject, function(val){values.push(val*2); return val*2})
+        , each = _r.each(subject, function(val, cb){values.push(val*2); cb(val*2)})
         , values2 = []
         , s = each.subscribe(function(val){values2.push(val)})
 
@@ -63,7 +48,7 @@ describe('producer tests', function(){
     it('should collect each value sent', function(){
       var subject = _r.subject()
         , values = []
-        , map = _r.map(subject, function(val){values.push(val); return val})
+        , map = _r.map(subject, function(val, cb){values.push(val); cb(val)})
 
       map.subscribe()
       subject.next(1)
@@ -76,7 +61,7 @@ describe('producer tests', function(){
     it('should allow subscription', function(){
       var subject = _r.subject()
         , values = []
-        , map = _r.map(subject, function(val){values.push(val); return val})
+        , map = _r.map(subject, function(val, cb){values.push(val); cb(val)})
         , values2 = []
         , s = map.subscribe(function(val){values2.push(val)})
 
@@ -88,22 +73,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
       expect(values2).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
-    it('should transform original values (return)', function(){
-      var subject = _r.subject()
-        , values = []
-        , map = _r.map(subject, function(val){values.push(val); return val*2})
-        , values2 = []
-        , s = map.subscribe(function(val){values2.push(val)})
-
-      subject.next(1)
-      subject.next(2)
-      subject.next(3)
-      subject.next(4)
-
-      expect(values).to.be.eql([1, 2, 3, 4])
-      expect(values2).to.be.eql([2, 4, 6, 8])
-    })
-    it('should transform original values (cb)', function(){
+    it('should transform original values', function(){
       var subject = _r.subject()
         , values = []
         , map = _r.map(subject, function(val, cb){values.push(val); cb(val*3)})
@@ -123,7 +93,7 @@ describe('producer tests', function(){
     it('should collect each value sent', function(){
       var subject = _r.subject()
         , values = []
-        , filter = _r.filter(subject, function(val){values.push(val); return val})
+        , filter = _r.filter(subject, function(val, cb){values.push(val); cb(val)})
 
       filter.subscribe()
       subject.next(1)
@@ -136,7 +106,7 @@ describe('producer tests', function(){
     it('should allow subscription', function(){
       var subject = _r.subject()
         , values = []
-        , filter = _r.filter(subject, function(val){values.push(val); return true})
+        , filter = _r.filter(subject, function(val, cb){values.push(val); cb(true)})
         , values2 = []
         , s = filter.subscribe(function(val){values2.push(val)})
 
@@ -148,22 +118,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
       expect(values2).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
-    it('should filter original values (return)', function(){
-      var subject = _r.subject()
-        , values = []
-        , filter = _r.filter(subject, function(val){values.push(val); return (val%2 === 1)})
-        , values2 = []
-        , s = filter.subscribe(function(val){values2.push(val)})
-
-      subject.next(1)
-      subject.next(2)
-      subject.next(3)
-      subject.next(4)
-
-      expect(values).to.be.eql([1, 2, 3, 4])
-      expect(values2).to.be.eql([1, 3])
-    })
-    it('should filter original values (cb)', function(){
+    it('should filter original values', function(){
       var subject = _r.subject()
         , values = []
         , filter = _r.filter(subject, function(val, cb){values.push(val); cb(val%2 === 0)})
@@ -183,7 +138,7 @@ describe('producer tests', function(){
     it('should collect each value sent', function(){
       var subject = _r.subject()
         , values = []
-        , reject = _r.reject(subject, function(val){values.push(val); return val})
+        , reject = _r.reject(subject, function(val, cb){values.push(val); cb(val)})
 
       reject.subscribe()
       subject.next(1)
@@ -196,7 +151,7 @@ describe('producer tests', function(){
     it('should allow subscription', function(){
       var subject = _r.subject()
         , values = []
-        , filter = _r.filter(subject, function(val){values.push(val); return true})
+        , filter = _r.filter(subject, function(val, cb){values.push(val); cb(true)})
         , values2 = []
         , s = filter.subscribe(function(val){values2.push(val)})
 
@@ -208,10 +163,10 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
       expect(values2).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
-    it('should filter original values (return)', function(){
+    it('should filter original values', function(){
       var subject = _r.subject()
         , values = []
-        , filter = _r.filter(subject, function(val){values.push(val); return (val%2 === 1)})
+        , filter = _r.filter(subject, function(val, cb){values.push(val); cb(val%2 === 1)})
         , values2 = []
         , s = filter.subscribe(function(val){values2.push(val)})
 
@@ -223,7 +178,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, 2, 3, 4])
       expect(values2).to.be.eql([1, 3])
     })
-    it('should filter original values (cb)', function(){
+    it('should filter original values', function(){
       var subject = _r.subject()
         , values = []
         , filter = _r.filter(subject, function(val, cb){values.push(val); cb(val%2 === 0)})
