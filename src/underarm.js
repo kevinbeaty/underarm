@@ -161,8 +161,23 @@ var Subject = (function(){
 })()
 _r.subject = function(){return new Subject()}
 
+function producerWrap(delegate){
+  var producer
+  if(delegate instanceof Producer || delegate instanceof Subject){
+    producer = delegate
+  } else {
+    producer = new Producer()
+    producer.onSubscribe = function(subscriber){
+      subscriber.next(delegate)
+      subscriber.complete()
+    }
+  }
+  return producer
+}
+
 function produce(delegate, context, next, complete, error){
   var producer = new Producer()
+    , delegate = producerWrap(delegate)
 
   producer.onSubscribe = function(subscriber){
     var wrap = function(wrapped){
@@ -211,6 +226,10 @@ function produceWithIterator(subject, context, iterator, iterate, complete, erro
     }
   }
   return produce(subject, context, next, complete, error)
+}
+
+function iteratorIdentity(value, callback){
+  callback(value)
 }
 
 _r.each = each
@@ -309,7 +328,33 @@ function any(subject, iterator, context){
 
 _r.contains = contains
 function contains(subject, obj, context){
-  return any(subject, function(value){return value === obj}, context)
+  return any(subject, function(value, cb){cb(value === obj)}, context)
+}
+
+_r.seq = seq
+function seq(subject, context){
+  return produceWithIterator(
+      subject
+    , context
+    , iteratorIdentity
+    , function(producer, value){
+        if(isArray(value)){
+          var i = 0
+            , len = value.length
+          for(; i < len; i++){
+            producer.next(value[i])
+          }
+        } else if(isObject(value)){
+          var key
+          for(key in value){
+            if(has(value, key)){
+              producer.next([key, value[key]])
+            }
+          }
+        } else {
+          producer.next(value)
+        }
+    })
 }
 
 })(this)
