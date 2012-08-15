@@ -16,7 +16,7 @@ if(typeof exports === 'undefined'){
 var ObjectProto = Object.prototype
   , ArrayProto = Array.prototype
   , toString = ObjectProto.toString
-  , hasOwnProperty = ObjectProto.hasOwnProperty
+  , hasOwnProp = ObjectProto.hasOwnProperty
   , isArray = Array.isArray || function(obj) {
       return toString.call(obj) == '[object Array]'
   }
@@ -30,7 +30,7 @@ var ObjectProto = Object.prototype
       return toString.call(obj) == '[object Function]'
   }
   , has = function(obj, key) {
-    return hasOwnProperty.call(obj, key)
+    return hasOwnProp.call(obj, key)
   }
   , indexOf = ArrayProto.indexOf || function(obj){
     var i = 0
@@ -49,6 +49,7 @@ var ObjectProto = Object.prototype
       }
   }
 
+
 var Producer = (function(){
   function Producer(){
     this.subscribers = []
@@ -59,13 +60,27 @@ var Producer = (function(){
 
   P.subscribe = subscribe
   function subscribe(next, complete, error){
-    var subscriber = new Subscriber(this, next, complete, error)
+    var subscriber = new Subscriber(next, complete, error)
+      , producer = this
 
-    if(this.onSubscribe){
-      this.onSubscribe(subscriber)
+    if(producer.onSubscribe){
+      var disposable = producer.onSubscribe(subscriber)
+      if(!isUndefined(disposable)){
+        if(isFunction(disposable)){
+          subscriber.onDispose(disposable)
+        } else if(isFunction(disposable.dispose)){
+          subscriber.onDispose(function(){
+            disposable.dispose()
+          })
+        }
+      }
     }
-    this.subscribers.push(subscriber)
 
+    subscriber.onDispose(function(){
+      producer.unsubscribe(subscriber)
+    })
+
+    producer.subscribers.push(subscriber)
     return subscriber
   }
 
@@ -78,11 +93,10 @@ var Producer = (function(){
 })()
 
 var Subscriber = (function(){
-  function Subscriber(producer, next, complete, error){
-    this.producer = producer
-    if(isFunction(next)) this.next = this._wrap(this.next, next)
-    if(isFunction(complete)) this.complete = this._wrap(this.complete, complete)
-    if(isFunction(error)) this.error = this._wrap(this.error, error)
+  function Subscriber(next, complete, error){
+    appendToMethod(this, 'next', next)
+    appendToMethod(this, 'complete', complete)
+    appendToMethod(this, 'error', error)
   }
   var P = Subscriber.prototype
 
@@ -102,15 +116,20 @@ var Subscriber = (function(){
 
   P.dispose = dispose
   function dispose(){
-    this.producer.unsubscribe(this)
   }
 
-  P._wrap = _wrap
-  function _wrap(func, wrapped){
-    var self = this
-    return function(arg){
-      wrapped.call(self, arg)
-      func.call(self, arg)
+  P.onDispose = onDispose
+  function onDispose(onDispose){
+    appendToMethod(this, 'dispose', onDispose)
+  }
+
+  function appendToMethod(obj, method, toAppend){
+    if(isFunction(toAppend)){
+      var func = obj[method]
+      obj[method] = function(arg){
+        toAppend.call(obj, arg)
+        func.call(obj, arg)
+      }
     }
   }
 
@@ -190,7 +209,7 @@ function produce(delegate, context, next, complete, error){
     , completeW = wrap(isFunction(complete) ? complete : defaults.complete)
     , errorW = wrap(isFunction(error) ? error : defaults.error)
 
-    delegate.subscribe(nextW, completeW, errorW)
+    return delegate.subscribe(nextW, completeW, errorW)
   }
 
   return producer
