@@ -1,16 +1,14 @@
 ;(function(root){
 "use strict";
 
-var _r = {}
-if(typeof exports === 'undefined'){
-  var _rOld = root._r
-  _r.noConflict = function(){
-    root._r = _rOld
-    return _r
-  }
-  root._r = _r
+var _r = function(obj) {
+  return new Underarm(obj)
+}
+
+if (typeof exports !== 'undefined') {
+  exports._r = _r
 } else {
-  _r = exports
+  root['_r'] = _r
 }
 
 var ObjectProto = Object.prototype
@@ -32,6 +30,9 @@ var ObjectProto = Object.prototype
   , has = function(obj, key) {
     return hasOwnProp.call(obj, key)
   }
+  , push = ArrayProto.push
+  , slice = ArrayProto.slice
+  , unshift = ArrayProto.unshift
   , indexOf = ArrayProto.indexOf || function(obj){
     var i = 0
       , len = this.length
@@ -80,7 +81,7 @@ var Producer = (function(){
       producer.unsubscribe(subscriber)
     })
 
-    producer.subscribers.push(subscriber)
+    push.call(producer.subscribers, subscriber)
     return subscriber
   }
 
@@ -374,6 +375,52 @@ function seq(subject, context){
           producer.next(value)
         }
     })
+}
+
+function Underarm(obj) {
+  this._wrapped = producerWrap(obj)
+}
+
+_r.chain = function(obj) {
+  return _r(obj).chain()
+}
+
+_r.mixin = mixin
+function mixin(obj) {
+  var name
+    , func
+    , addToWrapper = function(name, func){
+        Underarm.prototype[name] = function() {
+          var args = slice.call(arguments)
+            , result
+          unshift.call(args, this._wrapped)
+          result = func.apply(_r, args)
+          return (this._chain ? _r(result).chain() : result)
+        }
+      }
+
+  for(name in obj){
+    if(isFunction(obj[name])){
+      func = obj[name]
+      _r[name] = func
+      addToWrapper(name, func)
+    }
+  }
+}
+
+_r.mixin(_r)
+
+Underarm.prototype.chain = function() {
+  this._chain = true
+  return this
+}
+
+Underarm.prototype.value = function() {
+  return this._wrapped
+}
+
+Underarm.prototype.subscribe = function(next, complete, error) {
+  return this._wrapped.subscribe(next, complete, error)
 }
 
 })(this)
