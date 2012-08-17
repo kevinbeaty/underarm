@@ -223,33 +223,18 @@ produce.defaults = {
 
 function produceWithIterator(subject, context, iterator, iterate, complete, error){
   var next = function(producer, value){
-    var callback = function(result, finished){
-        try {
-          iterate(producer, value, result)
-
-          if(finished){
-            producer.complete()
-          }
-        } catch (e){
-          producer.error(e)
-        }
-      }
-    , errback = function(err){
-      producer.error(err)
-    }
-    , result
-
     try {
-      result = iterator.call(context, value, callback, errback)
-    } catch (e2){
-      producer.error(e2)
+      iterate(producer, value, iterator.call(context, value))
+    } catch (e){
+      producer.error(e)
     }
   }
   return produce(subject, context, next, complete, error)
 }
 
-function iteratorIdentity(value, callback){
-  callback(value)
+_r.identity = identity
+function identity(value){
+  return value
 }
 
 _r.each = each
@@ -356,7 +341,7 @@ function seq(subject, context){
   return produceWithIterator(
       subject
     , context
-    , iteratorIdentity
+    , identity
     , function(producer, value){
         if(isArray(value)){
           var i = 0
@@ -379,10 +364,6 @@ function seq(subject, context){
 
 function Underarm(obj) {
   this._wrapped = producerWrap(obj)
-}
-
-_r.chain = function(obj) {
-  return _r(obj).chain()
 }
 
 _r.mixin = mixin
@@ -409,6 +390,10 @@ function mixin(obj) {
 }
 
 _r.mixin(_r)
+
+_r.chain = function(obj) {
+  return _r(obj).chain()
+}
 
 Underarm.prototype.chain = function() {
   this._chain = true
