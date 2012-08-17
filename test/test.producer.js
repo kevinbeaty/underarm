@@ -85,6 +85,53 @@ describe('producer tests', function(){
       expect(values3).to.be.eql([3, 6, 9, 12])
     })
   })
+  describe('find', function(){
+    it('should collect each value sent', function(){
+      var subject = _r.seq([1, '2', {a: 3}, [4, 5]])
+        , values = []
+
+       _r.find(subject, function(val){values.push(val); return false}).subscribe()
+
+      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
+    })
+    it('should allow subscription', function(){
+      var subject = _r.seq([1, '2', {a: 3}, [4, 5]])
+        , values = []
+        , find = _r.find(subject, function(val){values.push(val); return false})
+        , values2 = []
+        , s = find.subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
+      expect(values2).to.be.eql([])
+    })
+    it('should find first value', function(){
+      var subject = _r.subject()
+        , values = []
+        , find = _r.find(subject, function(val){values.push(val); return (val%2 === 0)})
+        , values2 = []
+        , s = find.subscribe(function(val){values2.push(val)})
+
+      subject.next(1)
+      subject.next(2)
+      subject.next(3)
+      subject.next(4)
+
+      expect(values).to.be.eql([1, 2])
+      expect(values2).to.be.eql([2])
+    })
+    it('should chain', function(){
+      var values = []
+        , values2 = []
+
+      _r.chain([1, 2, 3, 4])
+        .seq()
+        .find(function(val){values.push(val); return (val%2 === 1)})
+        .subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1])
+      expect(values2).to.be.eql([1])
+    })
+  })
   describe('filter', function(){
     it('should collect each value sent', function(){
       var subject = _r.seq([1, '2', {a: 3}, [4, 5]])

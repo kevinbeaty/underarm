@@ -64,6 +64,11 @@ var Producer = (function(){
     var subscriber = new Subscriber(next, complete, error)
       , producer = this
 
+    push.call(producer.subscribers, subscriber)
+    subscriber.onDispose(function(){
+      producer.unsubscribe(subscriber)
+    })
+
     if(producer.onSubscribe){
       var disposable = producer.onSubscribe(subscriber)
       if(!isUndefined(disposable)){
@@ -77,11 +82,6 @@ var Producer = (function(){
       }
     }
 
-    subscriber.onDispose(function(){
-      producer.unsubscribe(subscriber)
-    })
-
-    push.call(producer.subscribers, subscriber)
     return subscriber
   }
 
@@ -98,6 +98,8 @@ var Subscriber = (function(){
     appendToMethod(this, 'next', next)
     appendToMethod(this, 'complete', complete)
     appendToMethod(this, 'error', error)
+    this.disposed = false
+    this.onDisposes = []
   }
   var P = Subscriber.prototype
 
@@ -117,19 +119,32 @@ var Subscriber = (function(){
 
   P.dispose = dispose
   function dispose(){
+    var onDisposes = this.onDisposes
+      onDispose = onDisposes.pop()
+    while(onDispose){
+      onDispose()
+      onDispose = onDisposes.pop()
+    }
+    this.disposed = true
   }
 
   P.onDispose = onDispose
   function onDispose(onDispose){
-    appendToMethod(this, 'dispose', onDispose)
+    if(this.disposed){
+      onDispose()
+    } else {
+      this.onDisposes.push(onDispose)
+    }
   }
 
   function appendToMethod(obj, method, toAppend){
     if(isFunction(toAppend)){
       var func = obj[method]
       obj[method] = function(arg){
-        toAppend.call(obj, arg)
-        func.call(obj, arg)
+        if(!this.disposed){
+          toAppend.call(obj, arg)
+          func.call(obj, arg)
+        }
       }
     }
   }
@@ -216,17 +231,19 @@ function produce(delegate, context, next, complete, error){
   return producer
 }
 produce.defaults = {
-    next: function(producer, value){producer.next(value)}
-  , complete: function(producer){producer.complete()}
-  , error: function(producer, err){producer.error(err)}
+    next: function(subscriber, value){subscriber.next(value)}
+  , complete: function(subscriber){subscriber.complete()}
+  , error: function(subscriber, err){subscriber.error(err)}
 }
 
 function produceWithIterator(subject, context, iterator, iterate, complete, error){
-  var next = function(producer, value){
-    try {
-      iterate(producer, value, iterator.call(context, value))
-    } catch (e){
-      producer.error(e)
+  var next = function(subscriber, value){
+    if(!subscriber.disposed){
+      try {
+          iterate(subscriber, value, iterator.call(context, value))
+      } catch(e){
+        subscriber.error(e)
+      }
     }
   }
   return produce(subject, context, next, complete, error)
@@ -243,8 +260,8 @@ function each(subject, iterator, context){
       subject
     , context
     , iterator
-    , function(producer, value){
-        producer.next(value)
+    , function(subscriber, value){
+        subscriber.next(value)
       })
 }
 
@@ -254,8 +271,8 @@ function map(subject, iterator, context){
       subject
     , context
     , iterator
-    , function(producer, value, result){
-        producer.next(result)
+    , function(subscriber, value, result){
+        subscriber.next(result)
       })
 }
 
@@ -265,10 +282,10 @@ function find(subject, iterator, context){
       subject
     , context
     , iterator
-    , function(producer, value, found){
+    , function(subscriber, value, found){
         if(found){
-          producer.next(value)
-          producer.complete()
+          subscriber.next(value)
+          subscriber.complete()
         }
       })
 }
@@ -279,8 +296,8 @@ function filter(subject, iterator, context){
       subject
     , context
     , iterator
-    , function(producer, value, keep){
-        if(keep) producer.next(value)
+    , function(subscriber, value, keep){
+        if(keep) subscriber.next(value)
       })
 }
 
@@ -290,8 +307,8 @@ function reject(subject, iterator, context){
       subject
     , context
     , iterator
-    , function(producer, value, ignore){
-        if(!ignore) producer.next(value)
+    , function(subscriber, value, ignore){
+        if(!ignore) subscriber.next(value)
       })
 }
 
@@ -301,15 +318,15 @@ function every(subject, iterator, context){
       subject
     , context
     , iterator
-    , function(producer, value, passes){
+    , function(subscriber, value, passes){
         if(!passes){
-          producer.next(false)
-          producer.complete()
+          subscriber.next(false)
+          subscriber.complete()
         }
       }
-    , function(producer){
-        producer.next(true)
-        producer.complete()
+    , function(subscriber){
+        subscriber.next(true)
+        subscriber.complete()
     })
 }
 
@@ -319,15 +336,15 @@ function any(subject, iterator, context){
       subject
     , context
     , iterator
-    , function(producer, value, passes){
+    , function(subscriber, value, passes){
         if(passes){
-          producer.next(true)
-          producer.complete()
+          subscriber.next(true)
+          subscriber.complete()
         }
       }
-    , function(producer){
-        producer.next(false)
-        producer.complete()
+    , function(subscriber){
+        subscriber.next(false)
+        subscriber.complete()
     })
 }
 
@@ -342,22 +359,22 @@ function seq(subject, context){
       subject
     , context
     , identity
-    , function(producer, value){
+    , function(subscriber, value){
         if(isArray(value)){
           var i = 0
             , len = value.length
           for(; i < len; i++){
-            producer.next(value[i])
+            subscriber.next(value[i])
           }
         } else if(isObject(value)){
           var key
           for(key in value){
             if(has(value, key)){
-              producer.next([key, value[key]])
+              subscriber.next([key, value[key]])
             }
           }
         } else {
-          producer.next(value)
+          subscriber.next(value)
         }
     })
 }
@@ -395,16 +412,17 @@ _r.chain = function(obj) {
   return _r(obj).chain()
 }
 
-Underarm.prototype.chain = function() {
+var UnderProto = Underarm.prototype
+UnderProto.chain = function() {
   this._chain = true
   return this
 }
 
-Underarm.prototype.value = function() {
+UnderProto.value = function() {
   return this._wrapped
 }
 
-Underarm.prototype.subscribe = function(next, complete, error) {
+UnderProto.subscribe = function(next, complete, error) {
   return this._wrapped.subscribe(next, complete, error)
 }
 
