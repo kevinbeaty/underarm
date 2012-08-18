@@ -18,6 +18,8 @@ describe('basic tests', function(){
       expect(_r.pluck).to.be.a('function')
       expect(_r.max).to.be.a('function')
       expect(_r.min).to.be.a('function')
+      expect(_r.sortBy).to.be.a('function')
+      expect(_r.sort).to.be.a('function')
     })
 
     it('should have aliases', function(){

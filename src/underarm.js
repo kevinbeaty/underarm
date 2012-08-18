@@ -11,6 +11,11 @@ if (typeof exports !== 'undefined') {
   root['_r'] = _r
 }
 
+_r.identity = identity
+function identity(value){
+  return value
+}
+
 var ObjectProto = Object.prototype
   , ArrayProto = Array.prototype
   , toString = ObjectProto.toString
@@ -32,6 +37,7 @@ var ObjectProto = Object.prototype
   }
   , push = ArrayProto.push
   , slice = ArrayProto.slice
+  , splice = ArrayProto.splice
   , unshift = ArrayProto.unshift
   , indexOf = ArrayProto.indexOf || function(obj){
     var i = 0
@@ -46,8 +52,28 @@ var ObjectProto = Object.prototype
   , removeFrom = function(array, value){
       var idx = indexOf.call(array, value)
       if(idx >= 0){
-        array.splice(idx, 1)
+        splice.call(array, idx, 1)
       }
+  }
+  , sortedIndex = function(array, obj, iterator) {
+      iterator = iterator ? iterator : identity
+      var value = iterator(obj)
+        , low = 0
+        , high = array.length
+        , mid
+
+      while (low < high) {
+        mid = (low + high) >> 1
+        if(iterator(array[mid]) < value){
+          low = mid + 1
+        } else {
+          high = mid
+        }
+      }
+      return low
+  }
+  , lookupIterator = function(obj, val) {
+    return isFunction(val) ? val : function(obj){return obj[val]}
   }
 
 
@@ -265,11 +291,6 @@ function produceWithIterator(subject, context, iterator, iterate, complete, erro
   return produce(subject, context, next, complete, error)
 }
 
-_r.identity = identity
-function identity(value){
-  return value
-}
-
 _r.each = _r.forEach = each
 function each(subject, iterator, context){
   return produceWithIterator(
@@ -456,6 +477,32 @@ function min(subject, iterator, context){
         }
         subscriber.next(min.value)
       })
+}
+
+_r.sortBy = sortBy
+function sortBy(subject, val, context){
+  var values = []
+  return produceWithIterator(
+      subject
+    , context
+    , identity
+    , function(subscriber, value){
+        var iterator = lookupIterator(value, val)
+        splice.call(values, sortedIndex(values, value, iterator), 0, value)
+      }
+    , function(subscriber){
+        var i = 0
+          , len = values.length
+        for(; i < len; i++){
+          subscriber.next(values[i])
+        }
+        subscriber.complete()
+      })
+}
+
+_r.sort = sort
+function sort(subject, context){
+  return sortBy(subject, identity, context)
 }
 
 _r.seq = seq

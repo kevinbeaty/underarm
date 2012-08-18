@@ -169,7 +169,7 @@ describe('producer tests', function(){
 
       _r.reduceRight(subject, function(memo, val){values.push(val); memos.push(memo); return val}, 1).subscribe()
 
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]].reverse())
+      expect(memos).to.be.eql([1, [4, 5], {a: 3}, '2'])
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]].reverse())
     })
     it('should collect each value sent without memo', function(){
@@ -757,6 +757,88 @@ describe('producer tests', function(){
 
       expect(values).to.be.eql([1, 2, 3, 4])
       expect(values2).to.be.eql([4])
+    })
+  })
+  describe('sortBy', function(){
+    it('should sort on identity', function(){
+      var subject = _r.seq([5, 3,  2, 4, 1])
+        , values = []
+
+      _r.chain(subject)
+        .sortBy(_r.identity)
+        .subscribe(function(value){values.push(value)})
+
+      expect(values).to.be.eql([1, 2, 3, 4, 5])
+    })
+    it('should sort with iterator', function(){
+      var subject = _r.seq([5, 3,  2, 4, 1])
+        , values = []
+
+      _r.chain(subject)
+        .sortBy(function(val){return -val})
+        .subscribe(function(value){values.push(value)})
+
+      expect(values).to.be.eql([5, 4, 3, 2, 1])
+    })
+    it('should sort with property', function(){
+      var subject = _r.seq([{a: 1, b: 2}, {a: 5, b: 1, c: 0}, {a: 3, b:4}])
+        , sortByA = _r.sortBy(subject, 'a')
+        , sortByB = _r.sortBy(subject, 'b')
+        , valuesA = []
+        , valuesB = []
+        , sA = sortByA.subscribe(function(val){valuesA.push(val)})
+        , sB = sortByB.subscribe(function(val){valuesB.push(val)})
+
+      expect(valuesA).to.be.eql([{a: 1, b: 2}, {a: 3, b:4}, {a: 5, b: 1, c: 0}])
+      expect(valuesB).to.be.eql([{a: 5, b: 1, c: 0}, {a: 1, b: 2}, {a: 3, b:4}])
+    })
+    it('should calculate on complete', function(){
+      var values = []
+        , subject = _r.subject()
+
+      _r.chain(subject)
+        .sortBy(_r.identity)
+        .subscribe(function(val){values.push(val)})
+
+      subject.next(4)
+      subject.next(-3)
+      subject.next(1)
+      subject.next(2)
+
+      expect(values).to.be.eql([])
+
+      subject.complete()
+      expect(values).to.be.eql([-3, 1, 2, 4])
+    })
+  })
+  describe('sort', function(){
+    it('should sort', function(){
+      var values = []
+
+      _r.chain(['d', 'a', 'c', 'b'])
+        .seq()
+        .sort()
+        .subscribe(function(value){values.push(value)})
+
+      expect(values).to.be.eql(['a', 'b', 'c', 'd'])
+    })
+    it('should calculate on complete', function(){
+      var values = []
+        , subject = _r.subject()
+
+      _r.chain(subject)
+        .sort()
+        .subscribe(function(val){values.push(val)})
+
+      subject.next(4)
+      subject.next(-3)
+      subject.next(1)
+      subject.next(2)
+
+      expect(values).to.be.eql([])
+
+      subject.complete()
+      expect(values).to.be.eql([-3, 1, 2, 4])
     })
   })
 })
