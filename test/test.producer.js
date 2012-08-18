@@ -85,6 +85,138 @@ describe('producer tests', function(){
       expect(values3).to.be.eql([3, 6, 9, 12])
     })
   })
+  describe('reduce', function(){
+    it('should collect each value sent with memo', function(){
+      var subject = _r.seq([1, '2', {a: 3}, [4, 5]])
+        , memos = []
+        , values = []
+
+      _r.reduce(subject, function(memo, val){values.push(val); memos.push(memo); return val}, 1).subscribe()
+
+      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
+      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
+    })
+    it('should collect each value sent without memo', function(){
+      var subject = _r.seq([1, '2', {a: 3}, [4, 5]])
+        , memos = []
+        , values = []
+
+      _r.reduce(subject, function(memo, val){values.push(val); memos.push(memo); return val}).subscribe()
+
+      expect(memos).to.be.eql([1, '2', {a: 3}])
+      expect(values).to.be.eql(['2', {a: 3}, [4, 5]])
+    })
+    it('should reduce original values', function(){
+      var subject = _r.seq([1, 2, 3, 4])
+        , reduce = _r.reduce(subject, function(memo, val){return memo + val})
+        , values = []
+        , s = reduce.subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([1 + 2 + 3 + 4])
+    })
+    it('should be left associative', function(){
+      var subject = _r.seq([1, 2, 3, 4])
+        , reduce = _r.reduce(subject, function(memo, val){memo.push(val); return memo}, [])
+        , values = []
+        , s = reduce.subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([[1, 2, 3, 4]])
+    })
+    it('should chain', function(){
+      var values = []
+
+      _r.chain([1, 2, 3, 4])
+        .seq()
+        .reduce(function(memo, val){return memo / val})
+        .subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([1 / 2 / 3 / 4])
+    })
+    it('should calculate on complete', function(){
+      var values = []
+        , subject = _r.subject()
+
+      _r.chain(subject)
+        .reduce(function(memo, val){return memo - val}, 5)
+        .subscribe(function(val){values.push(val)})
+
+      subject.next(1)
+      subject.next(2)
+      subject.next(3)
+      subject.next(4)
+
+      expect(values).to.be.eql([])
+
+      subject.complete()
+      expect(values).to.be.eql([5 - 1 - 2 - 3 - 4])
+    })
+  })
+  describe('reduceRight', function(){
+    it('should collect each value sent with memo', function(){
+      var subject = _r.seq([1, '2', {a: 3}, [4, 5]])
+        , memos = []
+        , values = []
+
+      _r.reduceRight(subject, function(memo, val){values.push(val); memos.push(memo); return val}, 1).subscribe()
+
+      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]].reverse())
+      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]].reverse())
+    })
+    it('should collect each value sent without memo', function(){
+      var subject = _r.seq([1, '2', {a: 3}, [4, 5]])
+        , memos = []
+        , values = []
+
+      _r.reduceRight(subject, function(memo, val){values.push(val); memos.push(memo); return val}).subscribe()
+
+      expect(memos).to.be.eql([[4, 5], {a: 3}, '2'])
+      expect(values).to.be.eql([{a: 3}, '2', 1])
+    })
+    it('should reduce original values', function(){
+      var subject = _r.seq([1, 2, 3, 4])
+        , reduce = _r.reduceRight(subject, function(memo, val){return memo + val})
+        , values = []
+        , s = reduce.subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([4 + 3 + 2 + 1])
+    })
+    it('should be right associative', function(){
+      var subject = _r.seq([1, 2, 3, 4])
+        , reduce = _r.reduceRight(subject, function(memo, val){memo.push(val); return memo}, [])
+        , values = []
+        , s = reduce.subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([[4, 3, 2, 1]])
+    })
+    it('should chain', function(){
+      var values = []
+
+      _r.chain([1, 2, 3, 4])
+        .seq()
+        .reduceRight(function(memo, val){return memo / val})
+        .subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([4 / 3 / 2 / 1])
+    })
+    it('should calculate on complete', function(){
+      var values = []
+        , subject = _r.subject()
+
+      _r.chain(subject)
+        .reduceRight(function(memo, val){return memo - val}, 5)
+        .subscribe(function(val){values.push(val)})
+
+      subject.next(1)
+      subject.next(2)
+      subject.next(3)
+      subject.next(4)
+
+      expect(values).to.be.eql([])
+
+      subject.complete()
+      expect(values).to.be.eql([5 - 4 - 3 - 2 - 1])
+    })
+  })
   describe('find', function(){
     it('should collect each value sent', function(){
       var subject = _r.seq([1, '2', {a: 3}, [4, 5]])
@@ -214,6 +346,184 @@ describe('producer tests', function(){
 
       expect(values).to.be.eql([1, 2, 3, 4])
       expect(values2).to.be.eql([2, 4])
+    })
+  })
+  describe('every', function(){
+    it('should collect each value sent', function(){
+      var subject = _r.seq([1, '2', {a: 3}, [4, 5]])
+        , values = []
+
+       _r.every(subject, function(val){values.push(val); return true}).subscribe()
+
+      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
+    })
+    it('should allow subscription', function(){
+      var subject = _r.seq([1, '2', {a: 3}, [4, 5]])
+        , values = []
+        , every = _r.every(subject, function(val){values.push(val); return true})
+        , values2 = []
+        , s = every.subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
+      expect(values2).to.be.eql([true])
+    })
+    it('should calculate on complete', function(){
+      var values = []
+        , subject = _r.subject()
+
+      _r.chain(subject)
+        .every(function(val){return val <= 4})
+        .subscribe(function(val){values.push(val)})
+
+      subject.next(1)
+      subject.next(2)
+      subject.next(3)
+      subject.next(4)
+
+      expect(values).to.be.eql([])
+
+      subject.complete()
+      expect(values).to.be.eql([true])
+    })
+    it('should short circuit on false', function(){
+      var subject = _r.seq([1, 2, 3, 4])
+        , values = []
+        , every = _r.every(subject, function(val){values.push(val); return (val !== 3)})
+        , values2 = []
+        , s = every.subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 2, 3])
+      expect(values2).to.be.eql([false])
+    })
+    it('should chain', function(){
+      var values = []
+        , values2 = []
+
+      _r.chain([1, 2, 3, 4])
+        .seq()
+        .every(function(val){values.push(val); return (val < 4)})
+        .subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 2, 3, 4])
+      expect(values2).to.be.eql([false])
+    })
+  })
+  describe('any', function(){
+    it('should collect each value sent', function(){
+      var subject = _r.seq([1, '2', {a: 3}, [4, 5]])
+        , values = []
+
+       _r.any(subject, function(val){values.push(val); return false}).subscribe()
+
+      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
+    })
+    it('should allow subscription', function(){
+      var subject = _r.seq([1, '2', {a: 3}, [4, 5]])
+        , values = []
+        , any = _r.any(subject, function(val){values.push(val); return false})
+        , values2 = []
+        , s = any.subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
+      expect(values2).to.be.eql([false])
+    })
+    it('should calculate on complete', function(){
+      var values = []
+        , subject = _r.subject()
+
+      _r.chain(subject)
+        .any(function(val){return val > 4})
+        .subscribe(function(val){values.push(val)})
+
+      subject.next(1)
+      subject.next(2)
+      subject.next(3)
+      subject.next(4)
+
+      expect(values).to.be.eql([])
+
+      subject.complete()
+      expect(values).to.be.eql([false])
+    })
+    it('should short circuit on true', function(){
+      var subject = _r.seq([1, 2, 3, 4])
+        , values = []
+        , any = _r.any(subject, function(val){values.push(val); return (val === 3)})
+        , values2 = []
+        , s = any.subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 2, 3])
+      expect(values2).to.be.eql([true])
+    })
+    it('should chain', function(){
+      var values = []
+        , values2 = []
+
+      _r.chain([1, 2, 3, 4])
+        .seq()
+        .every(function(val){values.push(val); return (val < 4)})
+        .subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 2, 3, 4])
+      expect(values2).to.be.eql([false])
+    })
+  })
+  describe('contains', function(){
+    it('should allow subscription', function(){
+      var subject = _r.seq([1, '2', {a: 3}, [4, 5]])
+        , values = []
+        , contains = _r.contains(subject, 2)
+        , s = contains.subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([false])
+    })
+    it('should calculate on complete', function(){
+      var values = []
+        , subject = _r.subject()
+
+      _r.chain(subject)
+        .contains(5)
+        .subscribe(function(val){values.push(val)})
+
+      subject.next(1)
+      subject.next(2)
+      subject.next(3)
+      subject.next(4)
+
+      expect(values).to.be.eql([])
+
+      subject.complete()
+      expect(values).to.be.eql([false])
+    })
+    it('should short circuit on true', function(){
+      var values = []
+        , subject = _r.subject()
+
+      _r.chain(subject)
+        .seq()
+        .contains(5)
+        .subscribe(function(val){values.push(val)})
+
+      subject.next(1)
+      subject.next(2)
+      subject.next(3)
+      subject.next(4)
+
+      expect(values).to.be.eql([])
+
+      subject.next(5)
+      expect(values).to.be.eql([true])
+    })
+    it('should chain', function(){
+      var values = []
+        , subject = _r.subject()
+
+      _r.chain([1, 2, 3, 4])
+        .seq()
+        .contains(3)
+        .subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([true])
     })
   })
 })

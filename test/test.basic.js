@@ -2,15 +2,38 @@ describe('basic tests', function(){
   describe('_r', function(){
     it('should have methods', function(){
       expect(_r).to.be.ok()
+      expect(_r.identity).to.be.a('function')
       expect(_r.subject).to.be.a('function')
       expect(_r.each).to.be.a('function')
       expect(_r.map).to.be.a('function')
+      expect(_r.reduce).to.be.a('function')
+      expect(_r.reduceRight).to.be.a('function')
       expect(_r.find).to.be.a('function')
       expect(_r.filter).to.be.a('function')
       expect(_r.reject).to.be.a('function')
       expect(_r.every).to.be.a('function')
       expect(_r.any).to.be.a('function')
       expect(_r.contains).to.be.a('function')
+    })
+
+    it('should have aliases', function(){
+      expect(_r.each).to.be.equal(_r.forEach)
+      expect(_r.map).to.be.equal(_r.collect)
+      expect(_r.reduce).to.be.equal(_r.foldl)
+      expect(_r.reduce).to.be.equal(_r.inject)
+      expect(_r.reduceRight).to.be.equal(_r.foldr)
+      expect(_r.find).to.be.equal(_r.detect)
+      expect(_r.filter).to.be.equal(_r.select)
+      expect(_r.every).to.be.equal(_r.all)
+      expect(_r.any).to.be.equal(_r.some)
+      expect(_r.include).to.be.equal(_r.contains)
+    })
+
+    describe('identity', function(){
+      it('should return value', function(){
+        expect(_r.identity(1)).to.eql(1)
+        expect(_r.identity([1 , 2])).to.eql([1, 2])
+      })
     })
 
     describe('subject', function(){

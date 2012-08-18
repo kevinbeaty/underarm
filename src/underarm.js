@@ -254,7 +254,7 @@ function identity(value){
   return value
 }
 
-_r.each = each
+_r.each = _r.forEach = each
 function each(subject, iterator, context){
   return produceWithIterator(
       subject
@@ -265,7 +265,7 @@ function each(subject, iterator, context){
       })
 }
 
-_r.map = map
+_r.map = _r.collect = map
 function map(subject, iterator, context){
   return produceWithIterator(
       subject
@@ -276,7 +276,54 @@ function map(subject, iterator, context){
       })
 }
 
-_r.find = find
+_r.reduce = _r.foldl = _r.inject = reduce
+function reduce(subject, iterator, memo, context){
+  var initial = arguments.length > 2
+  return produceWithIterator(
+      subject
+    , context
+    , identity
+    , function(subscriber, value){
+        if(!initial){
+          memo = value
+          initial = true
+        } else {
+          memo = iterator.call(context, memo, value)
+        }
+      }
+    , function(subscriber){
+        subscriber.next(memo)
+        subscriber.complete()
+      })
+}
+
+_r.reduceRight = _r.foldr = reduceRight
+function reduceRight(subject, iterator, memo, context){
+  var initial = arguments.length > 2
+    , values = []
+  return produceWithIterator(
+      subject
+    , context
+    , identity
+    , function(subscriber, value){
+        values.push(value)
+      }
+    , function(subscriber){
+        var i = values.length - 1
+        for(; i >= 0; i--){
+          if(!initial){
+            memo = values[i]
+            initial = true
+          } else {
+            memo = iterator.call(context, memo, values[i])
+          }
+        }
+        subscriber.next(memo)
+        subscriber.complete()
+      })
+}
+
+_r.find = _r.detect = find
 function find(subject, iterator, context){
   return produceWithIterator(
       subject
@@ -290,7 +337,7 @@ function find(subject, iterator, context){
       })
 }
 
-_r.filter = filter
+_r.filter = _r.select = filter
 function filter(subject, iterator, context){
   return produceWithIterator(
       subject
@@ -312,7 +359,7 @@ function reject(subject, iterator, context){
       })
 }
 
-_r.every = every
+_r.every = _r.all = every
 function every(subject, iterator, context){
   return produceWithIterator(
       subject
@@ -330,7 +377,7 @@ function every(subject, iterator, context){
     })
 }
 
-_r.any = any
+_r.any = _r.some = any
 function any(subject, iterator, context){
   return produceWithIterator(
       subject
@@ -348,9 +395,9 @@ function any(subject, iterator, context){
     })
 }
 
-_r.contains = contains
-function contains(subject, obj, context){
-  return any(subject, function(value, cb){cb(value === obj)}, context)
+_r.include = _r.contains = include
+function include(subject, obj, context){
+  return any(subject, function(value){return value === obj}, context)
 }
 
 _r.seq = seq
