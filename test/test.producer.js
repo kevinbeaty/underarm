@@ -112,13 +112,13 @@ describe('producer tests', function(){
         , values = []
         , s = reduce.subscribe(function(val){values.push(val)})
 
-      expect(values).to.be.eql([1 + 2 + 3 + 4])
+      expect(values).to.be.eql([1, 1+2, 1+2+3, 1+2+3+4])
     })
     it('should be left associative', function(){
       var subject = _r.seq([1, 2, 3, 4])
         , reduce = _r.reduce(subject, function(memo, val){memo.push(val); return memo}, [])
         , values = []
-        , s = reduce.subscribe(function(val){values.push(val)})
+        , s = _r.then(reduce, function(val){values.push(val)})
 
       expect(values).to.be.eql([[1, 2, 3, 4]])
     })
@@ -128,12 +128,13 @@ describe('producer tests', function(){
       _r.chain([1, 2, 3, 4])
         .seq()
         .reduce(function(memo, val){return memo / val})
-        .subscribe(function(val){values.push(val)})
+        .then(function(val){values.push(val)})
 
       expect(values).to.be.eql([1 / 2 / 3 / 4])
     })
-    it('should calculate on complete', function(){
+    it('should calculate incrementally', function(){
       var values = []
+        , result = []
         , subject = _r.subject()
 
       _r.chain(subject)
@@ -141,14 +142,23 @@ describe('producer tests', function(){
         .subscribe(function(val){values.push(val)})
 
       subject.next(1)
-      subject.next(2)
-      subject.next(3)
-      subject.next(4)
+      result.push(5 - 1)
+      expect(values).to.be.eql(result)
 
-      expect(values).to.be.eql([])
+      subject.next(2)
+      result.push(5 - 1 - 2)
+      expect(values).to.be.eql(result)
+
+      subject.next(3)
+      result.push(5 - 1 - 2 - 3)
+      expect(values).to.be.eql(result)
+
+      subject.next(4)
+      result.push(5 - 1 - 2 - 3 - 4)
+      expect(values).to.be.eql(result)
 
       subject.complete()
-      expect(values).to.be.eql([5 - 1 - 2 - 3 - 4])
+      expect(values).to.be.eql(result)
     })
   })
   describe('reduceRight', function(){
@@ -178,13 +188,13 @@ describe('producer tests', function(){
         , values = []
         , s = reduce.subscribe(function(val){values.push(val)})
 
-      expect(values).to.be.eql([4 + 3 + 2 + 1])
+      expect(values).to.be.eql([4, 4+3, 4+3+2, 4+3+2+1])
     })
     it('should be right associative', function(){
       var subject = _r.seq([1, 2, 3, 4])
         , reduce = _r.reduceRight(subject, function(memo, val){memo.push(val); return memo}, [])
         , values = []
-        , s = reduce.subscribe(function(val){values.push(val)})
+        , s = _r.then(reduce, function(val){values.push(val)})
 
       expect(values).to.be.eql([[4, 3, 2, 1]])
     })
@@ -194,7 +204,7 @@ describe('producer tests', function(){
       _r.chain([1, 2, 3, 4])
         .seq()
         .reduceRight(function(memo, val){return memo / val})
-        .subscribe(function(val){values.push(val)})
+        .then(function(val){values.push(val)})
 
       expect(values).to.be.eql([4 / 3 / 2 / 1])
     })
@@ -214,7 +224,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([])
 
       subject.complete()
-      expect(values).to.be.eql([5 - 4 - 3 - 2 - 1])
+      expect(values).to.be.eql([5-4, 5-4-3, 5-4-3-2, 5-4-3-2-1])
     })
   })
   describe('find', function(){
@@ -581,7 +591,7 @@ describe('producer tests', function(){
         , max = _r.max(subject)
         , s = max.subscribe(function(val){values.push(val)})
 
-      expect(values).to.be.eql([8])
+      expect(values).to.be.eql([1, 5, 5, 8, 8])
     })
     it('should accept iterator', function(){
       var subject = _r.seq([1, 5, 3, 8, -5])
@@ -591,10 +601,11 @@ describe('producer tests', function(){
         , s = max.subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 5, 3, 8, -5])
-      expect(values2).to.be.eql([-5])
+      expect(values2).to.be.eql([1, 1, 1, 1, -5])
     })
-    it('should calculate on complete', function(){
+    it('should calculate incrementally', function(){
       var values = []
+        , results = []
         , subject = _r.subject()
 
       _r.chain(subject)
@@ -602,14 +613,23 @@ describe('producer tests', function(){
         .subscribe(function(val){values.push(val)})
 
       subject.next(2)
-      subject.next(4)
-      subject.next(3)
-      subject.next(1)
+      results.push(2)
+      expect(values).to.be.eql(results)
 
-      expect(values).to.be.eql([])
+      subject.next(4)
+      results.push(4)
+      expect(values).to.be.eql(results)
+
+      subject.next(3)
+      results.push(4)
+      expect(values).to.be.eql(results)
+
+      subject.next(1)
+      results.push(4)
+      expect(values).to.be.eql(results)
 
       subject.complete()
-      expect(values).to.be.eql([4])
+      expect(values).to.be.eql(results)
     })
     it('should chain', function(){
       var values = []
@@ -618,7 +638,7 @@ describe('producer tests', function(){
       _r.chain([1, 2, 3, 4])
         .seq()
         .max(function(val){values.push(val); return -val})
-        .subscribe(function(val){values2.push(val)})
+        .then(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 2, 3, 4])
       expect(values2).to.be.eql([1])
@@ -631,7 +651,7 @@ describe('producer tests', function(){
         , min = _r.min(subject)
         , s = min.subscribe(function(val){values.push(val)})
 
-      expect(values).to.be.eql([-5])
+      expect(values).to.be.eql([1, 1, 1, 1, -5])
     })
     it('should accept iterator', function(){
       var subject = _r.seq([1, 5, 3, 8, -5])
@@ -641,10 +661,11 @@ describe('producer tests', function(){
         , s = min.subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 5, 3, 8, -5])
-      expect(values2).to.be.eql([8])
+      expect(values2).to.be.eql([1, 5, 5, 8, 8])
     })
-    it('should calculate on complete', function(){
+    it('should calculate incrementally', function(){
       var values = []
+        , results = []
         , subject = _r.subject()
 
       _r.chain(subject)
@@ -652,14 +673,23 @@ describe('producer tests', function(){
         .subscribe(function(val){values.push(val)})
 
       subject.next(2)
-      subject.next(4)
-      subject.next(3)
-      subject.next(1)
+      results.push(2)
+      expect(values).to.be.eql(results)
 
-      expect(values).to.be.eql([])
+      subject.next(4)
+      results.push(2)
+      expect(values).to.be.eql(results)
+
+      subject.next(3)
+      results.push(2)
+      expect(values).to.be.eql(results)
+
+      subject.next(1)
+      results.push(1)
+      expect(values).to.be.eql(results)
 
       subject.complete()
-      expect(values).to.be.eql([1])
+      expect(values).to.be.eql(results)
     })
     it('should chain', function(){
       var values = []
@@ -668,7 +698,7 @@ describe('producer tests', function(){
       _r.chain([1, 2, 3, 4])
         .seq()
         .min(function(val){values.push(val); return -val})
-        .subscribe(function(val){values2.push(val)})
+        .then(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 2, 3, 4])
       expect(values2).to.be.eql([4])

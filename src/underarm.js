@@ -196,6 +196,22 @@ var Subject = (function(){
 })()
 _r.subject = function(){return new Subject()}
 
+_r.then = then
+function then(subject, callback, errback, context){
+  var lastResult, lastErr
+  subject.subscribe(
+      function(result){
+        lastResult = result
+      },
+      function(){
+        lastErr ? errback(lastErr) : callback(lastResult)
+      },
+      function(err){
+        lastErr = err
+      })
+}
+
+
 function producerWrap(delegate){
   var producer
   if(delegate instanceof Producer || delegate instanceof Subject){
@@ -290,10 +306,7 @@ function reduce(subject, iterator, memo, context){
         } else {
           memo = iterator.call(context, memo, value)
         }
-      }
-    , function(subscriber){
         subscriber.next(memo)
-        subscriber.complete()
       })
 }
 
@@ -317,8 +330,8 @@ function reduceRight(subject, iterator, memo, context){
           } else {
             memo = iterator.call(context, memo, values[i])
           }
+          subscriber.next(memo)
         }
-        subscriber.next(memo)
         subscriber.complete()
       })
 }
@@ -429,11 +442,8 @@ function max(subject, iterator, context){
           max.value = value
           max.computed = computed
         }
-      }
-    , function(subscriber){
         subscriber.next(max.value)
-        subscriber.complete()
-    })
+      })
 }
 
 _r.min = min
@@ -452,11 +462,8 @@ function min(subject, iterator, context){
           min.value = value
           min.computed = computed
         }
-      }
-    , function(subscriber){
         subscriber.next(min.value)
-        subscriber.complete()
-    })
+      })
 }
 
 _r.seq = seq
