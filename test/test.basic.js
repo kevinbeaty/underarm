@@ -14,6 +14,10 @@ describe('basic tests', function(){
       expect(_r.every).to.be.a('function')
       expect(_r.any).to.be.a('function')
       expect(_r.contains).to.be.a('function')
+      expect(_r.invoke).to.be.a('function')
+      expect(_r.pluck).to.be.a('function')
+      expect(_r.max).to.be.a('function')
+      expect(_r.min).to.be.a('function')
     })
 
     it('should have aliases', function(){

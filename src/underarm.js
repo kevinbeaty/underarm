@@ -400,6 +400,65 @@ function include(subject, obj, context){
   return any(subject, function(value){return value === obj}, context)
 }
 
+_r.invoke = invoke
+function invoke(subject, method){
+  var args = slice.call(arguments, 2);
+  return map(subject, function(value){
+      return (isFunction(method) ? method : value[method]).apply(value, args)
+  })
+}
+
+_r.pluck = pluck
+function pluck(subject, key){
+  return map(subject, function(value){return value[key]})
+}
+
+_r.max = max
+function max(subject, iterator, context){
+  if(isUndefined(iterator)){
+    iterator = identity
+  }
+
+  var max = {computed: -Infinity}
+  return produceWithIterator(
+      subject
+    , context
+    , iterator
+    , function(subscriber, value, computed){
+        if(computed > max.computed){
+          max.value = value
+          max.computed = computed
+        }
+      }
+    , function(subscriber){
+        subscriber.next(max.value)
+        subscriber.complete()
+    })
+}
+
+_r.min = min
+function min(subject, iterator, context){
+  if(isUndefined(iterator)){
+    iterator = identity
+  }
+
+  var min = {computed: Infinity}
+  return produceWithIterator(
+      subject
+    , context
+    , iterator
+    , function(subscriber, value, computed){
+        if(computed < min.computed){
+          min.value = value
+          min.computed = computed
+        }
+      }
+    , function(subscriber){
+        subscriber.next(min.value)
+        subscriber.complete()
+    })
+}
+
 _r.seq = seq
 function seq(subject, context){
   return produceWithIterator(

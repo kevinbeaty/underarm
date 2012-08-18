@@ -526,4 +526,152 @@ describe('producer tests', function(){
       expect(values).to.be.eql([true])
     })
   })
+  describe('invoke', function(){
+    it('should invoke with method name', function(){
+      var subject = _r.seq([1, 2, 3, 4])
+        , values = []
+        , invoke = _r.invoke(subject,'toString')
+        , s = invoke.subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql(['1', '2', '3', '4'])
+    })
+    it('should invoke with function', function(){
+      var subject = _r.seq([1, 2, 3, 4])
+        , values = []
+        , invoke = _r.invoke(subject, function(){return this+'!'})
+        , s = invoke.subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql(['1!', '2!', '3!', '4!'])
+    })
+    it('should chain', function(){
+      var values = []
+
+      _r.chain(['a', 'b', 'c', 'd'])
+        .seq()
+        .invoke('toUpperCase')
+        .subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql(['A', 'B', 'C', 'D'])
+    })
+  })
+  describe('pluck', function(){
+    it('should pluck values with name', function(){
+      var subject = _r.seq([{a: '1', b: '2'}, {a: '2'}, {a: '3', b: '5', c: '6'}])
+        , values = []
+        , pluck = _r.pluck(subject, 'a')
+        , s = pluck.subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql(['1', '2', '3'])
+    })
+    it('should chain', function(){
+      var values = []
+
+      _r.chain([{a: '1', b: '2'}, {a: '2'}, {a: '3', b: '5', c: '6'}])
+        .seq()
+        .pluck('b')
+        .subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql(['2', undefined, '5'])
+    })
+  })
+  describe('max', function(){
+    it('should allow subscription', function(){
+      var subject = _r.seq([1, 5, 3, 8, -5])
+        , values = []
+        , max = _r.max(subject)
+        , s = max.subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([8])
+    })
+    it('should accept iterator', function(){
+      var subject = _r.seq([1, 5, 3, 8, -5])
+        , values = []
+        , max = _r.max(subject, function(val){values.push(val); return -val})
+        , values2 = []
+        , s = max.subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 5, 3, 8, -5])
+      expect(values2).to.be.eql([-5])
+    })
+    it('should calculate on complete', function(){
+      var values = []
+        , subject = _r.subject()
+
+      _r.chain(subject)
+        .max()
+        .subscribe(function(val){values.push(val)})
+
+      subject.next(2)
+      subject.next(4)
+      subject.next(3)
+      subject.next(1)
+
+      expect(values).to.be.eql([])
+
+      subject.complete()
+      expect(values).to.be.eql([4])
+    })
+    it('should chain', function(){
+      var values = []
+        , values2 = []
+
+      _r.chain([1, 2, 3, 4])
+        .seq()
+        .max(function(val){values.push(val); return -val})
+        .subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 2, 3, 4])
+      expect(values2).to.be.eql([1])
+    })
+  })
+  describe('min', function(){
+    it('should allow subscription', function(){
+      var subject = _r.seq([1, 5, 3, 8, -5])
+        , values = []
+        , min = _r.min(subject)
+        , s = min.subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([-5])
+    })
+    it('should accept iterator', function(){
+      var subject = _r.seq([1, 5, 3, 8, -5])
+        , values = []
+        , min = _r.min(subject, function(val){values.push(val); return -val})
+        , values2 = []
+        , s = min.subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 5, 3, 8, -5])
+      expect(values2).to.be.eql([8])
+    })
+    it('should calculate on complete', function(){
+      var values = []
+        , subject = _r.subject()
+
+      _r.chain(subject)
+        .min()
+        .subscribe(function(val){values.push(val)})
+
+      subject.next(2)
+      subject.next(4)
+      subject.next(3)
+      subject.next(1)
+
+      expect(values).to.be.eql([])
+
+      subject.complete()
+      expect(values).to.be.eql([1])
+    })
+    it('should chain', function(){
+      var values = []
+        , values2 = []
+
+      _r.chain([1, 2, 3, 4])
+        .seq()
+        .min(function(val){values.push(val); return -val})
+        .subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 2, 3, 4])
+      expect(values2).to.be.eql([4])
+    })
+  })
 })
