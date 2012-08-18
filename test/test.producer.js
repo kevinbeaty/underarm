@@ -375,25 +375,35 @@ describe('producer tests', function(){
         , s = every.subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-      expect(values2).to.be.eql([true])
+      expect(values2).to.be.eql([true, true, true, true])
     })
-    it('should calculate on complete', function(){
+    it('should calculate intermediate values', function(){
       var values = []
+        , results = []
         , subject = _r.subject()
 
       _r.chain(subject)
-        .every(function(val){return val <= 4})
+        .every(function(val){return val < 4})
         .subscribe(function(val){values.push(val)})
 
       subject.next(1)
-      subject.next(2)
-      subject.next(3)
-      subject.next(4)
+      results.push(true)
+      expect(values).to.be.eql(results)
 
-      expect(values).to.be.eql([])
+      subject.next(2)
+      results.push(true)
+      expect(values).to.be.eql(results)
+
+      subject.next(3)
+      results.push(true)
+      expect(values).to.be.eql(results)
+
+      subject.next(4)
+      results.push(false)
+      expect(values).to.be.eql(results)
 
       subject.complete()
-      expect(values).to.be.eql([true])
+      expect(values).to.be.eql(results)
     })
     it('should short circuit on false', function(){
       var subject = _r.seq([1, 2, 3, 4])
@@ -403,7 +413,7 @@ describe('producer tests', function(){
         , s = every.subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 2, 3])
-      expect(values2).to.be.eql([false])
+      expect(values2).to.be.eql([true, true, false])
     })
     it('should chain', function(){
       var values = []
@@ -412,7 +422,7 @@ describe('producer tests', function(){
       _r.chain([1, 2, 3, 4])
         .seq()
         .every(function(val){values.push(val); return (val < 4)})
-        .subscribe(function(val){values2.push(val)})
+        .then(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 2, 3, 4])
       expect(values2).to.be.eql([false])
@@ -435,10 +445,11 @@ describe('producer tests', function(){
         , s = any.subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-      expect(values2).to.be.eql([false])
+      expect(values2).to.be.eql([false, false, false, false])
     })
-    it('should calculate on complete', function(){
+    it('should calculate intermediate values', function(){
       var values = []
+        , results = []
         , subject = _r.subject()
 
       _r.chain(subject)
@@ -446,14 +457,23 @@ describe('producer tests', function(){
         .subscribe(function(val){values.push(val)})
 
       subject.next(1)
-      subject.next(2)
-      subject.next(3)
-      subject.next(4)
+      results.push(false)
+      expect(values).to.be.eql(results)
 
-      expect(values).to.be.eql([])
+      subject.next(2)
+      results.push(false)
+      expect(values).to.be.eql(results)
+
+      subject.next(3)
+      results.push(false)
+      expect(values).to.be.eql(results)
+
+      subject.next(4)
+      results.push(false)
+      expect(values).to.be.eql(results)
 
       subject.complete()
-      expect(values).to.be.eql([false])
+      expect(values).to.be.eql(results)
     })
     it('should short circuit on true', function(){
       var subject = _r.seq([1, 2, 3, 4])
@@ -463,19 +483,31 @@ describe('producer tests', function(){
         , s = any.subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 2, 3])
-      expect(values2).to.be.eql([true])
+      expect(values2).to.be.eql([false, false, true])
     })
-    it('should chain', function(){
+    it('should chain to false', function(){
       var values = []
         , values2 = []
 
       _r.chain([1, 2, 3, 4])
         .seq()
-        .every(function(val){values.push(val); return (val < 4)})
-        .subscribe(function(val){values2.push(val)})
+        .every(function(val){values.push(val); return (val != 3)})
+        .then(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 2, 3])
+      expect(values2).to.be.eql([false])
+    })
+    it('should chain to true', function(){
+      var values = []
+        , values2 = []
+
+      _r.chain([1, 2, 3, 4])
+        .seq()
+        .every(function(val){values.push(val); return (val <= 4)})
+        .then(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 2, 3, 4])
-      expect(values2).to.be.eql([false])
+      expect(values2).to.be.eql([true])
     })
   })
   describe('contains', function(){
@@ -485,25 +517,36 @@ describe('producer tests', function(){
         , contains = _r.contains(subject, 2)
         , s = contains.subscribe(function(val){values.push(val)})
 
-      expect(values).to.be.eql([false])
+      expect(values).to.be.eql([false, false, false, false])
     })
     it('should calculate on complete', function(){
       var values = []
+        , results = []
         , subject = _r.subject()
 
       _r.chain(subject)
-        .contains(5)
+        .contains(4)
         .subscribe(function(val){values.push(val)})
 
       subject.next(1)
-      subject.next(2)
-      subject.next(3)
-      subject.next(4)
+      results.push(false)
+      expect(values).to.be.eql(results)
 
-      expect(values).to.be.eql([])
+      subject.next(2)
+      results.push(false)
+      expect(values).to.be.eql(results)
+
+
+      subject.next(3)
+      results.push(false)
+      expect(values).to.be.eql(results)
+
+      subject.next(4)
+      results.push(true)
+      expect(values).to.be.eql(results)
 
       subject.complete()
-      expect(values).to.be.eql([false])
+      expect(values).to.be.eql(results)
     })
     it('should short circuit on true', function(){
       var values = []
@@ -514,26 +557,38 @@ describe('producer tests', function(){
         .contains(5)
         .subscribe(function(val){values.push(val)})
 
-      subject.next(1)
-      subject.next(2)
       subject.next(3)
       subject.next(4)
 
-      expect(values).to.be.eql([])
+      expect(values).to.be.eql([false, false])
 
       subject.next(5)
-      expect(values).to.be.eql([true])
+      expect(values).to.be.eql([false, false, true])
+
+      subject.next(6)
+      expect(values).to.be.eql([false, false, true])
     })
-    it('should chain', function(){
+    it('should chain to true', function(){
       var values = []
         , subject = _r.subject()
 
       _r.chain([1, 2, 3, 4])
         .seq()
         .contains(3)
-        .subscribe(function(val){values.push(val)})
+        .then(function(val){values.push(val)})
 
       expect(values).to.be.eql([true])
+    })
+    it('should chain to false', function(){
+      var values = []
+        , subject = _r.subject()
+
+      _r.chain([1, 2, 3, 4])
+        .seq()
+        .contains(6)
+        .then(function(val){values.push(val)})
+
+      expect(values).to.be.eql([false])
     })
   })
   describe('invoke', function(){

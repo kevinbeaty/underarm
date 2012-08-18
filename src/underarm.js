@@ -379,15 +379,11 @@ function every(subject, iterator, context){
     , context
     , iterator
     , function(subscriber, value, passes){
+        subscriber.next(passes)
         if(!passes){
-          subscriber.next(false)
           subscriber.complete()
         }
-      }
-    , function(subscriber){
-        subscriber.next(true)
-        subscriber.complete()
-    })
+      })
 }
 
 _r.any = _r.some = any
@@ -397,15 +393,11 @@ function any(subject, iterator, context){
     , context
     , iterator
     , function(subscriber, value, passes){
+        subscriber.next(passes)
         if(passes){
-          subscriber.next(true)
           subscriber.complete()
         }
-      }
-    , function(subscriber){
-        subscriber.next(false)
-        subscriber.complete()
-    })
+      })
 }
 
 _r.include = _r.contains = include
