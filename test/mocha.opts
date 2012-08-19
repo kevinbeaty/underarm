@@ -3,4 +3,7 @@
 --require ./test/common.js
 --ui bdd
 --reporter spec
+./test/test.basic
+./test/test.promise
+./test/test.producer
 
