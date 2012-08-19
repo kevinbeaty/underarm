@@ -318,16 +318,48 @@ produce.defaults = {
   , error: function(subscriber, err){subscriber.error(err)}
 }
 
-function produceWithIterator(subject, context, iterator, iterate, complete, error){
-  var next = function(subscriber, value){
-    if(!subscriber.disposed){
-      try {
-          iterate(subscriber, value, iterator.call(context, value))
-      } catch(e){
-        subscriber.error(e)
-      }
-    }
+function produceWithIterator(subject, context, iterator, iterate, iterComplete, error){
+  if(!isFunction(iterComplete)){
+    iterComplete = produce.defaults.complete
   }
+
+  var promisesCount = 0
+    , completeSubscriber
+    , completeContext
+    , complete = function(subscriber){
+        completeContext = this
+        completeSubscriber = subscriber
+        if(promisesCount === 0){
+          iterComplete.call(completeContext, subscriber)
+        }
+      }
+    , promiseCountdown = function(){
+        promisesCount--
+        if(promisesCount === 0 && !isUndefined(completeSubscriber)){
+          complete.call(completeContext, completeSubscriber)
+        }
+      }
+    , next = function(subscriber, value){
+        var result
+
+        if(!subscriber.disposed){
+          try {
+            result = unwrap(iterator.call(context, value))
+            if(!isProducer(result)){
+              iterate(subscriber, value, result)
+            } else {
+              promisesCount++
+              chain(result)
+                .then(
+                    function(resolved){iterate(subscriber, value, resolved)}
+                  , function(err){subscriber.error(err)})
+                .then(promiseCountdown)
+            }
+          } catch(e){
+            subscriber.error(e)
+          }
+        }
+      }
   return produce(subject, context, next, complete, error)
 }
 
