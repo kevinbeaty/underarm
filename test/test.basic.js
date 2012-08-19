@@ -20,6 +20,9 @@ describe('basic tests', function(){
       expect(_r.min).to.be.a('function')
       expect(_r.sortBy).to.be.a('function')
       expect(_r.sort).to.be.a('function')
+      expect(_r.groupBy).to.be.a('function')
+      expect(_r.seq).to.be.a('function')
+      expect(_r.zipMap).to.be.a('function')
     })
 
     it('should have aliases', function(){

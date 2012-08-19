@@ -31,7 +31,8 @@ describe('producer tests', function(){
       var values = []
         , values2 = []
 
-      _r.chain([1, 2, 3, 4])
+      _r([1, 2, 3, 4])
+        .chain()
         .seq()
         .each(function(val){values.push(val*2)})
         .subscribe(function(val){values2.push(val)})
@@ -45,7 +46,7 @@ describe('producer tests', function(){
       var subject = _r.seq([1, '2', {a: 3}, [4, 5]])
         , values = []
 
-      _r.map(subject, function(val){values.push(val); return val}).subscribe()
+      _r(subject).map(function(val){values.push(val); return val}).subscribe()
 
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
@@ -91,7 +92,7 @@ describe('producer tests', function(){
         , memos = []
         , values = []
 
-      _r.reduce(subject, function(memo, val){values.push(val); memos.push(memo); return val}, 1).subscribe()
+      _r(subject).reduce(function(memo, val){values.push(val); memos.push(memo); return val}, 1).subscribe()
 
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
@@ -839,6 +840,72 @@ describe('producer tests', function(){
 
       subject.complete()
       expect(values).to.be.eql([-3, 1, 2, 4])
+    })
+  })
+  describe('groupBy', function(){
+    it('should group on identity', function(){
+      var subject = _r.seq(['a', 'b', 'c', 'b', 'c', 'c'])
+        , values = []
+
+      _r.chain(subject)
+        .groupBy(_r.identity)
+        .zipMap()
+        .then(function(value){values.push(value)})
+
+      expect(values).to.have.length(1)
+      expect(values[0].a).to.be.eql(['a'])
+      expect(values[0].b).to.be.eql(['b', 'b'])
+      expect(values[0].c).to.be.eql(['c', 'c', 'c'])
+    })
+    it('should sort group with iterator', function(){
+      var subject = _r.seq([1, 1.4, 1.6, 2.0, 3.3])
+        , values = []
+
+      _r.chain(subject)
+        .groupBy(function(val){return Math.round(val)})
+        .zipMap()
+        .subscribe(function(value){values.push(value)})
+
+      expect(values).to.have.length(1)
+      expect(values[0]['1']).to.be.eql([1, 1.4])
+      expect(values[0]['2']).to.be.eql([1.6, 2.0])
+      expect(values[0]['3']).to.be.eql([3.3])
+    })
+    it('should group with property', function(){
+      var subject = _r.seq(['bob', 'frank', 'sue', 'fred', 'fran', 'sam'])
+        , groupBy = _r.groupBy(subject, 'length')
+        , sortBy = _r.sortBy(groupBy, function(val){return val[0]})
+        , values = []
+        , s = sortBy.subscribe(function(val){values.push(val)})
+
+      expect(values).to.have.length(3)
+      expect(values[0][1]).to.eql(['bob', 'sue', 'sam'])
+      expect(values[1][1]).to.be.eql(['fred', 'fran'])
+      expect(values[2][1]).to.be.eql(['frank'])
+    })
+    it('should calculate on complete', function(){
+      var values = []
+        , subject = _r.subject()
+
+      _r.chain(subject)
+        .groupBy(function(val){return val.charAt(0)})
+        .subscribe(function(val){values.push(val)})
+
+      subject.next('fred')
+      subject.next('fran')
+      subject.next('sam')
+      subject.next('frank')
+
+      expect(values).to.be.eql([])
+
+      subject.complete()
+
+      expect(values).to.have.length(2)
+
+      _r.chain(values).seq().zipMap().then(function(value){
+        expect(value.f).to.be.eql(['fred', 'fran', 'frank'])
+        expect(value.s).to.be.eql(['sam'])
+      })
     })
   })
 })

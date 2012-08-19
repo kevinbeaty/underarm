@@ -505,6 +505,34 @@ function sort(subject, context){
   return sortBy(subject, identity, context)
 }
 
+_r.groupBy = groupBy
+function groupBy(subject, val, context){
+  var groups = {}
+  return produceWithIterator(
+      subject
+    , context
+    , identity
+    , function(subscriber, value){
+        var iterator = lookupIterator(value, val)
+          , key = iterator.call(context, value)
+          , group = groups[key]
+        if(isUndefined(group)){
+          group = []
+          groups[key] = group
+        }
+        group.push(value)
+      }
+    , function(subscriber){
+        var key
+        for(key in groups){
+          if(has(groups, key)){
+            subscriber.next([key, groups[key]])
+          }
+        }
+        subscriber.complete()
+      })
+}
+
 _r.seq = seq
 function seq(subject, context){
   return produceWithIterator(
@@ -528,6 +556,22 @@ function seq(subject, context){
         } else {
           subscriber.next(value)
         }
+    })
+}
+
+_r.zipMap = zipMap
+function zipMap(subject, context){
+  var zipped = {}
+  return produceWithIterator(
+      subject
+    , context
+    , identity
+    , function(subscriber, value){
+        zipped[value[0]] = value[1]
+    }
+    , function(subscriber){
+      subscriber.next(zipped)
+      subscriber.complete()
     })
 }
 
