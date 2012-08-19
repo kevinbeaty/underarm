@@ -36,6 +36,8 @@ describe('basic tests', function(){
       expect(_r.every).to.be.equal(_r.all)
       expect(_r.any).to.be.equal(_r.some)
       expect(_r.include).to.be.equal(_r.contains)
+      expect(_r.pluck).to.be.equal(_r.get)
+      expect(_r.invoke).to.be.equal(_r.call)
     })
 
     describe('identity', function(){

@@ -33,7 +33,7 @@ var ObjectProto = Object.prototype
       return toString.call(obj) == '[object Function]'
   }
   , has = function(obj, key) {
-    return hasOwnProp.call(obj, key)
+    return obj && hasOwnProp.call(obj, key)
   }
   , push = ArrayProto.push
   , slice = ArrayProto.slice
@@ -143,6 +143,14 @@ var Subscriber = (function(){
     this.dispose()
   }
 
+  P.resolve = resolve
+  function resolve(value){
+    if(!isUndefined(value)){
+      this.next(value)
+    }
+    this.complete()
+  }
+
   P.dispose = dispose
   function dispose(){
     var onDisposes = this.onDisposes
@@ -182,6 +190,7 @@ var Subscriber = (function(){
 var Subject = (function(){
   function Subject(){
     this.producer = new Producer()
+    this.disposed = false
   }
   var P = Subject.prototype
 
@@ -205,8 +214,17 @@ var Subject = (function(){
     eachSubscriber(this, 'complete')
   }
 
+  P.resolve = resolve
+  function resolve(value){
+    if(!isUndefined(value)){
+      this.next(value)
+    }
+    this.complete()
+  }
+
   P.dispose = dispose
   function dispose(){
+    this.disposed = true
     eachSubscriber(this, 'dispose')
   }
 
@@ -223,25 +241,47 @@ var Subject = (function(){
 _r.subject = function(){return new Subject()}
 
 _r.then = then
-function then(subject, callback, errback, context){
-  var lastResult, lastErr
+function then(subject, callback, errback, progback, context){
+  var lastResult
+    , promise = new Subject()
+
   subject.subscribe(
       function(result){
+        if(isFunction(progback)){
+          progback(result)
+        }
         lastResult = result
-      },
-      function(){
-        lastErr ? errback(lastErr) : callback(lastResult)
-      },
-      function(err){
-        lastErr = err
+      }
+    , function(){
+        if(isFunction(callback)){
+          callback(lastResult)
+        }
+        promise.resolve(lastResult)
+      }
+    , function(err){
+        if(isFunction(errback)){
+          errback(err)
+        }
+        promise.error(err)
       })
+
+  return chain(promise)
 }
 
+function isProducer(producer){
+  return !isUndefined(producer) && (producer instanceof Producer || producer instanceof Subject)
+}
 
 function producerWrap(delegate){
+  delegate = unwrap(delegate)
   var producer
-  if(delegate instanceof Producer || delegate instanceof Subject){
+  if(isProducer(delegate)){
     producer = delegate
+  } else if(isUndefined(delegate)){
+    producer = new Subject()
+  } else if(isFunction(delegate)){
+    producer = new Producer()
+    producer.onSubscribe = delegate
   } else {
     producer = new Producer()
     producer.onSubscribe = function(subscriber){
@@ -426,7 +466,7 @@ function include(subject, obj, context){
   return any(subject, function(value){return value === obj}, context)
 }
 
-_r.invoke = invoke
+_r.invoke = _r.call = invoke
 function invoke(subject, method){
   var args = slice.call(arguments, 2);
   return map(subject, function(value){
@@ -434,7 +474,7 @@ function invoke(subject, method){
   })
 }
 
-_r.pluck = pluck
+_r.pluck = _r.get = pluck
 function pluck(subject, key){
   return map(subject, function(value){return value[key]})
 }
@@ -579,6 +619,10 @@ function Underarm(obj) {
   this._wrapped = producerWrap(obj)
 }
 
+function unwrap(obj){
+  return (obj instanceof Underarm) ? obj._wrapped : obj
+}
+
 _r.mixin = mixin
 function mixin(obj) {
   var name
@@ -604,22 +648,39 @@ function mixin(obj) {
 
 _r.mixin(_r)
 
-_r.chain = function(obj) {
+_r.chain = chain
+function chain(obj){
   return _r(obj).chain()
 }
 
 var UnderProto = Underarm.prototype
-UnderProto.chain = function() {
+UnderProto.chain = function(){
   this._chain = true
   return this
 }
 
-UnderProto.value = function() {
+UnderProto.value = function(){
   return this._wrapped
 }
 
-UnderProto.subscribe = function(next, complete, error) {
+UnderProto.subscribe = function(next, complete, error){
   return this._wrapped.subscribe(next, complete, error)
+}
+
+UnderProto.resolve = function(result){
+  return this.value().resolve(result)
+}
+
+UnderProto.error = function(result){
+  return this.value().error(result)
+}
+
+UnderProto.next = function(result){
+  return this.value().next(result)
+}
+
+UnderProto.complete = function(){
+  return this.value().complete()
 }
 
 })(this)
