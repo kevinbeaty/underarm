@@ -599,20 +599,35 @@ function seq(subject, context){
     })
 }
 
-_r.zipMap = zipMap
-function zipMap(subject, context){
+_r.zipMapBy = zipMapBy
+function zipMapBy(subject, val, context){
   var zipped = {}
   return produceWithIterator(
       subject
     , context
     , identity
     , function(subscriber, value){
-        zipped[value[0]] = value[1]
+        var iterator = lookupIterator(value, val)
+          , entry = iterator.call(context, value)
+        if(isArray(entry)){
+          if(entry.length === 2){
+            zipped[entry[0]] = entry[1]
+          } else {
+            zipped[entry[0]] = slice.call(entry, 1)
+          }
+        } else {
+          zipped[entry] = value
+        }
     }
     , function(subscriber){
       subscriber.next(zipped)
       subscriber.complete()
     })
+}
+
+_r.zipMap = zipMap
+function zipMap(subject, context){
+  return zipMapBy(subject, identity, context)
 }
 
 function Underarm(obj) {

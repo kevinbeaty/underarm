@@ -23,6 +23,7 @@ describe('basic tests', function(){
       expect(_r.groupBy).to.be.a('function')
       expect(_r.seq).to.be.a('function')
       expect(_r.zipMap).to.be.a('function')
+      expect(_r.zipMapBy).to.be.a('function')
     })
 
     it('should have aliases', function(){
