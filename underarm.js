@@ -591,14 +591,7 @@ function sortBy(producer, val, context){
     , function(consumer, value){
         var iterator = lookupIterator(value, val)
         splice.call(values, sortedIndex(values, value, iterator), 0, value)
-      }
-    , function(consumer){
-        var i = 0
-          , len = values.length
-        for(; i < len; i++){
-          consumer.next(values[i])
-        }
-        consumer.complete()
+        consumer.next(values)
       })
 }
 
@@ -623,15 +616,7 @@ function groupBy(producer, val, context){
           groups[key] = group
         }
         group.push(value)
-      }
-    , function(consumer){
-        var key
-        for(key in groups){
-          if(has(groups, key)){
-            consumer.next([key, groups[key]])
-          }
-        }
-        consumer.complete()
+        consumer.next(groups)
       })
 }
 
@@ -680,11 +665,8 @@ function zipMapBy(producer, val, context){
         } else {
           zipped[entry] = value
         }
-    }
-    , function(consumer){
-      consumer.next(zipped)
-      consumer.complete()
-    })
+        consumer.next(zipped)
+      })
 }
 
 _r.zipMap = zipMap

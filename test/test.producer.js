@@ -767,7 +767,7 @@ describe('producer tests', function(){
 
       _r.chain(producer)
         .sortBy(_r.identity)
-        .subscribe(function(value){values.push(value)})
+        .then(function(value){values = value})
 
       expect(values).to.be.eql([1, 2, 3, 4, 5])
     })
@@ -777,7 +777,7 @@ describe('producer tests', function(){
 
       _r.chain(producer)
         .sortBy(function(val){return -val})
-        .subscribe(function(value){values.push(value)})
+        .then(function(value){values = value})
 
       expect(values).to.be.eql([5, 4, 3, 2, 1])
     })
@@ -787,8 +787,8 @@ describe('producer tests', function(){
         , sortByB = _r.sortBy(producer, 'b')
         , valuesA = []
         , valuesB = []
-        , sA = sortByA.subscribe(function(val){valuesA.push(val)})
-        , sB = sortByB.subscribe(function(val){valuesB.push(val)})
+        , sA = _r.then(sortByA, function(val){valuesA = val})
+        , sB = _r.then(sortByB, function(val){valuesB = val})
 
       expect(valuesA).to.be.eql([{a: 1, b: 2}, {a: 3, b:4}, {a: 5, b: 1, c: 0}])
       expect(valuesB).to.be.eql([{a: 5, b: 1, c: 0}, {a: 1, b: 2}, {a: 3, b:4}])
@@ -799,7 +799,7 @@ describe('producer tests', function(){
 
       promise
         .sortBy(_r.identity)
-        .subscribe(function(val){values.push(val)})
+        .then(function(val){values = val})
 
       promise.next(4)
       promise.next(-3)
@@ -819,7 +819,7 @@ describe('producer tests', function(){
       _r.chain(['d', 'a', 'c', 'b'])
         .seq()
         .sort()
-        .subscribe(function(value){values.push(value)})
+        .then(function(value){values = value})
 
       expect(values).to.be.eql(['a', 'b', 'c', 'd'])
     })
@@ -829,7 +829,7 @@ describe('producer tests', function(){
 
       promise
         .sort()
-        .subscribe(function(val){values.push(val)})
+        .then(function(val){values = val})
 
       promise.next(4)
       promise.next(-3)
@@ -849,13 +849,11 @@ describe('producer tests', function(){
 
       _r.chain(producer)
         .groupBy(_r.identity)
-        .zipMap()
-        .then(function(value){values.push(value)})
+        .then(function(value){values = value})
 
-      expect(values).to.have.length(1)
-      expect(values[0].a).to.be.eql(['a'])
-      expect(values[0].b).to.be.eql(['b', 'b'])
-      expect(values[0].c).to.be.eql(['c', 'c', 'c'])
+      expect(values.a).to.be.eql(['a'])
+      expect(values.b).to.be.eql(['b', 'b'])
+      expect(values.c).to.be.eql(['c', 'c', 'c'])
     })
     it('should sort group with iterator', function(){
       var producer = _r.seq([1, 1.4, 1.6, 2.0, 3.3])
@@ -863,25 +861,21 @@ describe('producer tests', function(){
 
       _r.chain(producer)
         .groupBy(function(val){return Math.round(val)})
-        .zipMap()
-        .subscribe(function(value){values.push(value)})
+        .subscribe(function(value){values = value})
 
-      expect(values).to.have.length(1)
-      expect(values[0]['1']).to.be.eql([1, 1.4])
-      expect(values[0]['2']).to.be.eql([1.6, 2.0])
-      expect(values[0]['3']).to.be.eql([3.3])
+      expect(values[1]).to.be.eql([1, 1.4])
+      expect(values[2]).to.be.eql([1.6, 2.0])
+      expect(values[3]).to.be.eql([3.3])
     })
     it('should group with property', function(){
       var producer = _r.seq(['bob', 'frank', 'sue', 'fred', 'fran', 'sam'])
         , groupBy = _r.groupBy(producer, 'length')
-        , sortBy = _r.sortBy(groupBy, function(val){return val[0]})
         , values = []
-        , s = sortBy.subscribe(function(val){values.push(val)})
+        , s = groupBy.subscribe(function(val){values = val})
 
-      expect(values).to.have.length(3)
-      expect(values[0][1]).to.eql(['bob', 'sue', 'sam'])
-      expect(values[1][1]).to.be.eql(['fred', 'fran'])
-      expect(values[2][1]).to.be.eql(['frank'])
+      expect(values[3]).to.eql(['bob', 'sue', 'sam'])
+      expect(values[4]).to.be.eql(['fred', 'fran'])
+      expect(values[5]).to.be.eql(['frank'])
     })
     it('should calculate on complete', function(){
       var values = []
@@ -889,23 +883,18 @@ describe('producer tests', function(){
 
       promise
         .groupBy(function(val){return val.charAt(0)})
-        .subscribe(function(val){values.push(val)})
+        .subscribe(function(val){values = val})
 
       promise.next('fred')
       promise.next('fran')
       promise.next('sam')
       promise.next('frank')
 
-      expect(values).to.be.eql([])
-
       promise.complete()
 
-      expect(values).to.have.length(2)
+      expect(values.f).to.be.eql(['fred', 'fran', 'frank'])
+      expect(values.s).to.be.eql(['sam'])
 
-      _r.chain(values).seq().zipMap().then(function(value){
-        expect(value.f).to.be.eql(['fred', 'fran', 'frank'])
-        expect(value.s).to.be.eql(['sam'])
-      })
     })
   })
 })
