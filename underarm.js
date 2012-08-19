@@ -1,3 +1,4 @@
+/* underarm v0.0.1 | http://simplectic.com/underarm | License: MIT */
 ;(function(root){
 "use strict";
 
@@ -5,10 +6,20 @@ var _r = function(obj) {
   return new Underarm(obj)
 }
 
+_r.VERSION = '0.0.1';
+
+var old_r = root._r
+
 if (typeof exports !== 'undefined') {
   exports._r = _r
 } else {
   root['_r'] = _r
+}
+
+_r.noConflict = noConflict
+function noConflict(){
+  root._r = old_r
+  return _r
 }
 
 _r.identity = identity
@@ -75,7 +86,22 @@ var ObjectProto = Object.prototype
   , lookupIterator = function(obj, val) {
     return isFunction(val) ? val : function(obj){return obj[val]}
   }
+  , console = root.console || {
+        log:identity
+      , error:identity
+    }
+  , errorHandler = function(err){
+      if(isFunction(console.error)){
+        console.error(err)
+      } else if(isFunction(console.log)){
+        console.log(err)
+      }
+    }
 
+_r.defaultErrorHandler = defaultErrorHandler
+function defaultErrorHandler(handler){
+  errorHandler = handler
+}
 
 var Producer = (function(){
   function Producer(){
@@ -135,6 +161,7 @@ var Consumer = (function(){
 
   P.error = error
   function error(err){
+    errorHandler(err)
     this.dispose()
   }
 

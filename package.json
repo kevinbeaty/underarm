@@ -1,6 +1,6 @@
 {
   "name": "underarm",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Underscore Meets Reactive Extensions",
   "main": "underarm.js",
   "homepage": "http://simplectic.com/underarm",
