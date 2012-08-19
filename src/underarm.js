@@ -79,7 +79,7 @@ var ObjectProto = Object.prototype
 
 var Producer = (function(){
   function Producer(){
-    this.subscribers = []
+    this.consumers = []
   }
   var P = Producer.prototype
 
@@ -87,47 +87,47 @@ var Producer = (function(){
 
   P.subscribe = subscribe
   function subscribe(next, complete, error){
-    var subscriber = new Subscriber(next, complete, error)
+    var consumer = new Consumer(next, complete, error)
       , producer = this
 
-    push.call(producer.subscribers, subscriber)
-    subscriber.onDispose(function(){
-      producer.unsubscribe(subscriber)
+    push.call(producer.consumers, consumer)
+    consumer.onDispose(function(){
+      producer.unsubscribe(consumer)
     })
 
     if(producer.onSubscribe){
-      var disposable = producer.onSubscribe(subscriber)
+      var disposable = producer.onSubscribe(consumer)
       if(!isUndefined(disposable)){
         if(isFunction(disposable)){
-          subscriber.onDispose(disposable)
+          consumer.onDispose(disposable)
         } else if(isFunction(disposable.dispose)){
-          subscriber.onDispose(function(){
+          consumer.onDispose(function(){
             disposable.dispose()
           })
         }
       }
     }
 
-    return subscriber
+    return consumer
   }
 
   P.unsubscribe = unsubscribe
-  function unsubscribe(subscriber){
-    removeFrom(this.subscribers, subscriber)
+  function unsubscribe(consumer){
+    removeFrom(this.consumers, consumer)
   }
 
   return Producer
 })()
 
-var Subscriber = (function(){
-  function Subscriber(next, complete, error){
+var Consumer = (function(){
+  function Consumer(next, complete, error){
     appendToMethod(this, 'next', next)
     appendToMethod(this, 'complete', complete)
     appendToMethod(this, 'error', error)
     this.disposed = false
     this.onDisposes = []
   }
-  var P = Subscriber.prototype
+  var P = Consumer.prototype
 
   P.next = next
   function next(value){
@@ -183,7 +183,7 @@ var Subscriber = (function(){
     }
   }
 
-  return Subscriber
+  return Consumer
 })()
 
 
@@ -201,17 +201,17 @@ var Promise = (function(){
 
   P.next = next
   function next(value){
-    eachSubscriber(this, 'next', value)
+    eachConsumer(this, 'next', value)
   }
 
   P.error = error
   function error(error){
-    eachSubscriber(this, 'error', error)
+    eachConsumer(this, 'error', error)
   }
 
   P.complete = complete
   function complete(){
-    eachSubscriber(this, 'complete')
+    eachConsumer(this, 'complete')
   }
 
   P.resolve = resolve
@@ -225,48 +225,52 @@ var Promise = (function(){
   P.dispose = dispose
   function dispose(){
     this.disposed = true
-    eachSubscriber(this, 'dispose')
+    eachConsumer(this, 'dispose')
   }
 
-  function eachSubscriber(target, action, val){
+  function eachConsumer(target, action, val){
     var i = 0
-      , subscribers = target.producer.subscribers
-    for(; i < subscribers.length; i++){
-      subscribers[i][action](val)
+      , consumers = target.producer.consumers
+    for(; i < consumers.length; i++){
+      consumers[i][action](val)
     }
   }
 
   return Promise
 })()
 
-_r.promise = function(){return chain(new Promise())}
+_r.promise = promise
+function promise(){
+  return chain(new Promise())
+}
 
 _r.then = then
 function then(producer, callback, errback, progback, context){
   var lastResult
-    , promise = new Promise()
+    , nextPromise = promise()
 
   producer.subscribe(
       function(result){
         if(isFunction(progback)){
           progback(result)
         }
+        nextPromise.next(result)
         lastResult = result
       }
     , function(){
         if(isFunction(callback)){
           callback(lastResult)
         }
-        promise.resolve(lastResult)
+        nextPromise.resolve(lastResult)
       }
     , function(err){
         if(isFunction(errback)){
           errback(err)
         }
-        promise.error(err)
+        nextPromise.error(err)
       })
 
-  return chain(promise)
+  return nextPromise
 }
 
 function isProducer(producer){
@@ -283,9 +287,9 @@ function producerWrap(delegate){
     producer.onSubscribe = delegate
   } else {
     producer = new Producer()
-    producer.onSubscribe = function(subscriber){
-      subscriber.next(delegate)
-      subscriber.complete()
+    producer.onSubscribe = function(consumer){
+      consumer.next(delegate)
+      consumer.complete()
     }
   }
   return producer
@@ -295,10 +299,10 @@ function produce(delegate, context, next, complete, error){
   var producer = new Producer()
     , delegate = producerWrap(delegate)
 
-  producer.onSubscribe = function(subscriber){
+  producer.onSubscribe = function(consumer){
     var wrap = function(wrapped){
         return function(value){
-          wrapped.call(context, subscriber, value)
+          wrapped.call(context, consumer, value)
         }
       }
     , defaults = produce.defaults
@@ -312,9 +316,9 @@ function produce(delegate, context, next, complete, error){
   return producer
 }
 produce.defaults = {
-    next: function(subscriber, value){subscriber.next(value)}
-  , complete: function(subscriber){subscriber.complete()}
-  , error: function(subscriber, err){subscriber.error(err)}
+    next: function(consumer, value){consumer.next(value)}
+  , complete: function(consumer){consumer.complete()}
+  , error: function(consumer, err){consumer.error(err)}
 }
 
 function produceWithIterator(producer, context, iterator, iterate, iterComplete, error){
@@ -323,39 +327,39 @@ function produceWithIterator(producer, context, iterator, iterate, iterComplete,
   }
 
   var promisesCount = 0
-    , completeSubscriber
+    , completeConsumer
     , completeContext
-    , complete = function(subscriber){
+    , complete = function(consumer){
         completeContext = this
-        completeSubscriber = subscriber
+        completeConsumer = consumer
         if(promisesCount === 0){
-          iterComplete.call(completeContext, subscriber)
+          iterComplete.call(completeContext, consumer)
         }
       }
     , promiseCountdown = function(){
         promisesCount--
-        if(promisesCount === 0 && !isUndefined(completeSubscriber)){
-          complete.call(completeContext, completeSubscriber)
+        if(promisesCount === 0 && !isUndefined(completeConsumer)){
+          complete.call(completeContext, completeConsumer)
         }
       }
-    , next = function(subscriber, value){
+    , next = function(consumer, value){
         var result
 
-        if(!subscriber.disposed){
+        if(!consumer.disposed){
           try {
             result = unwrap(iterator.call(context, value))
             if(!isProducer(result)){
-              iterate(subscriber, value, result)
+              iterate(consumer, value, result)
             } else {
               promisesCount++
               chain(result)
                 .then(
-                    function(resolved){iterate(subscriber, value, resolved)}
-                  , function(err){subscriber.error(err)})
+                    function(resolved){iterate(consumer, value, resolved)}
+                  , function(err){consumer.error(err)})
                 .then(promiseCountdown)
             }
           } catch(e){
-            subscriber.error(e)
+            consumer.error(e)
           }
         }
       }
@@ -368,8 +372,8 @@ function each(producer, iterator, context){
       producer
     , context
     , iterator
-    , function(subscriber, value){
-        subscriber.next(value)
+    , function(consumer, value){
+        consumer.next(value)
       })
 }
 
@@ -379,8 +383,8 @@ function map(producer, iterator, context){
       producer
     , context
     , iterator
-    , function(subscriber, value, result){
-        subscriber.next(result)
+    , function(consumer, value, result){
+        consumer.next(result)
       })
 }
 
@@ -391,14 +395,14 @@ function reduce(producer, iterator, memo, context){
       producer
     , context
     , identity
-    , function(subscriber, value){
+    , function(consumer, value){
         if(!initial){
           memo = value
           initial = true
         } else {
           memo = iterator.call(context, memo, value)
         }
-        subscriber.next(memo)
+        consumer.next(memo)
       })
 }
 
@@ -410,10 +414,10 @@ function reduceRight(producer, iterator, memo, context){
       producer
     , context
     , identity
-    , function(subscriber, value){
+    , function(consumer, value){
         values.push(value)
       }
-    , function(subscriber){
+    , function(consumer){
         var i = values.length - 1
         for(; i >= 0; i--){
           if(!initial){
@@ -422,9 +426,9 @@ function reduceRight(producer, iterator, memo, context){
           } else {
             memo = iterator.call(context, memo, values[i])
           }
-          subscriber.next(memo)
+          consumer.next(memo)
         }
-        subscriber.complete()
+        consumer.complete()
       })
 }
 
@@ -434,10 +438,10 @@ function find(producer, iterator, context){
       producer
     , context
     , iterator
-    , function(subscriber, value, found){
+    , function(consumer, value, found){
         if(found){
-          subscriber.next(value)
-          subscriber.complete()
+          consumer.next(value)
+          consumer.complete()
         }
       })
 }
@@ -448,8 +452,8 @@ function filter(producer, iterator, context){
       producer
     , context
     , iterator
-    , function(subscriber, value, keep){
-        if(keep) subscriber.next(value)
+    , function(consumer, value, keep){
+        if(keep) consumer.next(value)
       })
 }
 
@@ -459,8 +463,8 @@ function reject(producer, iterator, context){
       producer
     , context
     , iterator
-    , function(subscriber, value, ignore){
-        if(!ignore) subscriber.next(value)
+    , function(consumer, value, ignore){
+        if(!ignore) consumer.next(value)
       })
 }
 
@@ -470,10 +474,10 @@ function every(producer, iterator, context){
       producer
     , context
     , iterator
-    , function(subscriber, value, passes){
-        subscriber.next(passes)
+    , function(consumer, value, passes){
+        consumer.next(passes)
         if(!passes){
-          subscriber.complete()
+          consumer.complete()
         }
       })
 }
@@ -484,10 +488,10 @@ function any(producer, iterator, context){
       producer
     , context
     , iterator
-    , function(subscriber, value, passes){
-        subscriber.next(passes)
+    , function(consumer, value, passes){
+        consumer.next(passes)
         if(passes){
-          subscriber.complete()
+          consumer.complete()
         }
       })
 }
@@ -521,12 +525,12 @@ function max(producer, iterator, context){
       producer
     , context
     , iterator
-    , function(subscriber, value, computed){
+    , function(consumer, value, computed){
         if(computed > max.computed){
           max.value = value
           max.computed = computed
         }
-        subscriber.next(max.value)
+        consumer.next(max.value)
       })
 }
 
@@ -541,12 +545,12 @@ function min(producer, iterator, context){
       producer
     , context
     , iterator
-    , function(subscriber, value, computed){
+    , function(consumer, value, computed){
         if(computed < min.computed){
           min.value = value
           min.computed = computed
         }
-        subscriber.next(min.value)
+        consumer.next(min.value)
       })
 }
 
@@ -557,17 +561,17 @@ function sortBy(producer, val, context){
       producer
     , context
     , identity
-    , function(subscriber, value){
+    , function(consumer, value){
         var iterator = lookupIterator(value, val)
         splice.call(values, sortedIndex(values, value, iterator), 0, value)
       }
-    , function(subscriber){
+    , function(consumer){
         var i = 0
           , len = values.length
         for(; i < len; i++){
-          subscriber.next(values[i])
+          consumer.next(values[i])
         }
-        subscriber.complete()
+        consumer.complete()
       })
 }
 
@@ -583,7 +587,7 @@ function groupBy(producer, val, context){
       producer
     , context
     , identity
-    , function(subscriber, value){
+    , function(consumer, value){
         var iterator = lookupIterator(value, val)
           , key = iterator.call(context, value)
           , group = groups[key]
@@ -593,14 +597,14 @@ function groupBy(producer, val, context){
         }
         group.push(value)
       }
-    , function(subscriber){
+    , function(consumer){
         var key
         for(key in groups){
           if(has(groups, key)){
-            subscriber.next([key, groups[key]])
+            consumer.next([key, groups[key]])
           }
         }
-        subscriber.complete()
+        consumer.complete()
       })
 }
 
@@ -610,22 +614,22 @@ function seq(producer, context){
       producer
     , context
     , identity
-    , function(subscriber, value){
+    , function(consumer, value){
         if(isArray(value)){
           var i = 0
             , len = value.length
           for(; i < len; i++){
-            subscriber.next(value[i])
+            consumer.next(value[i])
           }
         } else if(isObject(value)){
           var key
           for(key in value){
             if(has(value, key)){
-              subscriber.next([key, value[key]])
+              consumer.next([key, value[key]])
             }
           }
         } else {
-          subscriber.next(value)
+          consumer.next(value)
         }
     })
 }
@@ -637,7 +641,7 @@ function zipMapBy(producer, val, context){
       producer
     , context
     , identity
-    , function(subscriber, value){
+    , function(consumer, value){
         var iterator = lookupIterator(value, val)
           , entry = iterator.call(context, value)
         if(isArray(entry)){
@@ -650,9 +654,9 @@ function zipMapBy(producer, val, context){
           zipped[entry] = value
         }
     }
-    , function(subscriber){
-      subscriber.next(zipped)
-      subscriber.complete()
+    , function(consumer){
+      consumer.next(zipped)
+      consumer.complete()
     })
 }
 
