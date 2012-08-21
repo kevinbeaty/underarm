@@ -217,9 +217,13 @@ var Consumer = (function(){
 var Promise = (function(){
   function Promise(){
     this.producer = new Producer()
-    this.disposed = false
   }
   var P = Promise.prototype
+
+  P.disposed = false
+  P.unfulfilled = true
+  P.fulfilled = false
+  P.failed = false
 
   P.subscribe = subscribe
   function subscribe(next, complete, error){
@@ -228,17 +232,28 @@ var Promise = (function(){
 
   P.next = next
   function next(value){
-    eachConsumer(this, 'next', value)
+    if(this.unfulfilled){
+      eachConsumer(this, 'next', value)
+      this.value = value
+    }
   }
 
   P.error = error
   function error(error){
-    eachConsumer(this, 'error', error)
+    if(this.unfulfilled){
+      eachConsumer(this, 'error', error)
+      this.unfulfilled = false
+      this.failed = true
+    }
   }
 
   P.complete = complete
   function complete(){
-    eachConsumer(this, 'complete')
+    if(this.unfulfilled){
+      eachConsumer(this, 'complete')
+      this.unfulfilled = false
+      this.fulfilled = true
+    }
   }
 
   P.resolve = resolve
