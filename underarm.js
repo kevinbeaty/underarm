@@ -3,7 +3,7 @@
 "use strict";
 
 var _r = function(obj) {
-  return new Underarm(obj)
+  return chain(obj)
 }
 
 _r.VERSION = '0.0.1';
@@ -341,6 +341,16 @@ function producerWrap(delegate){
   } else if(isFunction(delegate)){
     producer = new Producer()
     producer.onSubscribe = delegate
+  } else if(isArray(delegate)){
+    producer = new Producer()
+    producer.onSubscribe = function(consumer){
+      var i = 0
+        , len = delegate.length
+      for(; i < len; i++){
+        consumer.next(delegate[i])
+      }
+      consumer.complete()
+    }
   } else {
     producer = new Producer()
     producer.onSubscribe = function(consumer){
@@ -721,7 +731,7 @@ function mixin(obj) {
             , result
           unshift.call(args, this._wrapped)
           result = func.apply(_r, args)
-          return (this._chain ? _r(result).chain() : result)
+          return (this._chain ? chain(result) : result)
         }
       }
 
@@ -738,7 +748,7 @@ _r.mixin(_r)
 
 _r.chain = chain
 function chain(obj){
-  return _r(obj).chain()
+  return (obj instanceof Underarm) ? obj : new Underarm(obj).chain()
 }
 
 var UnderProto = Underarm.prototype
@@ -756,19 +766,19 @@ UnderProto.subscribe = function(next, complete, error){
 }
 
 UnderProto.resolve = function(result){
-  return this.value().resolve(result)
+  return this._wrapped.resolve(result)
 }
 
 UnderProto.error = function(result){
-  return this.value().error(result)
+  return this._wrapped.error(result)
 }
 
 UnderProto.next = function(result){
-  return this.value().next(result)
+  return this._wrapped.next(result)
 }
 
 UnderProto.complete = function(){
-  return this.value().complete()
+  return this._wrapped.complete()
 }
 
 })(this)

@@ -1,14 +1,14 @@
 describe('producer tests', function(){
   describe('each', function(){
     it('should collect each value sent', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
 
       _r.each(producer, function(val){values.push(val)}).subscribe()
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
     it('should allow subscription', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
         , each = _r.each(producer, function(val){values.push(val)})
         , values2 = []
@@ -18,7 +18,7 @@ describe('producer tests', function(){
       expect(values2).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
     it('should pass through original values', function(){
-      var producer = _r.seq([1, 2, 3, 4])
+      var producer = _r([1, 2, 3, 4])
         , values = []
         , each = _r.each(producer, function(val){values.push(val*2);})
         , values2 = []
@@ -32,8 +32,6 @@ describe('producer tests', function(){
         , values2 = []
 
       _r([1, 2, 3, 4])
-        .chain()
-        .seq()
         .each(function(val){values.push(val*2)})
         .subscribe(function(val){values2.push(val)})
 
@@ -43,7 +41,7 @@ describe('producer tests', function(){
   })
   describe('map', function(){
     it('should collect each value sent', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
 
       _r(producer).map(function(val){values.push(val); return val}).subscribe()
@@ -51,7 +49,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
     it('should allow subscription', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
         , map = _r.map(producer, function(val){values.push(val); return val})
         , values2 = []
@@ -61,7 +59,7 @@ describe('producer tests', function(){
       expect(values2).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
     it('should transform original values', function(){
-      var producer = _r.seq([1, 2, 3, 4])
+      var producer = _r([1, 2, 3, 4])
         , values = []
         , map = _r.map(producer, function(val){values.push(val); return val*3})
         , values2 = []
@@ -76,7 +74,6 @@ describe('producer tests', function(){
         , values3 = []
 
       _r.chain([1, 2, 3, 4])
-        .seq()
         .each(function(val){values.push(val*2); return val*2})
         .map(function(val){values2.push(val); return val*3})
         .subscribe(function(val){values3.push(val)})
@@ -88,7 +85,7 @@ describe('producer tests', function(){
   })
   describe('reduce', function(){
     it('should collect each value sent with memo', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , memos = []
         , values = []
 
@@ -98,7 +95,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
     it('should collect each value sent without memo', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , memos = []
         , values = []
 
@@ -108,7 +105,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql(['2', {a: 3}, [4, 5]])
     })
     it('should reduce original values', function(){
-      var producer = _r.seq([1, 2, 3, 4])
+      var producer = _r([1, 2, 3, 4])
         , reduce = _r.reduce(producer, function(memo, val){return memo + val})
         , values = []
         , s = reduce.subscribe(function(val){values.push(val)})
@@ -116,7 +113,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, 1+2, 1+2+3, 1+2+3+4])
     })
     it('should be left associative', function(){
-      var producer = _r.seq([1, 2, 3, 4])
+      var producer = _r([1, 2, 3, 4])
         , reduce = _r.reduce(producer, function(memo, val){memo.push(val); return memo}, [])
         , values = []
         , s = _r.then(reduce, function(val){values.push(val)})
@@ -126,8 +123,7 @@ describe('producer tests', function(){
     it('should chain', function(){
       var values = []
 
-      _r.chain([1, 2, 3, 4])
-        .seq()
+      _r([1, 2, 3, 4])
         .reduce(function(memo, val){return memo / val})
         .then(function(val){values.push(val)})
 
@@ -164,7 +160,7 @@ describe('producer tests', function(){
   })
   describe('reduceRight', function(){
     it('should collect each value sent with memo', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , memos = []
         , values = []
 
@@ -174,7 +170,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]].reverse())
     })
     it('should collect each value sent without memo', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , memos = []
         , values = []
 
@@ -184,7 +180,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([{a: 3}, '2', 1])
     })
     it('should reduce original values', function(){
-      var producer = _r.seq([1, 2, 3, 4])
+      var producer = _r([1, 2, 3, 4])
         , reduce = _r.reduceRight(producer, function(memo, val){return memo + val})
         , values = []
         , s = reduce.subscribe(function(val){values.push(val)})
@@ -192,7 +188,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([4, 4+3, 4+3+2, 4+3+2+1])
     })
     it('should be right associative', function(){
-      var producer = _r.seq([1, 2, 3, 4])
+      var producer = _r([1, 2, 3, 4])
         , reduce = _r.reduceRight(producer, function(memo, val){memo.push(val); return memo}, [])
         , values = []
         , s = _r.then(reduce, function(val){values.push(val)})
@@ -202,8 +198,7 @@ describe('producer tests', function(){
     it('should chain', function(){
       var values = []
 
-      _r.chain([1, 2, 3, 4])
-        .seq()
+      _r([1, 2, 3, 4])
         .reduceRight(function(memo, val){return memo / val})
         .then(function(val){values.push(val)})
 
@@ -230,7 +225,7 @@ describe('producer tests', function(){
   })
   describe('find', function(){
     it('should collect each value sent', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
 
        _r.find(producer, function(val){values.push(val); return false}).subscribe()
@@ -238,7 +233,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
     it('should allow subscription', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
         , find = _r.find(producer, function(val){values.push(val); return false})
         , values2 = []
@@ -267,7 +262,6 @@ describe('producer tests', function(){
         , values2 = []
 
       _r.chain([1, 2, 3, 4])
-        .seq()
         .find(function(val){values.push(val); return (val%2 === 1)})
         .subscribe(function(val){values2.push(val)})
 
@@ -277,7 +271,7 @@ describe('producer tests', function(){
   })
   describe('filter', function(){
     it('should collect each value sent', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
 
        _r.filter(producer, function(val){values.push(val); return val}).subscribe()
@@ -285,7 +279,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
     it('should allow subscription', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
         , filter = _r.filter(producer, function(val){values.push(val); return true})
         , values2 = []
@@ -295,7 +289,7 @@ describe('producer tests', function(){
       expect(values2).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
     it('should filter original values', function(){
-      var producer = _r.seq([1, 2, 3, 4])
+      var producer = _r([1, 2, 3, 4])
         , values = []
         , filter = _r.filter(producer, function(val){values.push(val); return (val%2 === 0)})
         , values2 = []
@@ -308,8 +302,7 @@ describe('producer tests', function(){
       var values = []
         , values2 = []
 
-      _r.chain([1, 2, 3, 4])
-        .seq()
+      _r([1, 2, 3, 4])
         .filter(function(val){values.push(val); return (val%2 === 1)})
         .subscribe(function(val){values2.push(val)})
 
@@ -319,7 +312,7 @@ describe('producer tests', function(){
   })
   describe('reject', function(){
     it('should collect each value sent', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
 
        _r.reject(producer, function(val){values.push(val); return val}).subscribe()
@@ -327,7 +320,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
     it('should allow subscription', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
         , filter = _r.filter(producer, function(val){values.push(val); return true})
         , values2 = []
@@ -337,7 +330,7 @@ describe('producer tests', function(){
       expect(values2).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
     it('should reject original values', function(){
-      var producer = _r.seq([1, 2, 3, 4])
+      var producer = _r([1, 2, 3, 4])
         , values = []
         , reject = _r.reject(producer, function(val){values.push(val); return (val%2 === 1)})
         , values2 = []
@@ -351,7 +344,6 @@ describe('producer tests', function(){
         , values2 = []
 
       _r.chain([1, 2, 3, 4])
-        .seq()
         .reject(function(val){values.push(val); return (val%2 === 1)})
         .subscribe(function(val){values2.push(val)})
 
@@ -361,7 +353,7 @@ describe('producer tests', function(){
   })
   describe('every', function(){
     it('should collect each value sent', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
 
        _r.every(producer, function(val){values.push(val); return true}).subscribe()
@@ -369,7 +361,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
     it('should allow subscription', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
         , every = _r.every(producer, function(val){values.push(val); return true})
         , values2 = []
@@ -407,7 +399,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql(results)
     })
     it('should short circuit on false', function(){
-      var producer = _r.seq([1, 2, 3, 4])
+      var producer = _r([1, 2, 3, 4])
         , values = []
         , every = _r.every(producer, function(val){values.push(val); return (val !== 3)})
         , values2 = []
@@ -420,8 +412,7 @@ describe('producer tests', function(){
       var values = []
         , values2 = []
 
-      _r.chain([1, 2, 3, 4])
-        .seq()
+      _r([1, 2, 3, 4])
         .every(function(val){values.push(val); return (val < 4)})
         .then(function(val){values2.push(val)})
 
@@ -431,7 +422,7 @@ describe('producer tests', function(){
   })
   describe('any', function(){
     it('should collect each value sent', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
 
        _r.any(producer, function(val){values.push(val); return false}).subscribe()
@@ -439,7 +430,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
     })
     it('should allow subscription', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
         , any = _r.any(producer, function(val){values.push(val); return false})
         , values2 = []
@@ -477,7 +468,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql(results)
     })
     it('should short circuit on true', function(){
-      var producer = _r.seq([1, 2, 3, 4])
+      var producer = _r([1, 2, 3, 4])
         , values = []
         , any = _r.any(producer, function(val){values.push(val); return (val === 3)})
         , values2 = []
@@ -491,7 +482,6 @@ describe('producer tests', function(){
         , values2 = []
 
       _r.chain([1, 2, 3, 4])
-        .seq()
         .every(function(val){values.push(val); return (val != 3)})
         .then(function(val){values2.push(val)})
 
@@ -503,7 +493,6 @@ describe('producer tests', function(){
         , values2 = []
 
       _r.chain([1, 2, 3, 4])
-        .seq()
         .every(function(val){values.push(val); return (val <= 4)})
         .then(function(val){values2.push(val)})
 
@@ -513,7 +502,7 @@ describe('producer tests', function(){
   })
   describe('contains', function(){
     it('should allow subscription', function(){
-      var producer = _r.seq([1, '2', {a: 3}, [4, 5]])
+      var producer = _r([1, '2', {a: 3}, [4, 5]])
         , values = []
         , contains = _r.contains(producer, 2)
         , s = contains.subscribe(function(val){values.push(val)})
@@ -554,7 +543,6 @@ describe('producer tests', function(){
         , promise = _r.promise()
 
       promise
-        .seq()
         .contains(5)
         .subscribe(function(val){values.push(val)})
 
@@ -574,7 +562,6 @@ describe('producer tests', function(){
         , promise = _r.promise()
 
       _r.chain([1, 2, 3, 4])
-        .seq()
         .contains(3)
         .then(function(val){values.push(val)})
 
@@ -585,7 +572,6 @@ describe('producer tests', function(){
         , promise = _r.promise()
 
       _r.chain([1, 2, 3, 4])
-        .seq()
         .contains(6)
         .then(function(val){values.push(val)})
 
@@ -594,7 +580,7 @@ describe('producer tests', function(){
   })
   describe('invoke', function(){
     it('should invoke with method name', function(){
-      var producer = _r.seq([1, 2, 3, 4])
+      var producer = _r([1, 2, 3, 4])
         , values = []
         , invoke = _r.invoke(producer,'toString')
         , s = invoke.subscribe(function(val){values.push(val)})
@@ -602,7 +588,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql(['1', '2', '3', '4'])
     })
     it('should invoke with function', function(){
-      var producer = _r.seq([1, 2, 3, 4])
+      var producer = _r([1, 2, 3, 4])
         , values = []
         , invoke = _r.invoke(producer, function(){return this+'!'})
         , s = invoke.subscribe(function(val){values.push(val)})
@@ -613,7 +599,6 @@ describe('producer tests', function(){
       var values = []
 
       _r.chain(['a', 'b', 'c', 'd'])
-        .seq()
         .invoke('toUpperCase')
         .subscribe(function(val){values.push(val)})
 
@@ -622,7 +607,7 @@ describe('producer tests', function(){
   })
   describe('pluck', function(){
     it('should pluck values with name', function(){
-      var producer = _r.seq([{a: '1', b: '2'}, {a: '2'}, {a: '3', b: '5', c: '6'}])
+      var producer = _r([{a: '1', b: '2'}, {a: '2'}, {a: '3', b: '5', c: '6'}])
         , values = []
         , pluck = _r.pluck(producer, 'a')
         , s = pluck.subscribe(function(val){values.push(val)})
@@ -633,7 +618,6 @@ describe('producer tests', function(){
       var values = []
 
       _r.chain([{a: '1', b: '2'}, {a: '2'}, {a: '3', b: '5', c: '6'}])
-        .seq()
         .pluck('b')
         .subscribe(function(val){values.push(val)})
 
@@ -642,7 +626,7 @@ describe('producer tests', function(){
   })
   describe('max', function(){
     it('should allow subscription', function(){
-      var producer = _r.seq([1, 5, 3, 8, -5])
+      var producer = _r([1, 5, 3, 8, -5])
         , values = []
         , max = _r.max(producer)
         , s = max.subscribe(function(val){values.push(val)})
@@ -650,7 +634,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, 5, 5, 8, 8])
     })
     it('should accept iterator', function(){
-      var producer = _r.seq([1, 5, 3, 8, -5])
+      var producer = _r([1, 5, 3, 8, -5])
         , values = []
         , max = _r.max(producer, function(val){values.push(val); return -val})
         , values2 = []
@@ -692,7 +676,6 @@ describe('producer tests', function(){
         , values2 = []
 
       _r.chain([1, 2, 3, 4])
-        .seq()
         .max(function(val){values.push(val); return -val})
         .then(function(val){values2.push(val)})
 
@@ -702,7 +685,7 @@ describe('producer tests', function(){
   })
   describe('min', function(){
     it('should allow subscription', function(){
-      var producer = _r.seq([1, 5, 3, 8, -5])
+      var producer = _r([1, 5, 3, 8, -5])
         , values = []
         , min = _r.min(producer)
         , s = min.subscribe(function(val){values.push(val)})
@@ -710,7 +693,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, 1, 1, 1, -5])
     })
     it('should accept iterator', function(){
-      var producer = _r.seq([1, 5, 3, 8, -5])
+      var producer = _r([1, 5, 3, 8, -5])
         , values = []
         , min = _r.min(producer, function(val){values.push(val); return -val})
         , values2 = []
@@ -752,7 +735,6 @@ describe('producer tests', function(){
         , values2 = []
 
       _r.chain([1, 2, 3, 4])
-        .seq()
         .min(function(val){values.push(val); return -val})
         .then(function(val){values2.push(val)})
 
@@ -762,7 +744,7 @@ describe('producer tests', function(){
   })
   describe('sortBy', function(){
     it('should sort on identity', function(){
-      var producer = _r.seq([5, 3,  2, 4, 1])
+      var producer = _r([5, 3,  2, 4, 1])
         , values = []
 
       _r.chain(producer)
@@ -772,7 +754,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, 2, 3, 4, 5])
     })
     it('should sort with iterator', function(){
-      var producer = _r.seq([5, 3,  2, 4, 1])
+      var producer = _r([5, 3,  2, 4, 1])
         , values = []
 
       _r.chain(producer)
@@ -782,7 +764,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([5, 4, 3, 2, 1])
     })
     it('should sort with property', function(){
-      var producer = _r.seq([{a: 1, b: 2}, {a: 5, b: 1, c: 0}, {a: 3, b:4}])
+      var producer = _r([{a: 1, b: 2}, {a: 5, b: 1, c: 0}, {a: 3, b:4}])
         , sortByA = _r.sortBy(producer, 'a')
         , sortByB = _r.sortBy(producer, 'b')
         , valuesA = []
@@ -817,7 +799,6 @@ describe('producer tests', function(){
       var values = []
 
       _r.chain(['d', 'a', 'c', 'b'])
-        .seq()
         .sort()
         .then(function(value){values = value})
 
@@ -844,7 +825,7 @@ describe('producer tests', function(){
   })
   describe('groupBy', function(){
     it('should group on identity', function(){
-      var producer = _r.seq(['a', 'b', 'c', 'b', 'c', 'c'])
+      var producer = _r(['a', 'b', 'c', 'b', 'c', 'c'])
         , values = []
 
       _r.chain(producer)
@@ -856,7 +837,7 @@ describe('producer tests', function(){
       expect(values.c).to.be.eql(['c', 'c', 'c'])
     })
     it('should sort group with iterator', function(){
-      var producer = _r.seq([1, 1.4, 1.6, 2.0, 3.3])
+      var producer = _r([1, 1.4, 1.6, 2.0, 3.3])
         , values = []
 
       _r.chain(producer)
@@ -868,7 +849,7 @@ describe('producer tests', function(){
       expect(values[3]).to.be.eql([3.3])
     })
     it('should group with property', function(){
-      var producer = _r.seq(['bob', 'frank', 'sue', 'fred', 'fran', 'sam'])
+      var producer = _r(['bob', 'frank', 'sue', 'fred', 'fran', 'sam'])
         , groupBy = _r.groupBy(producer, 'length')
         , values = []
         , s = groupBy.subscribe(function(val){values = val})
