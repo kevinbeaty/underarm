@@ -267,14 +267,28 @@ var Promise = (function(){
 })()
 
 _r.promise = promise
-function promise(){
-  return chain(new Promise())
+function promise(producer){
+  var promise = new Promise()
+  if(!isUndefined(producer)){
+    producer = producerWrap(producer)
+    producer.subscribe(
+        function(value){
+          promise.next(value)
+        }
+      , function(){
+          promise.complete()
+        }
+      , function(err){
+          promise.error(err)
+        })
+  }
+  return chain(promise)
 }
 
 _r.then = then
 function then(producer, callback, errback, progback, context){
-  var lastResult
-    , nextPromise = promise()
+  var nextPromise = promise()
+    , lastResult
 
   producer.subscribe(
       function(result){
@@ -288,11 +302,11 @@ function then(producer, callback, errback, progback, context){
         if(isFunction(callback)){
           callback(lastResult)
         }
-        nextPromise.resolve(lastResult)
+        nextPromise.complete()
       }
     , function(err){
         if(isFunction(errback)){
-          errback(err)
+          errback(err, lastResult)
         }
         nextPromise.error(err)
       })
