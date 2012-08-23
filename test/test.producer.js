@@ -38,6 +38,18 @@ describe('producer tests', function(){
       expect(values).to.be.eql([2, 4, 6, 8])
       expect(values2).to.be.eql([1, 2, 3, 4])
     })
+    it('should attach', function(){
+      var values = []
+        , values2 = []
+
+      _r()
+        .each(function(val){values.push(val*2)})
+        .attach([1,2,3,4])
+        .subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([2, 4, 6, 8])
+      expect(values2).to.be.eql([1, 2, 3, 4])
+    })
   })
   describe('map', function(){
     it('should collect each value sent', function(){
@@ -75,12 +87,35 @@ describe('producer tests', function(){
 
       _r.chain([1, 2, 3, 4])
         .each(function(val){values.push(val*2); return val*2})
+        .attach(['nothing'])
         .map(function(val){values2.push(val); return val*3})
         .subscribe(function(val){values3.push(val)})
 
       expect(values).to.be.eql([2, 4, 6, 8])
       expect(values2).to.be.eql([1, 2, 3, 4])
       expect(values3).to.be.eql([3, 6, 9, 12])
+    })
+    it('should attach', function(){
+      var values = []
+        , values2 = []
+        , values3 = []
+        , map = _r()
+            .each(function(val){values.push(val*2); return val*2})
+            .map(function(val){values2.push(val); return val*3})
+
+      map.attach([1,2,3,4]).subscribe(function(val){values3.push(val)})
+
+      expect(values).to.be.eql([2, 4, 6, 8])
+      expect(values2).to.be.eql([1, 2, 3, 4])
+      expect(values3).to.be.eql([3, 6, 9, 12])
+
+      values = []
+      values2 = []
+      values3 = []
+      map.attach([5, 6, 7, 8]).subscribe(function(val){values3.push(val)})
+      expect(values).to.be.eql([10, 12, 14, 16])
+      expect(values2).to.be.eql([5, 6, 7, 8])
+      expect(values3).to.be.eql([15, 18, 21, 24])
     })
   })
   describe('reduce', function(){
@@ -128,6 +163,22 @@ describe('producer tests', function(){
         .then(function(val){values.push(val)})
 
       expect(values).to.be.eql([1 / 2 / 3 / 4])
+    })
+    it('should attach', function(){
+      var values = []
+      var reduce = _r().reduce(function(memo, val){return memo / val})
+
+      reduce.attach([1, 2, 3, 4]).then(function(val){values.push(val)})
+
+      expect(values).to.be.eql([1 / 2 / 3 / 4])
+
+      values = []
+      reduce.attach([10, 9, 8, 7]).then(function(val){values.push(val)})
+      expect(values).to.be.eql([10 / 9 / 8 / 7])
+
+      values = []
+      reduce.attach([9, 8, 7, 2]).then(function(val){values.push(val)})
+      expect(values).to.be.eql([9 / 8 / 7 / 2])
     })
     it('should calculate incrementally', function(){
       var values = []
@@ -204,6 +255,17 @@ describe('producer tests', function(){
 
       expect(values).to.be.eql([4 / 3 / 2 / 1])
     })
+    it('should attach', function(){
+      var values = []
+        , reduce = _r().reduceRight(function(memo, val){return memo / val})
+
+      reduce.attach([1, 2, 3, 4]).then(function(val){values.push(val)})
+      expect(values).to.be.eql([4 / 3 / 2 / 1])
+
+      values = []
+      reduce.attach([4, 3, 2, 3]).then(function(val){values.push(val)})
+      expect(values).to.be.eql([3 / 2 / 3 / 4])
+    })
     it('should calculate on complete', function(){
       var values = []
         , promise = _r.promise()
@@ -268,6 +330,18 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1])
       expect(values2).to.be.eql([1])
     })
+    it('should attach', function(){
+      var values = []
+        , values2 = []
+
+      _r()
+        .find(function(val){values.push(val); return (val%2 === 1)})
+        .attach([1, 2, 3, 4])
+        .subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1])
+      expect(values2).to.be.eql([1])
+    })
   })
   describe('filter', function(){
     it('should collect each value sent', function(){
@@ -309,6 +383,18 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, 2, 3, 4])
       expect(values2).to.be.eql([1, 3])
     })
+    it('should attach', function(){
+      var values = []
+        , values2 = []
+
+      _r()
+        .filter(function(val){values.push(val); return (val%2 === 1)})
+        .attach([1, 2, 3, 4])
+        .subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 2, 3, 4])
+      expect(values2).to.be.eql([1, 3])
+    })
   })
   describe('reject', function(){
     it('should collect each value sent', function(){
@@ -345,6 +431,18 @@ describe('producer tests', function(){
 
       _r.chain([1, 2, 3, 4])
         .reject(function(val){values.push(val); return (val%2 === 1)})
+        .subscribe(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 2, 3, 4])
+      expect(values2).to.be.eql([2, 4])
+    })
+    it('should attach', function(){
+      var values = []
+        , values2 = []
+
+      _r()
+        .reject(function(val){values.push(val); return (val%2 === 1)})
+        .attach([1, 2, 3, 4])
         .subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 2, 3, 4])
@@ -414,6 +512,18 @@ describe('producer tests', function(){
 
       _r([1, 2, 3, 4])
         .every(function(val){values.push(val); return (val < 4)})
+        .then(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 2, 3, 4])
+      expect(values2).to.be.eql([false])
+    })
+    it('should attach', function(){
+      var values = []
+        , values2 = []
+
+      _r()
+        .every(function(val){values.push(val); return (val < 4)})
+        .attach([1,2,3,4])
         .then(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 2, 3, 4])
@@ -499,6 +609,18 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, 2, 3, 4])
       expect(values2).to.be.eql([true])
     })
+    it('should attach', function(){
+      var values = []
+        , values2 = []
+
+      _r()
+        .every(function(val){values.push(val); return (val <= 4)})
+        .attach([1,2,3,4])
+        .then(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 2, 3, 4])
+      expect(values2).to.be.eql([true])
+    })
   })
   describe('contains', function(){
     it('should allow subscription', function(){
@@ -577,6 +699,17 @@ describe('producer tests', function(){
 
       expect(values).to.be.eql([false])
     })
+    it('should attach', function(){
+      var values = []
+        , promise = _r.promise()
+
+      _r()
+        .contains(6)
+        .attach([1, 2, 3, 4])
+        .then(function(val){values.push(val)})
+
+      expect(values).to.be.eql([false])
+    })
   })
   describe('invoke', function(){
     it('should invoke with method name', function(){
@@ -604,6 +737,16 @@ describe('producer tests', function(){
 
       expect(values).to.be.eql(['A', 'B', 'C', 'D'])
     })
+    it('should attach', function(){
+      var values = []
+
+      _r()
+        .invoke('toUpperCase')
+        .attach(['a', 'b', 'c', 'd'])
+        .subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql(['A', 'B', 'C', 'D'])
+    })
   })
   describe('pluck', function(){
     it('should pluck values with name', function(){
@@ -622,6 +765,16 @@ describe('producer tests', function(){
         .subscribe(function(val){values.push(val)})
 
       expect(values).to.be.eql(['2', undefined, '5'])
+    })
+    it('should attach', function(){
+      var values = []
+
+      _r()
+        .pluck('c')
+        .attach([{a: '1', b: '2'}, {a: '2'}, {a: '3', b: '5', c: '6'}])
+        .subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([undefined, undefined, '6'])
     })
   })
   describe('max', function(){
@@ -677,6 +830,18 @@ describe('producer tests', function(){
 
       _r.chain([1, 2, 3, 4])
         .max(function(val){values.push(val); return -val})
+        .then(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 2, 3, 4])
+      expect(values2).to.be.eql([1])
+    })
+    it('should attach', function(){
+      var values = []
+        , values2 = []
+
+      _r()
+        .max(function(val){values.push(val); return -val})
+        .attach([1, 2, 3, 4])
         .then(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 2, 3, 4])
@@ -741,6 +906,18 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, 2, 3, 4])
       expect(values2).to.be.eql([4])
     })
+    it('should attach', function(){
+      var values = []
+        , values2 = []
+
+      _r()
+        .min(function(val){values.push(val); return -val})
+        .attach([1, 2, 3, 4])
+        .then(function(val){values2.push(val)})
+
+      expect(values).to.be.eql([1, 2, 3, 4])
+      expect(values2).to.be.eql([4])
+    })
   })
   describe('sortBy', function(){
     it('should sort on identity', function(){
@@ -798,8 +975,9 @@ describe('producer tests', function(){
     it('should sort', function(){
       var values = []
 
-      _r.chain(['d', 'a', 'c', 'b'])
+      _r.chain()
         .sort()
+        .attach(['d', 'a', 'c', 'b'])
         .then(function(value){values = value})
 
       expect(values).to.be.eql(['a', 'b', 'c', 'd'])
@@ -849,10 +1027,11 @@ describe('producer tests', function(){
       expect(values[3]).to.be.eql([3.3])
     })
     it('should group with property', function(){
-      var producer = _r(['bob', 'frank', 'sue', 'fred', 'fran', 'sam'])
-        , groupBy = _r.groupBy(producer, 'length')
+      var groupBy = _r().groupBy('length')
         , values = []
-        , s = groupBy.subscribe(function(val){values = val})
+
+      groupBy.attach(['bob', 'frank', 'sue', 'fred', 'fran', 'sam'])
+        .subscribe(function(val){values = val})
 
       expect(values[3]).to.eql(['bob', 'sue', 'sam'])
       expect(values[4]).to.be.eql(['fred', 'fran'])

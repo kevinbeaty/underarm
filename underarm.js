@@ -300,35 +300,6 @@ function promise(producer){
   return chain(promise)
 }
 
-_r.then = then
-function then(producer, callback, errback, progback, context){
-  var nextPromise = promise()
-    , lastResult
-
-  producer.subscribe(
-      function(result){
-        if(isFunction(progback)){
-          progback(result)
-        }
-        nextPromise.next(result)
-        lastResult = result
-      }
-    , function(){
-        if(isFunction(callback)){
-          callback(lastResult)
-        }
-        nextPromise.complete()
-      }
-    , function(err){
-        if(isFunction(errback)){
-          errback(err, lastResult)
-        }
-        nextPromise.error(err)
-      })
-
-  return nextPromise
-}
-
 function isProducer(producer){
   return (producer instanceof Producer || producer instanceof Promise)
 }
@@ -713,12 +684,25 @@ function zipMap(producer, context){
   return zipMapBy(producer, identity, context)
 }
 
-function Underarm(obj) {
-  this._wrapped = producerWrap(obj)
+function Underarm(obj, func, args) {
+  if(isUndefined(obj)){
+    this._detached = true
+  } else if(obj instanceof Underarm){
+    this._parent = obj
+    this._func = func
+    this._args = args
+  } else {
+    this._wrapped = producerWrap(obj)
+  }
+}
+
+_r.chain = chain
+function chain(obj){
+  return (obj instanceof Underarm) ? obj : new Underarm(obj)
 }
 
 function unwrap(obj){
-  return (obj instanceof Underarm) ? obj._wrapped : obj
+  return (obj instanceof Underarm) ? obj.value() : obj
 }
 
 _r.mixin = mixin
@@ -728,10 +712,7 @@ function mixin(obj) {
     , addToWrapper = function(name, func){
         Underarm.prototype[name] = function() {
           var args = slice.call(arguments)
-            , result
-          unshift.call(args, this._wrapped)
-          result = func.apply(_r, args)
-          return (this._chain ? chain(result) : result)
+          return new Underarm(this, func, args)
         }
       }
 
@@ -746,39 +727,101 @@ function mixin(obj) {
 
 _r.mixin(_r)
 
-_r.chain = chain
-function chain(obj){
-  return (obj instanceof Underarm) ? obj : new Underarm(obj).chain()
-}
-
 var UnderProto = Underarm.prototype
-UnderProto.chain = function(){
-  this._chain = true
+
+UnderProto.attach = function(producer){
+  var node = this
+  do {
+    if(node._detached){
+      node._wrapped = producerWrap(producer)
+      break
+    }
+  } while(node = node._parent)
   return this
 }
 
 UnderProto.value = function(){
-  return this._wrapped
+  var result = this._wrapped
+  if(isUndefined(result)){
+    var stack = []
+      , node = this
+      , result
+      , args
+      , attached = true
+
+    while(node._parent){
+      stack.push(node)
+      node = node._parent
+      if(!isUndefined(node._wrapped)){
+        result = node._wrapped
+        attached = !node._detached
+        break
+      }
+    }
+
+    while(node = stack.pop()){
+      args = slice.call(node._args)
+      unshift.call(args, result)
+      result = node._func.apply(_r, args)
+      if(attached){
+        node._wrapped = producerWrap(result)
+      }
+    }
+  }
+  return result
 }
 
 UnderProto.subscribe = function(next, complete, error){
-  return this._wrapped.subscribe(next, complete, error)
+  return this.value().subscribe(next, complete, error)
 }
 
 UnderProto.resolve = function(result){
-  return this._wrapped.resolve(result)
+  return this.value().resolve(result)
 }
 
 UnderProto.error = function(result){
-  return this._wrapped.error(result)
+  return this.value().error(result)
 }
 
 UnderProto.next = function(result){
-  return this._wrapped.next(result)
+  return this.value().next(result)
 }
 
 UnderProto.complete = function(){
-  return this._wrapped.complete()
+  return this.value().complete()
+}
+
+_r.then = then
+function then(producer, callback, errback, progback, context){
+  return chain(producer).then(callback, errback, progback, context)
+}
+
+UnderProto.then = function(callback, errback, progback, context){
+  var nextPromise = promise()
+    , lastResult
+
+  this.subscribe(
+      function(result){
+        if(isFunction(progback)){
+          progback(result)
+        }
+        nextPromise.next(result)
+        lastResult = result
+      }
+    , function(){
+        if(isFunction(callback)){
+          callback(lastResult)
+        }
+        nextPromise.complete()
+      }
+    , function(err){
+        if(isFunction(errback)){
+          errback(err, lastResult)
+        }
+        nextPromise.error(err)
+      })
+
+  return nextPromise
 }
 
 })(this)
