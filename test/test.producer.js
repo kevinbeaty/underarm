@@ -154,7 +154,7 @@ describe('producer tests', function(){
         , values = []
         , s = reduce.subscribe(function(val){values.push(val)})
 
-      expect(values).to.be.eql([1, 1+2, 1+2+3, 1+2+3+4])
+      expect(values).to.be.eql([1+2+3+4])
     })
     it('should be left associative', function(){
       var producer = _r([1, 2, 3, 4])
@@ -189,34 +189,6 @@ describe('producer tests', function(){
       reduce.attach([9, 8, 7, 2]).then(function(val){values.push(val)})
       expect(values).to.be.eql([9 / 8 / 7 / 2])
     })
-    it('should calculate incrementally', function(){
-      var values = []
-        , result = []
-        , promise = _r.promise()
-
-      promise
-        .reduce(function(memo, val){return memo - val}, 5)
-        .subscribe(function(val){values.push(val)})
-
-      promise.next(1)
-      result.push(5 - 1)
-      expect(values).to.be.eql(result)
-
-      promise.next(2)
-      result.push(5 - 1 - 2)
-      expect(values).to.be.eql(result)
-
-      promise.next(3)
-      result.push(5 - 1 - 2 - 3)
-      expect(values).to.be.eql(result)
-
-      promise.next(4)
-      result.push(5 - 1 - 2 - 3 - 4)
-      expect(values).to.be.eql(result)
-
-      promise.complete()
-      expect(values).to.be.eql(result)
-    })
   })
   describe('reduceRight', function(){
     it('should collect each value sent with memo', function(){
@@ -245,7 +217,7 @@ describe('producer tests', function(){
         , values = []
         , s = reduce.subscribe(function(val){values.push(val)})
 
-      expect(values).to.be.eql([4, 4+3, 4+3+2, 4+3+2+1])
+      expect(values).to.be.eql([4+3+2+1])
     })
     it('should be right associative', function(){
       var producer = _r([1, 2, 3, 4])
@@ -291,7 +263,7 @@ describe('producer tests', function(){
       expect(values).to.be.eql([])
 
       promise.complete()
-      expect(values).to.be.eql([5-4, 5-4-3, 5-4-3-2, 5-4-3-2-1])
+      expect(values).to.be.eql([5-4-3-2-1])
     })
   })
   describe('find', function(){
@@ -475,35 +447,7 @@ describe('producer tests', function(){
         , s = every.subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-      expect(values2).to.be.eql([true, true, true, true])
-    })
-    it('should calculate intermediate values', function(){
-      var values = []
-        , results = []
-        , promise = _r.promise()
-
-      promise
-        .every(function(val){return val < 4})
-        .subscribe(function(val){values.push(val)})
-
-      promise.next(1)
-      results.push(true)
-      expect(values).to.be.eql(results)
-
-      promise.next(2)
-      results.push(true)
-      expect(values).to.be.eql(results)
-
-      promise.next(3)
-      results.push(true)
-      expect(values).to.be.eql(results)
-
-      promise.next(4)
-      results.push(false)
-      expect(values).to.be.eql(results)
-
-      promise.complete()
-      expect(values).to.be.eql(results)
+      expect(values2).to.be.eql([true])
     })
     it('should short circuit on false', function(){
       var producer = _r([1, 2, 3, 4])
@@ -513,7 +457,7 @@ describe('producer tests', function(){
         , s = every.subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 2, 3])
-      expect(values2).to.be.eql([true, true, false])
+      expect(values2).to.be.eql([false])
     })
     it('should chain', function(){
       var values = []
@@ -556,35 +500,7 @@ describe('producer tests', function(){
         , s = any.subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-      expect(values2).to.be.eql([false, false, false, false])
-    })
-    it('should calculate intermediate values', function(){
-      var values = []
-        , results = []
-        , promise = _r.promise()
-
-      promise
-        .any(function(val){return val > 4})
-        .subscribe(function(val){values.push(val)})
-
-      promise.next(1)
-      results.push(false)
-      expect(values).to.be.eql(results)
-
-      promise.next(2)
-      results.push(false)
-      expect(values).to.be.eql(results)
-
-      promise.next(3)
-      results.push(false)
-      expect(values).to.be.eql(results)
-
-      promise.next(4)
-      results.push(false)
-      expect(values).to.be.eql(results)
-
-      promise.complete()
-      expect(values).to.be.eql(results)
+      expect(values2).to.be.eql([false])
     })
     it('should short circuit on true', function(){
       var producer = _r([1, 2, 3, 4])
@@ -594,7 +510,7 @@ describe('producer tests', function(){
         , s = any.subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 2, 3])
-      expect(values2).to.be.eql([false, false, true])
+      expect(values2).to.be.eql([true])
     })
     it('should chain to false', function(){
       var values = []
@@ -638,36 +554,7 @@ describe('producer tests', function(){
         , contains = _r.contains(producer, 2)
         , s = contains.subscribe(function(val){values.push(val)})
 
-      expect(values).to.be.eql([false, false, false, false])
-    })
-    it('should calculate on complete', function(){
-      var values = []
-        , results = []
-        , promise = _r.promise()
-
-      promise
-        .contains(4)
-        .subscribe(function(val){values.push(val)})
-
-      promise.next(1)
-      results.push(false)
-      expect(values).to.be.eql(results)
-
-      promise.next(2)
-      results.push(false)
-      expect(values).to.be.eql(results)
-
-
-      promise.next(3)
-      results.push(false)
-      expect(values).to.be.eql(results)
-
-      promise.next(4)
-      results.push(true)
-      expect(values).to.be.eql(results)
-
-      promise.complete()
-      expect(values).to.be.eql(results)
+      expect(values).to.be.eql([false])
     })
     it('should short circuit on true', function(){
       var values = []
@@ -680,13 +567,13 @@ describe('producer tests', function(){
       promise.next(3)
       promise.next(4)
 
-      expect(values).to.be.eql([false, false])
+      expect(values).to.be.eql([])
 
       promise.next(5)
-      expect(values).to.be.eql([false, false, true])
+      expect(values).to.be.eql([true])
 
       promise.next(6)
-      expect(values).to.be.eql([false, false, true])
+      expect(values).to.be.eql([true])
     })
     it('should chain to true', function(){
       var values = []
@@ -793,7 +680,7 @@ describe('producer tests', function(){
         , max = _r.max(producer)
         , s = max.subscribe(function(val){values.push(val)})
 
-      expect(values).to.be.eql([1, 5, 5, 8, 8])
+      expect(values).to.be.eql([8])
     })
     it('should accept iterator', function(){
       var producer = _r([1, 5, 3, 8, -5])
@@ -803,35 +690,7 @@ describe('producer tests', function(){
         , s = max.subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 5, 3, 8, -5])
-      expect(values2).to.be.eql([1, 1, 1, 1, -5])
-    })
-    it('should calculate incrementally', function(){
-      var values = []
-        , results = []
-        , promise = _r.promise()
-
-      promise
-        .max()
-        .subscribe(function(val){values.push(val)})
-
-      promise.next(2)
-      results.push(2)
-      expect(values).to.be.eql(results)
-
-      promise.next(4)
-      results.push(4)
-      expect(values).to.be.eql(results)
-
-      promise.next(3)
-      results.push(4)
-      expect(values).to.be.eql(results)
-
-      promise.next(1)
-      results.push(4)
-      expect(values).to.be.eql(results)
-
-      promise.complete()
-      expect(values).to.be.eql(results)
+      expect(values2).to.be.eql([-5])
     })
     it('should chain', function(){
       var values = []
@@ -864,7 +723,7 @@ describe('producer tests', function(){
         , min = _r.min(producer)
         , s = min.subscribe(function(val){values.push(val)})
 
-      expect(values).to.be.eql([1, 1, 1, 1, -5])
+      expect(values).to.be.eql([-5])
     })
     it('should accept iterator', function(){
       var producer = _r([1, 5, 3, 8, -5])
@@ -874,35 +733,7 @@ describe('producer tests', function(){
         , s = min.subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 5, 3, 8, -5])
-      expect(values2).to.be.eql([1, 5, 5, 8, 8])
-    })
-    it('should calculate incrementally', function(){
-      var values = []
-        , results = []
-        , promise = _r.promise()
-
-      promise
-        .min()
-        .subscribe(function(val){values.push(val)})
-
-      promise.next(2)
-      results.push(2)
-      expect(values).to.be.eql(results)
-
-      promise.next(4)
-      results.push(2)
-      expect(values).to.be.eql(results)
-
-      promise.next(3)
-      results.push(2)
-      expect(values).to.be.eql(results)
-
-      promise.next(1)
-      results.push(1)
-      expect(values).to.be.eql(results)
-
-      promise.complete()
-      expect(values).to.be.eql(results)
+      expect(values2).to.be.eql([8])
     })
     it('should chain', function(){
       var values = []
@@ -935,7 +766,7 @@ describe('producer tests', function(){
 
       _r.chain(producer)
         .sortBy(_r.identity)
-        .then(function(value){values = value})
+        .subscribe(function(value){values.push(value)})
 
       expect(values).to.be.eql([1, 2, 3, 4, 5])
     })
@@ -945,7 +776,7 @@ describe('producer tests', function(){
 
       _r.chain(producer)
         .sortBy(function(val){return -val})
-        .then(function(value){values = value})
+        .subscribe(function(value){values.push(value)})
 
       expect(values).to.be.eql([5, 4, 3, 2, 1])
     })
@@ -955,8 +786,8 @@ describe('producer tests', function(){
         , sortByB = _r.sortBy(producer, 'b')
         , valuesA = []
         , valuesB = []
-        , sA = _r.then(sortByA, function(val){valuesA = val})
-        , sB = _r.then(sortByB, function(val){valuesB = val})
+        , sA = sortByA.subscribe(function(val){valuesA.push(val)})
+        , sB = sortByB.subscribe(function(val){valuesB.push(val)})
 
       expect(valuesA).to.be.eql([{a: 1, b: 2}, {a: 3, b:4}, {a: 5, b: 1, c: 0}])
       expect(valuesB).to.be.eql([{a: 5, b: 1, c: 0}, {a: 1, b: 2}, {a: 3, b:4}])
@@ -967,7 +798,7 @@ describe('producer tests', function(){
 
       promise
         .sortBy(_r.identity)
-        .then(function(val){values = val})
+        .subscribe(function(val){values.push(val)})
 
       promise.next(4)
       promise.next(-3)
@@ -987,7 +818,7 @@ describe('producer tests', function(){
       _r.chain()
         .sort()
         .attach(['d', 'a', 'c', 'b'])
-        .then(function(value){values = value})
+        .subscribe(function(value){values.push(value)})
 
       expect(values).to.be.eql(['a', 'b', 'c', 'd'])
     })
@@ -997,7 +828,7 @@ describe('producer tests', function(){
 
       promise
         .sort()
-        .then(function(val){values = val})
+        .subscribe(function(val){values.push(val)})
 
       promise.next(4)
       promise.next(-3)

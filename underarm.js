@@ -445,7 +445,10 @@ function reduce(producer, iterator, memo, context){
         } else {
           memo = iterator.call(context, memo, value)
         }
+      }
+    , function(consumer){
         consumer.next(memo)
+        consumer.complete()
       })
 }
 
@@ -469,8 +472,8 @@ function reduceRight(producer, iterator, memo, context){
           } else {
             memo = iterator.call(context, memo, values[i])
           }
-          consumer.next(memo)
         }
+        consumer.next(memo)
         consumer.complete()
       })
 }
@@ -518,10 +521,14 @@ function every(producer, iterator, context){
     , context
     , iterator
     , function(consumer, value, passes){
-        consumer.next(passes)
         if(!passes){
+          consumer.next(false)
           consumer.complete()
         }
+      }
+    , function(consumer){
+        consumer.next(true)
+        consumer.complete()
       })
 }
 
@@ -532,10 +539,14 @@ function any(producer, iterator, context){
     , context
     , iterator
     , function(consumer, value, passes){
-        consumer.next(passes)
         if(passes){
+          consumer.next(true)
           consumer.complete()
         }
+      }
+    , function(consumer){
+        consumer.next(false)
+        consumer.complete()
       })
 }
 
@@ -573,7 +584,10 @@ function max(producer, iterator, context){
           max.value = value
           max.computed = computed
         }
+      }
+    , function(consumer){
         consumer.next(max.value)
+        consumer.complete()
       })
 }
 
@@ -593,7 +607,10 @@ function min(producer, iterator, context){
           min.value = value
           min.computed = computed
         }
+      }
+    , function(consumer){
         consumer.next(min.value)
+        consumer.complete()
       })
 }
 
@@ -607,7 +624,14 @@ function sortBy(producer, val, context){
     , function(consumer, value){
         var iterator = lookupIterator(value, val)
         splice.call(values, sortedIndex(values, value, iterator), 0, value)
-        consumer.next(values)
+      }
+    , function(consumer){
+        var i = 0
+          , len = values.length
+        for(; i < len; i++){
+          consumer.next(values[i])
+        }
+        consumer.complete()
       })
 }
 
@@ -632,7 +656,10 @@ function groupBy(producer, val, context){
           groups[key] = group
         }
         group.push(value)
+      }
+    , function(consumer){
         consumer.next(groups)
+        consumer.complete()
       })
 }
 
@@ -681,7 +708,10 @@ function zipMapBy(producer, val, context){
         } else {
           zipped[entry] = value
         }
+      }
+    , function(consumer){
         consumer.next(zipped)
+        consumer.complete()
       })
 }
 
