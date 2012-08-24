@@ -301,11 +301,12 @@ function promise(producer){
 }
 
 function isProducer(producer){
-  return (producer instanceof Producer || producer instanceof Promise)
+  return producer instanceof Producer
+      || producer instanceof Promise
+      || producer instanceof Underarm
 }
 
 function producerWrap(delegate){
-  delegate = unwrap(delegate)
   var producer
   if(isProducer(delegate)){
     producer = delegate
@@ -369,13 +370,13 @@ function produceWithIterator(producer, context, iterator, iterate, iterComplete,
     , complete = function(consumer){
         completeContext = this
         completeConsumer = consumer
-        if(promisesCount === 0){
+        if(!promisesCount){
           iterComplete.call(completeContext, consumer)
         }
       }
     , promiseCountdown = function(){
         promisesCount--
-        if(promisesCount === 0 && !isUndefined(completeConsumer)){
+        if(!promisesCount && !isUndefined(completeConsumer)){
           complete.call(completeContext, completeConsumer)
         }
       }
@@ -384,7 +385,12 @@ function produceWithIterator(producer, context, iterator, iterate, iterComplete,
 
         if(!consumer.disposed){
           try {
-            result = unwrap(iterator.call(context, value))
+            if(isFunction(iterator)){
+              result = iterator.call(context, value)
+            } else {
+              result = chain(iterator).attach(value)
+            }
+
             if(!isProducer(result)){
               iterate(consumer, value, result)
             } else {
@@ -772,23 +778,23 @@ UnderProto.value = function(){
 }
 
 UnderProto.subscribe = function(next, complete, error){
-  return this.value().subscribe(next, complete, error)
+  return unwrap(this).subscribe(next, complete, error)
 }
 
 UnderProto.resolve = function(result){
-  return this.value().resolve(result)
+  return unwrap(this).resolve(result)
 }
 
 UnderProto.error = function(result){
-  return this.value().error(result)
+  return unwrap(this).error(result)
 }
 
 UnderProto.next = function(result){
-  return this.value().next(result)
+  return unwrap(this).next(result)
 }
 
 UnderProto.complete = function(){
-  return this.value().complete()
+  return unwrap(this).complete()
 }
 
 _r.then = then
@@ -800,7 +806,7 @@ UnderProto.then = function(callback, errback, progback, context){
   var nextPromise = promise()
     , lastResult
 
-  this.subscribe(
+  unwrap(this).subscribe(
       function(result){
         if(isFunction(progback)){
           progback(result)

@@ -117,6 +117,15 @@ describe('producer tests', function(){
       expect(values2).to.be.eql([5, 6, 7, 8])
       expect(values3).to.be.eql([15, 18, 21, 24])
     })
+    it('should allow detached iterator', function(){
+      var values = []
+
+      _r.chain([1, 2, 3, 4])
+        .map(_r().contains(3))
+        .subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([false, false, true, false])
+    })
   })
   describe('reduce', function(){
     it('should collect each value sent with memo', function(){
