@@ -657,6 +657,99 @@ function groupBy(producer, val, context){
     return self
 }
 
+_r.toArray = toArray
+function toArray(producer){
+  return reduce(
+      producer
+    , function(memo, val){
+        memo.push(val)
+        return memo
+      }
+    , [])
+}
+
+_r.size = size
+function size(producer){
+  return reduce(producer, function(memo, val){return memo+1}, 0)
+}
+
+_r.first = _r.head = first
+function first(producer, n){
+  if(isUndefined(n)){
+    n = 1
+  }
+  return produce(
+        producer
+      , null
+      , function(consumer, value){
+          consumer.next(value)
+          if(--n <= 0){
+            consumer.complete()
+          }
+        })
+
+}
+
+_r.initial = initial
+function initial(producer, n){
+  var results = []
+  if(isUndefined(n)){
+    n = 1
+  }
+  return produce(
+        producer
+      , null
+      , function(consumer, value){
+          results.push(value)
+        }
+      , function(consumer){
+          var i = 0
+            , len = results.length - n
+          for(; i < len; i++){
+            consumer.next(results[i])
+          }
+          consumer.complete()
+        })
+}
+
+_r.last = last
+function last(producer, n){
+  var results = []
+  if(isUndefined(n)){
+    n = 1
+  }
+  return produce(
+        producer
+      , null
+      , function(consumer, value){
+          results.push(value)
+        }
+      , function(consumer){
+          var len = results.length
+            , i = n > len ? 0 : len - n
+          for(; i < len; i++){
+            consumer.next(results[i])
+          }
+          consumer.complete()
+        })
+}
+
+_r.rest = _r.tail = rest
+function rest(producer, n){
+  if(isUndefined(n)){
+    n = 1
+  }
+  return produce(
+        producer
+      , null
+      , function(consumer, value){
+          if(--n < 0){
+            consumer.next(value)
+          }
+        })
+
+}
+
 _r.seq = seq
 function seq(producer, context){
   return produce(

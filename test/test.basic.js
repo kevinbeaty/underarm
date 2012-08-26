@@ -25,6 +25,12 @@ describe('basic tests', function(){
       expect(_r.sort).to.be.a('function')
       expect(_r.groupBy).to.be.a('function')
       expect(_r.seq).to.be.a('function')
+      expect(_r.toArray).to.be.a('function')
+      expect(_r.size).to.be.a('function')
+      expect(_r.first).to.be.a('function')
+      expect(_r.initial).to.be.a('function')
+      expect(_r.last).to.be.a('function')
+      expect(_r.rest).to.be.a('function')
       expect(_r.zipMap).to.be.a('function')
       expect(_r.zipMapBy).to.be.a('function')
     })
@@ -42,6 +48,8 @@ describe('basic tests', function(){
       expect(_r.include).to.be.equal(_r.contains)
       expect(_r.pluck).to.be.equal(_r.get)
       expect(_r.invoke).to.be.equal(_r.call)
+      expect(_r.first).to.be.equal(_r.head)
+      expect(_r.rest).to.be.equal(_r.tail)
     })
 
     describe('identity', function(){

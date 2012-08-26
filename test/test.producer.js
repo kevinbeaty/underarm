@@ -728,4 +728,137 @@ describe('producer tests', function(){
       expect(result[5]).to.be.eql(['frank'])
     })
   })
+  describe('toArray', function(){
+    it('should reduce to array', function(){
+      var values = [1, 2, 3, 4, 5, 6]
+        , values2
+      _r(values).toArray().then(function(result){values2 = result})
+      expect(values).to.be.eql(values2)
+    })
+  })
+  describe('size', function(){
+    it('should size array', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .size()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql(6)
+    })
+  })
+  describe('first', function(){
+    it('should retrieve first', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .first()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql(1)
+    })
+    it('should retrieve first three', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .first(3)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([1, 2, 3])
+    })
+    it('should complete if request more than size', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .first(10)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6])
+    })
+  })
+  describe('initial', function(){
+    it('should skip last', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .initial()
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([1, 2, 3, 4, 5])
+    })
+    it('should skip last three', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .initial(3)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([1, 2, 3])
+    })
+    it('should be empty if request more than size', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .initial(10)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([])
+    })
+  })
+  describe('last', function(){
+    it('should keep last', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .last()
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([6])
+    })
+    it('should keep last three', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .last(3)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([4, 5, 6])
+    })
+    it('should be complete array if request more than size', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .last(10)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6])
+    })
+  })
+  describe('rest', function(){
+    it('should retrieve rest', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .rest()
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([2, 3, 4, 5, 6])
+    })
+    it('should retrieve rest after three', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .rest(3)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([4, 5, 6])
+    })
+    it('should empty if request more than size', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .rest(10)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([])
+    })
+  })
 })
