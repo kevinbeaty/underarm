@@ -751,7 +751,6 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .slice(0, 3)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([1, 2, 3])
@@ -760,7 +759,6 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .slice(2, 5)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([3, 4, 5])
@@ -769,7 +767,6 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .slice(3)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([4, 5, 6])
@@ -778,21 +775,18 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .slice(-3)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([4, 5, 6])
 
       _r([1, 2, 3, 4, 5, 6])
         .slice(-3, 7)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([4, 5, 6])
 
       _r([1, 2, 3, 4, 5, 6])
         .slice(-3, 10)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([4, 5, 6])
@@ -802,21 +796,18 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .slice(-4, -1)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([3, 4, 5])
 
       _r([1, 2, 3, 4, 5, 6])
         .slice(2, -1)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([3, 4, 5])
 
       _r([1, 2, 3, 4, 5, 6])
         .slice(-4, 5)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([3, 4, 5])
@@ -825,21 +816,18 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .slice(-6, -3)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([1, 2, 3])
 
       _r([1, 2, 3, 4, 5, 6])
         .slice(0, -3)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([1, 2, 3])
 
       _r([1, 2, 3, 4, 5, 6])
         .slice(-6, 3)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([1, 2, 3])
@@ -848,28 +836,24 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .slice(5, 1)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([])
 
       _r([1, 2, 3, 4, 5, 6])
         .slice(-1, 1)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([])
 
       _r([1, 2, 3, 4, 5, 6])
         .slice(5, -5)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([])
 
       _r([1, 2, 3, 4, 5, 6])
         .slice(-1, -2)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([])
@@ -878,7 +862,6 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .slice(0, 10)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([1, 2, 3, 4, 5, 6])
@@ -897,7 +880,6 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .first(3)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([1, 2, 3])
@@ -906,7 +888,6 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .first(10)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([1, 2, 3, 4, 5, 6])
@@ -917,7 +898,6 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .initial()
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([1, 2, 3, 4, 5])
@@ -926,7 +906,6 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .initial(3)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([1, 2, 3])
@@ -935,7 +914,6 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .initial(10)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([])
@@ -946,16 +924,14 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .last()
-        .toArray()
         .then(function(result){value = result})
 
-      expect(value).to.be.eql([6])
+      expect(value).to.be.eql(6)
     })
     it('should keep last three', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .last(3)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([4, 5, 6])
@@ -964,7 +940,6 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .last(10)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([1, 2, 3, 4, 5, 6])
@@ -975,7 +950,6 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .rest()
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([2, 3, 4, 5, 6])
@@ -984,7 +958,6 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .rest(3)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([4, 5, 6])
@@ -993,7 +966,6 @@ describe('producer tests', function(){
       var value
       _r([1, 2, 3, 4, 5, 6])
         .rest(10)
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([])
@@ -1005,7 +977,6 @@ describe('producer tests', function(){
       _r([0, 1, 2, [], [1], false, true, void 0, 0
           , 3, 4, null, NaN, undefined, "", 'hello', {}])
         .compact()
-        .toArray()
         .then(function(result){value = result})
 
       expect(value).to.be.eql([1, 2, [], [1], true, 3, 4, 'hello', {}])

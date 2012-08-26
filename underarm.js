@@ -112,11 +112,10 @@ var Producer = (function(){
   var P = Producer.prototype
 
   P.onSubscribe = null
-  P.producesObject = false
 
   P.subscribe = subscribe
   function subscribe(next, complete, error){
-    var consumer = new Consumer(next, complete, error)
+    var consumer = consumerWrap(next, complete, error)
       , producer = this
 
     _push.call(producer.consumers, consumer)
@@ -153,10 +152,12 @@ var Consumer = (function(){
     appendToMethod(this, 'next', next)
     appendToMethod(this, 'complete', complete)
     appendToMethod(this, 'error', error)
-    this.disposed = false
     this.onDisposes = []
   }
   var P = Consumer.prototype
+
+  P.disposed = false
+  P.resolveSingleValue = false
 
   P.next = next
   function next(value){
@@ -171,14 +172,6 @@ var Consumer = (function(){
   P.complete = complete
   function complete(){
     this.dispose()
-  }
-
-  P.resolve = resolve
-  function resolve(value){
-    if(!isUndefined(value)){
-      this.next(value)
-    }
-    this.complete()
   }
 
   P.dispose = dispose
@@ -216,12 +209,13 @@ var Consumer = (function(){
   return Consumer
 })()
 
-
 var Promise = (function(){
   function Promise(){
     this.producer = new Producer()
   }
   var P = Promise.prototype
+
+  P.resolveSingleValue = true
 
   P.disposed = false
   P.unfulfilled = true
@@ -230,7 +224,9 @@ var Promise = (function(){
 
   P.subscribe = subscribe
   function subscribe(next, complete, error){
-    return this.producer.subscribe(next, complete, error)
+    var consumer = consumerWrap(next, complete, error)
+    consumer.resolveSingleValue = true
+    return this.producer.subscribe(consumer)
   }
 
   P.next = next
@@ -290,6 +286,24 @@ function isProducer(producer){
       || producer instanceof Underarm
 }
 
+function isConsumer(producer){
+  return producer instanceof Consumer
+      || producer instanceof Promise
+      || producer instanceof Underarm
+}
+
+function resolveSingleValue(consumer, value){
+    consumer.resolveSingleValue = true
+    consumer.next(value)
+    consumer.complete()
+}
+
+function consumerWrap(next, complete, error){
+  return isConsumer(next)
+    ? next
+    : new Consumer(next, complete, error)
+}
+
 function producerWrap(delegate){
   var producer
   if(isProducer(delegate)){
@@ -310,12 +324,7 @@ function producerWrap(delegate){
   } else {
     producer = new Producer()
     producer.onSubscribe = function(consumer){
-      consumer.next(delegate)
-      consumer.complete()
-    }
-
-    if(isObject(delegate)){
-      producer.producesObject = true
+      resolveSingleValue(consumer, delegate)
     }
   }
   return producer
@@ -434,7 +443,7 @@ function map(producer, iterator, context){
 _r.reduce = _r.foldl = _r.inject = reduce
 function reduce(producer, iterator, memo, context){
   var initial = arguments.length > 2
-    , self = produce(
+  return produce(
         producer
       , context
       , function(consumer, value){
@@ -446,18 +455,15 @@ function reduce(producer, iterator, memo, context){
           }
         }
       , function(consumer){
-          self.producesObject = isObject(memo)
-          consumer.next(memo)
-          consumer.complete()
+          resolveSingleValue(consumer, memo)
         })
-  return self
 }
 
 _r.reduceRight = _r.foldr = reduceRight
 function reduceRight(producer, iterator, memo, context){
   var initial = arguments.length > 2
     , values = []
-    , self = produce(
+  return produce(
         producer
       , context
       , function(consumer, value){
@@ -473,27 +479,22 @@ function reduceRight(producer, iterator, memo, context){
               memo = iterator.call(context, memo, values[i])
             }
           }
-          self.producesObject = isObject(memo)
-          consumer.next(memo)
-          consumer.complete()
+          resolveSingleValue(consumer, memo)
         })
-  return self
 }
 
 _r.find = _r.detect = find
 function find(producer, iterator, context){
-  var self = produceWithIterator(
+  return produceWithIterator(
         producer
       , context
       , iterator
       , function(consumer, value, found){
           if(found){
-            self.producesObject = isObject(value)
-            consumer.next(value)
-            consumer.complete()
+            resolveSingleValue(consumer, value)
           }
-        })
-  return self
+        }
+      , resolveSingleValue)
 }
 
 _r.filter = _r.select = filter
@@ -526,13 +527,11 @@ function every(producer, iterator, context){
     , iterator
     , function(consumer, value, passes){
         if(!passes){
-          consumer.next(false)
-          consumer.complete()
+          resolveSingleValue(consumer, false)
         }
       }
     , function(consumer){
-        consumer.next(true)
-        consumer.complete()
+        resolveSingleValue(consumer, true)
       })
 }
 
@@ -544,13 +543,11 @@ function any(producer, iterator, context){
     , iterator
     , function(consumer, value, passes){
         if(passes){
-          consumer.next(true)
-          consumer.complete()
+          resolveSingleValue(consumer, true)
         }
       }
     , function(consumer){
-        consumer.next(false)
-        consumer.complete()
+        resolveSingleValue(consumer, false)
       })
 }
 
@@ -586,8 +583,7 @@ function max(producer, iterator, context){
         }
       }
     , function(consumer){
-        consumer.next(max.value)
-        consumer.complete()
+        resolveSingleValue(consumer, max.value)
       })
 }
 
@@ -605,8 +601,7 @@ function min(producer, iterator, context){
         }
       }
     , function(consumer){
-        consumer.next(min.value)
-        consumer.complete()
+        resolveSingleValue(consumer, min.value)
       })
 }
 
@@ -638,7 +633,7 @@ function sort(producer, context){
 _r.groupBy = groupBy
 function groupBy(producer, val, context){
   var groups = {}
-    , self = produce(
+  return produce(
         producer
       , context
       , function(consumer, value){
@@ -652,11 +647,8 @@ function groupBy(producer, val, context){
           _push.call(group, value)
         }
       , function(consumer){
-          consumer.next(groups)
-          consumer.complete()
+          resolveSingleValue(consumer, groups)
         })
-    self.producesObject = true
-    return self
 }
 
 _r.toArray = toArray
@@ -677,10 +669,18 @@ function size(producer){
 
 _r.slice = slice
 function slice(producer, begin, end){
+  return sliceWithSingleValueOption(producer, false, begin, end)
+}
+
+function sliceWithSingleValueOption(producer, singleValueOption, begin, end){
   var index = 0
     , hasEnd = !isUndefined(end)
 
   if(begin >= 0 && (!hasEnd || end >= 0)){
+    if(singleValueOption && hasEnd && (end - begin === 1)){
+      return produce(producer, null, resolveSingleValue)
+    }
+
     return produce(
         producer
       , null
@@ -709,16 +709,22 @@ function slice(producer, begin, end){
           begin = begin < 0 ? len + begin : begin
           end = !hasEnd ? len : (end < 0 ? len + end : end)
 
-          for(i = _max(0, begin); i < _min(len, end); i++){
-            consumer.next(results[i])
+          if(singleValueOption && (!hasEnd && begin === len - 1)
+              || (hasEnd && (end - begin === 1))){
+            resolveSingleValue(consumer, results[begin])
+          } else {
+            for(i = _max(0, begin); i < _min(len, end); i++){
+              consumer.next(results[i])
+            }
+            consumer.complete()
           }
-          consumer.complete()
         })
 }
 
 _r.first = _r.head = first
 function first(producer, n){
-  return slice(producer, 0, isUndefined(n) ? 1 : n)
+  var hasN = isUndefined(n)
+  return sliceWithSingleValueOption(producer, hasN, 0, hasN ? 1 : n)
 }
 
 _r.initial = initial
@@ -728,7 +734,8 @@ function initial(producer, n){
 
 _r.last = last
 function last(producer, n){
-  return slice(producer, isUndefined(n) ? -1 : -n)
+  var hasN = isUndefined(n)
+  return sliceWithSingleValueOption(producer, hasN, hasN ? -1 : -n)
 }
 
 _r.rest = _r.tail = rest
@@ -775,7 +782,7 @@ function seq(producer, context){
 _r.zipMapBy = zipMapBy
 function zipMapBy(producer, val, context){
   var zipped = {}
-    , self = produce(
+  return produce(
         producer
       , context
       , function(consumer, value){
@@ -792,11 +799,8 @@ function zipMapBy(producer, val, context){
           }
         }
       , function(consumer){
-          consumer.next(zipped)
-          consumer.complete()
+          resolveSingleValue(zipped)
         })
-  self.producesObject = true
-  return self
 }
 
 _r.zipMap = zipMap
@@ -918,28 +922,33 @@ function then(producer, callback, errback, progback, context){
 
 UnderProto.then = function(callback, errback, progback, context){
   var nextPromise = promise()
-    , lastResult
-
-  unwrap(this).subscribe(
+    , results = []
+    , consumer = new Consumer(
       function(result){
         if(isFunction(progback)){
-          progback(result)
+          progback.call(context, result)
         }
         nextPromise.next(result)
-        lastResult = result
+        _push.call(results, result)
       }
     , function(){
         if(isFunction(callback)){
-          callback(lastResult)
+          callback.call(
+              context
+            , consumer.resolveSingleValue
+              ? results[results.length - 1]
+              : results)
         }
         nextPromise.complete()
       }
     , function(err){
         if(isFunction(errback)){
-          errback(err, lastResult)
+          errback.call(context, err)
         }
         nextPromise.error(err)
       })
+
+  unwrap(this).subscribe(consumer)
 
   return nextPromise
 }
@@ -950,29 +959,40 @@ function each(producer, iterator, context){
 }
 
 UnderProto.each = UnderProto.forEach = function(iterator, context){
-  var self = unwrap(this)
-    , result = []
-  return self.subscribe(
+  var result = []
+    , consumer = new Consumer(
       function(next){
         _push.call(result, next)
       }
     , function(){
         var key = 0
           , len = result.length
-        if(!self.producesObject){
-          for(; key < len; key++){
-            iterator.call(context, result[key], key, result)
-          }
-        } else if(len){
-          result = result[0]
-          for(key in result){
-            if(_has(result, key)){
+          , resolveSingleValue = consumer.resolveSingleValue
+        if(len){
+          if(!resolveSingleValue){
+            for(; key < len; key++){
               iterator.call(context, result[key], key, result)
             }
+          } else {
+            var singleValue = result[0]
+            if(singleValue && singleValue.length === +singleValue.length){
+              len = singleValue.length
+              for(; key < len; key++){
+                iterator.call(context, singleValue[key], key, singleValue)
+              }
+            } else if(isObject(singleValue)){
+              for(key in singleValue){
+                if(_has(singleValue, key)){
+                  iterator.call(context, singleValue[key], key, singleValue)
+                }
+              }
+            } else {
+              iterator.call(context, singleValue, 0, result)
+            }
           }
-
         }
       })
+  return unwrap(this).subscribe(consumer)
 }
 
 })(this)
