@@ -43,14 +43,16 @@ var ObjectProto = Object.prototype
   , isFunction = function(obj){
       return toString.call(obj) == '[object Function]'
   }
-  , has = function(obj, key) {
+  , _min = Math.min
+  , _max = Math.max
+  , _has = function(obj, key) {
     return obj && hasOwnProp.call(obj, key)
   }
-  , push = ArrayProto.push
-  , slice = ArrayProto.slice
-  , splice = ArrayProto.splice
-  , unshift = ArrayProto.unshift
-  , indexOf = ArrayProto.indexOf || function(obj){
+  , _push = ArrayProto.push
+  , _slice = ArrayProto.slice
+  , _splice = ArrayProto.splice
+  , _unshift = ArrayProto.unshift
+  , _indexOf = ArrayProto.indexOf || function(obj){
     var i = 0
       , len = this.length
     for(; i < len; i++){
@@ -60,13 +62,13 @@ var ObjectProto = Object.prototype
     }
     return -1
   }
-  , removeFrom = function(array, value){
-      var idx = indexOf.call(array, value)
+  , _removeFrom = function(array, value){
+      var idx = _indexOf.call(array, value)
       if(idx >= 0){
-        splice.call(array, idx, 1)
+        _splice.call(array, idx, 1)
       }
   }
-  , sortedIndex = function(array, obj, iterator) {
+  , _sortedIndex = function(array, obj, iterator) {
       iterator = iterator ? iterator : identity
       var value = iterator(obj)
         , low = 0
@@ -117,7 +119,7 @@ var Producer = (function(){
     var consumer = new Consumer(next, complete, error)
       , producer = this
 
-    push.call(producer.consumers, consumer)
+    _push.call(producer.consumers, consumer)
     consumer.onDispose(function(){
       producer.unsubscribe(consumer)
     })
@@ -140,7 +142,7 @@ var Producer = (function(){
 
   P.unsubscribe = unsubscribe
   function unsubscribe(consumer){
-    removeFrom(this.consumers, consumer)
+    _removeFrom(this.consumers, consumer)
   }
 
   return Producer
@@ -195,7 +197,7 @@ var Consumer = (function(){
     if(this.disposed){
       onDispose()
     } else {
-      this.onDisposes.push(onDispose)
+      _push.call(this.onDisposes, onDispose)
     }
   }
 
@@ -459,7 +461,7 @@ function reduceRight(producer, iterator, memo, context){
         producer
       , context
       , function(consumer, value){
-          values.push(value)
+          _push.call(values, value)
         }
       , function(consumer){
           var i = values.length - 1
@@ -559,7 +561,7 @@ function include(producer, obj, context){
 
 _r.invoke = _r.call = invoke
 function invoke(producer, method){
-  var args = slice.call(arguments, 2);
+  var args = _slice.call(arguments, 2);
   return map(producer, function(value){
       return (isFunction(method) ? method : value[method]).apply(value, args)
   })
@@ -616,7 +618,7 @@ function sortBy(producer, val, context){
     , context
     , function(consumer, value){
         var iterator = lookupIterator(value, val)
-        splice.call(values, sortedIndex(values, value, iterator), 0, value)
+        _splice.call(values, _sortedIndex(values, value, iterator), 0, value)
       }
     , function(consumer){
         var i = 0
@@ -647,7 +649,7 @@ function groupBy(producer, val, context){
             group = []
             groups[key] = group
           }
-          group.push(value)
+          _push.call(group, value)
         }
       , function(consumer){
           consumer.next(groups)
@@ -662,7 +664,7 @@ function toArray(producer){
   return reduce(
       producer
     , function(memo, val){
-        memo.push(val)
+        _push.call(memo, val)
         return memo
       }
     , [])
@@ -673,81 +675,76 @@ function size(producer){
   return reduce(producer, function(memo, val){return memo+1}, 0)
 }
 
-_r.first = _r.head = first
-function first(producer, n){
-  if(isUndefined(n)){
-    n = 1
+_r.slice = slice
+function slice(producer, begin, end){
+  var index = 0
+    , hasEnd = !isUndefined(end)
+
+  if(begin >= 0 && (!hasEnd || end >= 0)){
+    return produce(
+        producer
+      , null
+      , function(consumer, value){
+          if(index++ >= begin){
+            consumer.next(value)
+          }
+
+          if(hasEnd && index === end){
+            consumer.complete()
+          }
+        })
   }
+
+  var results = []
   return produce(
         producer
       , null
       , function(consumer, value){
-          consumer.next(value)
-          if(--n <= 0){
-            consumer.complete()
-          }
-        })
+          _push.call(results, value)
+        }
+      , function(consumer){
+          var i = 0
+            , len = results.length
 
+          begin = begin < 0 ? len + begin : begin
+          end = !hasEnd ? len : (end < 0 ? len + end : end)
+
+          for(i = _max(0, begin); i < _min(len, end); i++){
+            consumer.next(results[i])
+          }
+          consumer.complete()
+        })
+}
+
+_r.first = _r.head = first
+function first(producer, n){
+  return slice(producer, 0, isUndefined(n) ? 1 : n)
 }
 
 _r.initial = initial
 function initial(producer, n){
-  var results = []
-  if(isUndefined(n)){
-    n = 1
-  }
-  return produce(
-        producer
-      , null
-      , function(consumer, value){
-          results.push(value)
-        }
-      , function(consumer){
-          var i = 0
-            , len = results.length - n
-          for(; i < len; i++){
-            consumer.next(results[i])
-          }
-          consumer.complete()
-        })
+  return slice(producer, 0, isUndefined(n) ? -1 : -n);
 }
 
 _r.last = last
 function last(producer, n){
-  var results = []
-  if(isUndefined(n)){
-    n = 1
-  }
-  return produce(
-        producer
-      , null
-      , function(consumer, value){
-          results.push(value)
-        }
-      , function(consumer){
-          var len = results.length
-            , i = n > len ? 0 : len - n
-          for(; i < len; i++){
-            consumer.next(results[i])
-          }
-          consumer.complete()
-        })
+  return slice(producer, isUndefined(n) ? -1 : -n)
 }
 
 _r.rest = _r.tail = rest
 function rest(producer, n){
-  if(isUndefined(n)){
-    n = 1
-  }
-  return produce(
-        producer
-      , null
-      , function(consumer, value){
-          if(--n < 0){
-            consumer.next(value)
-          }
-        })
+  return slice(producer, isUndefined(n) ? 1 : n)
+}
 
+_r.compact = compact
+function compact(producer){
+  return filter(producer, function(val){return !!val})
+}
+
+_r.without = without
+function without(producer){
+  var values = _slice.call(arguments, 1)
+  return reject(function(val){return _indexOf.call(values, val) >= 0})
 }
 
 _r.seq = seq
@@ -765,7 +762,7 @@ function seq(producer, context){
         } else if(isObject(value)){
           var key
           for(key in value){
-            if(has(value, key)){
+            if(_has(value, key)){
               consumer.next([key, value[key]])
             }
           }
@@ -788,7 +785,7 @@ function zipMapBy(producer, val, context){
             if(entry.length === 2){
               zipped[entry[0]] = entry[1]
             } else {
-              zipped[entry[0]] = slice.call(entry, 1)
+              zipped[entry[0]] = _slice.call(entry, 1)
             }
           } else {
             zipped[entry] = value
@@ -834,7 +831,7 @@ function mixin(obj) {
     , func
     , addToWrapper = function(name, func){
         Underarm.prototype[name] = function() {
-          var args = slice.call(arguments)
+          var args = _slice.call(arguments)
           return new Underarm(this, func, args)
         }
       }
@@ -873,7 +870,7 @@ UnderProto.value = function(){
       , attached = true
 
     while(node._parent){
-      stack.push(node)
+      _push.call(stack, node)
       node = node._parent
       if(!isUndefined(node._wrapped)){
         result = node._wrapped
@@ -883,8 +880,8 @@ UnderProto.value = function(){
     }
 
     while(node = stack.pop()){
-      args = slice.call(node._args)
-      unshift.call(args, result)
+      args = _slice.call(node._args)
+      _unshift.call(args, result)
       result = node._func.apply(_r, args)
       if(attached){
         node._wrapped = producerWrap(result)
@@ -957,7 +954,7 @@ UnderProto.each = UnderProto.forEach = function(iterator, context){
     , result = []
   return self.subscribe(
       function(next){
-        result.push(next)
+        _push.call(result, next)
       }
     , function(){
         var key = 0
@@ -969,7 +966,7 @@ UnderProto.each = UnderProto.forEach = function(iterator, context){
         } else if(len){
           result = result[0]
           for(key in result){
-            if(has(result, key)){
+            if(_has(result, key)){
               iterator.call(context, result[key], key, result)
             }
           }

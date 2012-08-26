@@ -746,6 +746,144 @@ describe('producer tests', function(){
       expect(value).to.be.eql(6)
     })
   })
+  describe('slice', function(){
+    it('should retrieve first three', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(0, 3)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([1, 2, 3])
+    })
+    it('should retrieve middle three', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(2, 5)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([3, 4, 5])
+    })
+    it('should retrieve last three', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(3)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([4, 5, 6])
+    })
+    it('should retrieve last three from end', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(-3)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([4, 5, 6])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(-3, 7)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([4, 5, 6])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(-3, 10)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([4, 5, 6])
+
+    })
+    it('should retrieve middle three from end', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(-4, -1)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([3, 4, 5])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(2, -1)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([3, 4, 5])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(-4, 5)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([3, 4, 5])
+    })
+    it('should retrieve first three from end', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(-6, -3)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([1, 2, 3])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(0, -3)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([1, 2, 3])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(-6, 3)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([1, 2, 3])
+    })
+    it('should be empty if begin > end ', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(5, 1)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(-1, 1)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(5, -5)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(-1, -2)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([])
+    })
+    it('should complete if request more than size', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .slice(0, 10)
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6])
+    })
+  })
   describe('first', function(){
     it('should retrieve first', function(){
       var value
@@ -859,6 +997,18 @@ describe('producer tests', function(){
         .then(function(result){value = result})
 
       expect(value).to.be.eql([])
+    })
+  })
+  describe('compact', function(){
+    it('should remove falsey values', function(){
+      var value
+      _r([0, 1, 2, [], [1], false, true, void 0, 0
+          , 3, 4, null, NaN, undefined, "", 'hello', {}])
+        .compact()
+        .toArray()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([1, 2, [], [1], true, 3, 4, 'hello', {}])
     })
   })
 })
