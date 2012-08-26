@@ -1,12 +1,5 @@
 describe('producer tests', function(){
   describe('each', function(){
-    it('should collect each value sent', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , values = []
-
-      _r.each(producer, function(val){values.push(val)})
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-    })
     it('should attach', function(){
       var values = []
 
@@ -16,19 +9,7 @@ describe('producer tests', function(){
 
       expect(values).to.be.eql([2, 4, 6, 8])
     })
-    it('should pass indeces', function(){
-      var values = []
-        , indeces = []
-
-      _r.each([3, 5, 7, 9], function(val, index){
-          values.push(val)
-          indeces.push(index)
-        })
-
-      expect(values).to.be.eql([3, 5, 7, 9])
-      expect(indeces).to.be.eql([0, 1, 2, 3])
-    })
-    it('should pass array', function(){
+    it('should pass values, indeces and array', function(){
       var values = []
         , indeces = []
         , lists = []
@@ -44,31 +25,17 @@ describe('producer tests', function(){
       expect(indeces).to.be.eql([0, 1, 2, 3])
       expect(lists).to.be.eql([[3, 5, 7, 9], [3, 5, 7, 9], [3, 5, 7, 9], [3, 5, 7, 9]])
     })
-    it('should pass values of object', function(){
-      var values = []
-
-      _r({a: 1, b: 2, c: 3})
-        .each(function(val){values.push(val)})
-
-      expect(values.sort()).to.be.eql([1, 2, 3])
-    })
-    it('should pass keys', function(){
-      var values = []
-        , keys = []
-
-      _r({a: 1, b: 2, c: 3})
-        .each(function(val, key){values.push(val); keys.push(key)})
-
-      expect(values.sort()).to.be.eql([1, 2, 3])
-      expect(keys.sort()).to.be.eql(['a', 'b', 'c'])
-    })
-    it('should pass obj', function(){
+    it('should pass values, keys, obj', function(){
       var values = []
         , keys = []
         , obj = null
 
       _r({a: 1, b: 2, c: 3})
-        .each(function(val, key, list){values.push(val); keys.push(key); obj = list})
+        .each(function(val, key, list){
+          values.push(val)
+          keys.push(key)
+          obj = list
+        })
 
       expect(values.sort()).to.be.eql([1, 2, 3])
       expect(keys.sort()).to.be.eql(['a', 'b', 'c'])
@@ -89,24 +56,6 @@ describe('producer tests', function(){
     })
   })
   describe('map', function(){
-    it('should collect each value sent', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , values = []
-
-      _r(producer).map(function(val){values.push(val); return val}).subscribe()
-
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-    })
-    it('should allow subscription', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , values = []
-        , map = _r.map(producer, function(val){values.push(val); return val})
-        , values2 = []
-        , s = map.subscribe(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-      expect(values2).to.be.eql([1, '2', {a: 3}, [4, 5]])
-    })
     it('should transform original values', function(){
       var producer = _r([1, 2, 3, 4])
         , values = []
@@ -178,26 +127,6 @@ describe('producer tests', function(){
     })
   })
   describe('reduce', function(){
-    it('should collect each value sent with memo', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , memos = []
-        , values = []
-
-      _r(producer).reduce(function(memo, val){values.push(val); memos.push(memo); return val}, 1).subscribe()
-
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-    })
-    it('should collect each value sent without memo', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , memos = []
-        , values = []
-
-      _r.reduce(producer, function(memo, val){values.push(val); memos.push(memo); return val}).subscribe()
-
-      expect(memos).to.be.eql([1, '2', {a: 3}])
-      expect(values).to.be.eql(['2', {a: 3}, [4, 5]])
-    })
     it('should reduce original values', function(){
       var producer = _r([1, 2, 3, 4])
         , reduce = _r.reduce(producer, function(memo, val){return memo + val})
@@ -213,15 +142,6 @@ describe('producer tests', function(){
         , s = _r.then(reduce, function(val){values.push(val)})
 
       expect(values).to.be.eql([[1, 2, 3, 4]])
-    })
-    it('should chain', function(){
-      var values = []
-
-      _r([1, 2, 3, 4])
-        .reduce(function(memo, val){return memo / val})
-        .then(function(val){values.push(val)})
-
-      expect(values).to.be.eql([1 / 2 / 3 / 4])
     })
     it('should attach', function(){
       var values = []
@@ -267,26 +187,6 @@ describe('producer tests', function(){
     })
   })
   describe('reduceRight', function(){
-    it('should collect each value sent with memo', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , memos = []
-        , values = []
-
-      _r.reduceRight(producer, function(memo, val){values.push(val); memos.push(memo); return val}, 1).subscribe()
-
-      expect(memos).to.be.eql([1, [4, 5], {a: 3}, '2'])
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]].reverse())
-    })
-    it('should collect each value sent without memo', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , memos = []
-        , values = []
-
-      _r.reduceRight(producer, function(memo, val){values.push(val); memos.push(memo); return val}).subscribe()
-
-      expect(memos).to.be.eql([[4, 5], {a: 3}, '2'])
-      expect(values).to.be.eql([{a: 3}, '2', 1])
-    })
     it('should reduce original values', function(){
       var producer = _r([1, 2, 3, 4])
         , reduce = _r.reduceRight(producer, function(memo, val){return memo + val})
@@ -302,26 +202,6 @@ describe('producer tests', function(){
         , s = _r.then(reduce, function(val){values.push(val)})
 
       expect(values).to.be.eql([[4, 3, 2, 1]])
-    })
-    it('should chain', function(){
-      var values = []
-
-      _r([1, 2, 3, 4])
-        .reduceRight(function(memo, val){return memo / val})
-        .then(function(val){values.push(val)})
-
-      expect(values).to.be.eql([4 / 3 / 2 / 1])
-    })
-    it('should attach', function(){
-      var values = []
-        , reduce = _r().reduceRight(function(memo, val){return memo / val})
-
-      reduce.attach([1, 2, 3, 4]).then(function(val){values.push(val)})
-      expect(values).to.be.eql([4 / 3 / 2 / 1])
-
-      values = []
-      reduce.attach([4, 3, 2, 3]).then(function(val){values.push(val)})
-      expect(values).to.be.eql([3 / 2 / 3 / 4])
     })
     it('should calculate on complete', function(){
       var values = []
@@ -369,24 +249,6 @@ describe('producer tests', function(){
     })
   })
   describe('find', function(){
-    it('should collect each value sent', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , values = []
-
-       _r.find(producer, function(val){values.push(val); return false}).subscribe()
-
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-    })
-    it('should allow subscription', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , values = []
-        , find = _r.find(producer, function(val){values.push(val); return false})
-        , values2 = []
-        , s = find.subscribe(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-      expect(values2).to.be.eql([])
-    })
     it('should find first value', function(){
       var promise = _r.promise()
         , values = []
@@ -401,29 +263,6 @@ describe('producer tests', function(){
 
       expect(values).to.be.eql([1, 2])
       expect(values2).to.be.eql([2])
-    })
-    it('should chain', function(){
-      var values = []
-        , values2 = []
-
-      _r.chain([1, 2, 3, 4])
-        .find(function(val){values.push(val); return (val%2 === 1)})
-        .subscribe(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1])
-      expect(values2).to.be.eql([1])
-    })
-    it('should attach', function(){
-      var values = []
-        , values2 = []
-
-      _r()
-        .find(function(val){values.push(val); return (val%2 === 1)})
-        .attach([1, 2, 3, 4])
-        .subscribe(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1])
-      expect(values2).to.be.eql([1])
     })
     it('should iterate each as array if found not object', function(){
       var values = []
@@ -453,24 +292,6 @@ describe('producer tests', function(){
     })
   })
   describe('filter', function(){
-    it('should collect each value sent', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , values = []
-
-       _r.filter(producer, function(val){values.push(val); return val}).subscribe()
-
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-    })
-    it('should allow subscription', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , values = []
-        , filter = _r.filter(producer, function(val){values.push(val); return true})
-        , values2 = []
-        , s = filter.subscribe(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-      expect(values2).to.be.eql([1, '2', {a: 3}, [4, 5]])
-    })
     it('should filter original values', function(){
       var producer = _r([1, 2, 3, 4])
         , values = []
@@ -480,29 +301,6 @@ describe('producer tests', function(){
 
       expect(values).to.be.eql([1, 2, 3, 4])
       expect(values2).to.be.eql([2, 4])
-    })
-    it('should chain', function(){
-      var values = []
-        , values2 = []
-
-      _r([1, 2, 3, 4])
-        .filter(function(val){values.push(val); return (val%2 === 1)})
-        .subscribe(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, 2, 3, 4])
-      expect(values2).to.be.eql([1, 3])
-    })
-    it('should attach', function(){
-      var values = []
-        , values2 = []
-
-      _r()
-        .filter(function(val){values.push(val); return (val%2 === 1)})
-        .attach([1, 2, 3, 4])
-        .subscribe(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, 2, 3, 4])
-      expect(values2).to.be.eql([1, 3])
     })
     it('should iterate each', function(){
       var values = []
@@ -521,53 +319,12 @@ describe('producer tests', function(){
     })
   })
   describe('reject', function(){
-    it('should collect each value sent', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , values = []
-
-       _r.reject(producer, function(val){values.push(val); return val}).subscribe()
-
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-    })
-    it('should allow subscription', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , values = []
-        , filter = _r.filter(producer, function(val){values.push(val); return true})
-        , values2 = []
-        , s = filter.subscribe(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-      expect(values2).to.be.eql([1, '2', {a: 3}, [4, 5]])
-    })
     it('should reject original values', function(){
       var producer = _r([1, 2, 3, 4])
         , values = []
         , reject = _r.reject(producer, function(val){values.push(val); return (val%2 === 1)})
         , values2 = []
         , s = reject.subscribe(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, 2, 3, 4])
-      expect(values2).to.be.eql([2, 4])
-    })
-    it('should chain', function(){
-      var values = []
-        , values2 = []
-
-      _r.chain([1, 2, 3, 4])
-        .reject(function(val){values.push(val); return (val%2 === 1)})
-        .subscribe(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, 2, 3, 4])
-      expect(values2).to.be.eql([2, 4])
-    })
-    it('should attach', function(){
-      var values = []
-        , values2 = []
-
-      _r()
-        .reject(function(val){values.push(val); return (val%2 === 1)})
-        .attach([1, 2, 3, 4])
-        .subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 2, 3, 4])
       expect(values2).to.be.eql([2, 4])
@@ -589,24 +346,6 @@ describe('producer tests', function(){
     })
   })
   describe('every', function(){
-    it('should collect each value sent', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , values = []
-
-       _r.every(producer, function(val){values.push(val); return true}).subscribe()
-
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-    })
-    it('should allow subscription', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , values = []
-        , every = _r.every(producer, function(val){values.push(val); return true})
-        , values2 = []
-        , s = every.subscribe(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-      expect(values2).to.be.eql([true])
-    })
     it('should short circuit on false', function(){
       var producer = _r([1, 2, 3, 4])
         , values = []
@@ -615,29 +354,6 @@ describe('producer tests', function(){
         , s = every.subscribe(function(val){values2.push(val)})
 
       expect(values).to.be.eql([1, 2, 3])
-      expect(values2).to.be.eql([false])
-    })
-    it('should chain', function(){
-      var values = []
-        , values2 = []
-
-      _r([1, 2, 3, 4])
-        .every(function(val){values.push(val); return (val < 4)})
-        .then(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, 2, 3, 4])
-      expect(values2).to.be.eql([false])
-    })
-    it('should attach', function(){
-      var values = []
-        , values2 = []
-
-      _r()
-        .every(function(val){values.push(val); return (val < 4)})
-        .attach([1,2,3,4])
-        .then(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, 2, 3, 4])
       expect(values2).to.be.eql([false])
     })
     it('should iterate each', function(){
@@ -657,24 +373,6 @@ describe('producer tests', function(){
     })
   })
   describe('any', function(){
-    it('should collect each value sent', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , values = []
-
-       _r.any(producer, function(val){values.push(val); return false}).subscribe()
-
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-    })
-    it('should allow subscription', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , values = []
-        , any = _r.any(producer, function(val){values.push(val); return false})
-        , values2 = []
-        , s = any.subscribe(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, '2', {a: 3}, [4, 5]])
-      expect(values2).to.be.eql([false])
-    })
     it('should short circuit on true', function(){
       var producer = _r([1, 2, 3, 4])
         , values = []
@@ -707,43 +405,8 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1])
       expect(values2).to.be.eql([true])
     })
-    it('should attach', function(){
-      var values = []
-        , values2 = []
-
-      _r()
-        .any(function(val){values.push(val); return (val >= 4)})
-        .attach([1,2,3,4])
-        .then(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, 2, 3, 4])
-      expect(values2).to.be.eql([true])
-    })
-    it('should iterate each', function(){
-      var values = []
-        , values2 = []
-        , indeces = []
-        , result
-
-      _r([1, 2, 3, 4])
-        .any(function(val){values.push(val); return (val%2 === 0)})
-        .each(function(val, index, list){values2.push(val); indeces.push(index); result = list})
-
-      expect(values).to.be.eql([1, 2])
-      expect(values2).to.be.eql([true])
-      expect(indeces).to.be.eql([0])
-      expect(result).to.be.eql([true])
-    })
   })
   describe('contains', function(){
-    it('should allow subscription', function(){
-      var producer = _r([1, '2', {a: 3}, [4, 5]])
-        , values = []
-        , contains = _r.contains(producer, 2)
-        , s = contains.subscribe(function(val){values.push(val)})
-
-      expect(values).to.be.eql([false])
-    })
     it('should short circuit on true', function(){
       var values = []
         , promise = _r.promise()
@@ -783,30 +446,6 @@ describe('producer tests', function(){
 
       expect(values).to.be.eql([false])
     })
-    it('should attach', function(){
-      var values = []
-        , promise = _r.promise()
-
-      _r()
-        .contains(6)
-        .attach([1, 2, 3, 4])
-        .then(function(val){values.push(val)})
-
-      expect(values).to.be.eql([false])
-    })
-    it('should iterate each', function(){
-      var values = []
-        , indeces = []
-        , result
-
-      _r([1, 2, 3, 4])
-        .contains(3)
-        .each(function(val, index, list){values.push(val); indeces.push(index); result = list})
-
-      expect(values).to.be.eql([true])
-      expect(indeces).to.be.eql([0])
-      expect(result).to.be.eql([true])
-    })
   })
   describe('invoke', function(){
     it('should invoke with method name', function(){
@@ -824,25 +463,6 @@ describe('producer tests', function(){
         , s = invoke.subscribe(function(val){values.push(val)})
 
       expect(values).to.be.eql(['1!', '2!', '3!', '4!'])
-    })
-    it('should chain', function(){
-      var values = []
-
-      _r.chain(['a', 'b', 'c', 'd'])
-        .invoke('toUpperCase')
-        .subscribe(function(val){values.push(val)})
-
-      expect(values).to.be.eql(['A', 'B', 'C', 'D'])
-    })
-    it('should attach', function(){
-      var values = []
-
-      _r()
-        .invoke('toUpperCase')
-        .attach(['a', 'b', 'c', 'd'])
-        .subscribe(function(val){values.push(val)})
-
-      expect(values).to.be.eql(['A', 'B', 'C', 'D'])
     })
     it('should iterate each', function(){
       var values = []
@@ -867,15 +487,6 @@ describe('producer tests', function(){
 
       expect(values).to.be.eql(['1', '2', '3'])
     })
-    it('should chain', function(){
-      var values = []
-
-      _r.chain([{a: '1', b: '2'}, {a: '2'}, {a: '3', b: '5', c: '6'}])
-        .pluck('b')
-        .subscribe(function(val){values.push(val)})
-
-      expect(values).to.be.eql(['2', undefined, '5'])
-    })
     it('should attach', function(){
       var values = []
 
@@ -899,14 +510,6 @@ describe('producer tests', function(){
     })
   })
   describe('max', function(){
-    it('should allow subscription', function(){
-      var producer = _r([1, 5, 3, 8, -5])
-        , values = []
-        , max = _r.max(producer)
-        , s = max.subscribe(function(val){values.push(val)})
-
-      expect(values).to.be.eql([8])
-    })
     it('should accept iterator', function(){
       var producer = _r([1, 5, 3, 8, -5])
         , values = []
@@ -917,17 +520,6 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, 5, 3, 8, -5])
       expect(values2).to.be.eql([-5])
     })
-    it('should chain', function(){
-      var values = []
-        , values2 = []
-
-      _r.chain([1, 2, 3, 4])
-        .max(function(val){values.push(val); return -val})
-        .then(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, 2, 3, 4])
-      expect(values2).to.be.eql([1])
-    })
     it('should attach', function(){
       var values = []
         , values2 = []
@@ -940,27 +532,8 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, 2, 3, 4])
       expect(values2).to.be.eql([1])
     })
-    it('should iterate each', function(){
-      var values = []
-        , indeces = []
-
-      _r([1, 2, 3, 4])
-        .max(function(val){return val})
-        .each(function(val, index){values.push(val); indeces.push(index)})
-
-      expect(values).to.be.eql([4])
-      expect(indeces).to.be.eql([0])
-    })
   })
   describe('min', function(){
-    it('should allow subscription', function(){
-      var producer = _r([1, 5, 3, 8, -5])
-        , values = []
-        , min = _r.min(producer)
-        , s = min.subscribe(function(val){values.push(val)})
-
-      expect(values).to.be.eql([-5])
-    })
     it('should accept iterator', function(){
       var producer = _r([1, 5, 3, 8, -5])
         , values = []
@@ -971,17 +544,6 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, 5, 3, 8, -5])
       expect(values2).to.be.eql([8])
     })
-    it('should chain', function(){
-      var values = []
-        , values2 = []
-
-      _r.chain([1, 2, 3, 4])
-        .min(function(val){values.push(val); return -val})
-        .then(function(val){values2.push(val)})
-
-      expect(values).to.be.eql([1, 2, 3, 4])
-      expect(values2).to.be.eql([4])
-    })
     it('should attach', function(){
       var values = []
         , values2 = []
@@ -993,17 +555,6 @@ describe('producer tests', function(){
 
       expect(values).to.be.eql([1, 2, 3, 4])
       expect(values2).to.be.eql([4])
-    })
-    it('should iterate each', function(){
-      var values = []
-        , indeces = []
-
-      _r([1, 2, 3, 4])
-        .min(function(val){return val})
-        .each(function(val, index){values.push(val); indeces.push(index)})
-
-      expect(values).to.be.eql([1])
-      expect(indeces).to.be.eql([0])
     })
   })
   describe('sortBy', function(){
