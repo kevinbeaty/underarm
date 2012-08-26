@@ -110,6 +110,7 @@ var Producer = (function(){
   var P = Producer.prototype
 
   P.onSubscribe = null
+  P.producesObject = false
 
   P.subscribe = subscribe
   function subscribe(next, complete, error){
@@ -281,25 +282,6 @@ var Promise = (function(){
   return Promise
 })()
 
-_r.promise = promise
-function promise(producer){
-  var promise = new Promise()
-  if(!isUndefined(producer)){
-    producer = producerWrap(producer)
-    producer.subscribe(
-        function(value){
-          promise.next(value)
-        }
-      , function(){
-          promise.complete()
-        }
-      , function(err){
-          promise.error(err)
-        })
-  }
-  return chain(promise)
-}
-
 function isProducer(producer){
   return producer instanceof Producer
       || producer instanceof Promise
@@ -329,8 +311,31 @@ function producerWrap(delegate){
       consumer.next(delegate)
       consumer.complete()
     }
+
+    if(isObject(delegate)){
+      producer.producesObject = true
+    }
   }
   return producer
+}
+
+_r.promise = promise
+function promise(producer){
+  var promise = new Promise()
+  if(!isUndefined(producer)){
+    producer = producerWrap(producer)
+    producer.subscribe(
+        function(value){
+          promise.next(value)
+        }
+      , function(){
+          promise.complete()
+        }
+      , function(err){
+          promise.error(err)
+        })
+  }
+  return chain(promise)
 }
 
 function produce(delegate, context, next, complete, error){
@@ -360,6 +365,10 @@ produce.defaults = {
 }
 
 function produceWithIterator(producer, context, iterator, iterate, iterComplete, error){
+  if(isUndefined(iterator)){
+    iterator = identity
+  }
+
   if(!isFunction(iterComplete)){
     iterComplete = produce.defaults.complete
   }
@@ -409,17 +418,6 @@ function produceWithIterator(producer, context, iterator, iterate, iterComplete,
   return produce(producer, context, next, complete, error)
 }
 
-_r.each = _r.forEach = each
-function each(producer, iterator, context){
-  return produceWithIterator(
-      producer
-    , context
-    , iterator
-    , function(consumer, value){
-        consumer.next(value)
-      })
-}
-
 _r.map = _r.collect = map
 function map(producer, iterator, context){
   return produceWithIterator(
@@ -434,62 +432,66 @@ function map(producer, iterator, context){
 _r.reduce = _r.foldl = _r.inject = reduce
 function reduce(producer, iterator, memo, context){
   var initial = arguments.length > 2
-  return produceWithIterator(
-      producer
-    , context
-    , identity
-    , function(consumer, value){
-        if(!initial){
-          memo = value
-          initial = true
-        } else {
-          memo = iterator.call(context, memo, value)
+    , self = produce(
+        producer
+      , context
+      , function(consumer, value){
+          if(!initial){
+            memo = value
+            initial = true
+          } else {
+            memo = iterator.call(context, memo, value)
+          }
         }
-      }
-    , function(consumer){
-        consumer.next(memo)
-        consumer.complete()
-      })
+      , function(consumer){
+          self.producesObject = isObject(memo)
+          consumer.next(memo)
+          consumer.complete()
+        })
+  return self
 }
 
 _r.reduceRight = _r.foldr = reduceRight
 function reduceRight(producer, iterator, memo, context){
   var initial = arguments.length > 2
     , values = []
-  return produceWithIterator(
-      producer
-    , context
-    , identity
-    , function(consumer, value){
-        values.push(value)
-      }
-    , function(consumer){
-        var i = values.length - 1
-        for(; i >= 0; i--){
-          if(!initial){
-            memo = values[i]
-            initial = true
-          } else {
-            memo = iterator.call(context, memo, values[i])
-          }
+    , self = produce(
+        producer
+      , context
+      , function(consumer, value){
+          values.push(value)
         }
-        consumer.next(memo)
-        consumer.complete()
-      })
+      , function(consumer){
+          var i = values.length - 1
+          for(; i >= 0; i--){
+            if(!initial){
+              memo = values[i]
+              initial = true
+            } else {
+              memo = iterator.call(context, memo, values[i])
+            }
+          }
+          self.producesObject = isObject(memo)
+          consumer.next(memo)
+          consumer.complete()
+        })
+  return self
 }
 
 _r.find = _r.detect = find
 function find(producer, iterator, context){
-  return produceWithIterator(
-      producer
-    , context
-    , iterator
-    , function(consumer, value, found){
-        if(found){
-          consumer.next(value)
-          consumer.complete()
-        }
-      })
+  var self = produceWithIterator(
+        producer
+      , context
+      , iterator
+      , function(consumer, value, found){
+          if(found){
+            self.producesObject = isObject(value)
+            consumer.next(value)
+            consumer.complete()
+          }
+        })
+  return self
 }
 
 _r.filter = _r.select = filter
@@ -570,10 +572,6 @@ function pluck(producer, key){
 
 _r.max = max
 function max(producer, iterator, context){
-  if(isUndefined(iterator)){
-    iterator = identity
-  }
-
   var max = {computed: -Infinity}
   return produceWithIterator(
       producer
@@ -593,10 +591,6 @@ function max(producer, iterator, context){
 
 _r.min = min
 function min(producer, iterator, context){
-  if(isUndefined(iterator)){
-    iterator = identity
-  }
-
   var min = {computed: Infinity}
   return produceWithIterator(
       producer
@@ -617,10 +611,9 @@ function min(producer, iterator, context){
 _r.sortBy = sortBy
 function sortBy(producer, val, context){
   var values = []
-  return produceWithIterator(
+  return produce(
       producer
     , context
-    , identity
     , function(consumer, value){
         var iterator = lookupIterator(value, val)
         splice.call(values, sortedIndex(values, value, iterator), 0, value)
@@ -643,32 +636,32 @@ function sort(producer, context){
 _r.groupBy = groupBy
 function groupBy(producer, val, context){
   var groups = {}
-  return produceWithIterator(
-      producer
-    , context
-    , identity
-    , function(consumer, value){
-        var iterator = lookupIterator(value, val)
-          , key = iterator.call(context, value)
-          , group = groups[key]
-        if(isUndefined(group)){
-          group = []
-          groups[key] = group
+    , self = produce(
+        producer
+      , context
+      , function(consumer, value){
+          var iterator = lookupIterator(value, val)
+            , key = iterator.call(context, value)
+            , group = groups[key]
+          if(isUndefined(group)){
+            group = []
+            groups[key] = group
+          }
+          group.push(value)
         }
-        group.push(value)
-      }
-    , function(consumer){
-        consumer.next(groups)
-        consumer.complete()
-      })
+      , function(consumer){
+          consumer.next(groups)
+          consumer.complete()
+        })
+    self.producesObject = true
+    return self
 }
 
 _r.seq = seq
 function seq(producer, context){
-  return produceWithIterator(
+  return produce(
       producer
     , context
-    , identity
     , function(consumer, value){
         if(isArray(value)){
           var i = 0
@@ -692,27 +685,28 @@ function seq(producer, context){
 _r.zipMapBy = zipMapBy
 function zipMapBy(producer, val, context){
   var zipped = {}
-  return produceWithIterator(
-      producer
-    , context
-    , identity
-    , function(consumer, value){
-        var iterator = lookupIterator(value, val)
-          , entry = iterator.call(context, value)
-        if(isArray(entry)){
-          if(entry.length === 2){
-            zipped[entry[0]] = entry[1]
+    , self = produce(
+        producer
+      , context
+      , function(consumer, value){
+          var iterator = lookupIterator(value, val)
+            , entry = iterator.call(context, value)
+          if(isArray(entry)){
+            if(entry.length === 2){
+              zipped[entry[0]] = entry[1]
+            } else {
+              zipped[entry[0]] = slice.call(entry, 1)
+            }
           } else {
-            zipped[entry[0]] = slice.call(entry, 1)
+            zipped[entry] = value
           }
-        } else {
-          zipped[entry] = value
         }
-      }
-    , function(consumer){
-        consumer.next(zipped)
-        consumer.complete()
-      })
+      , function(consumer){
+          consumer.next(zipped)
+          consumer.complete()
+        })
+  self.producesObject = true
+  return self
 }
 
 _r.zipMap = zipMap
@@ -858,6 +852,37 @@ UnderProto.then = function(callback, errback, progback, context){
       })
 
   return nextPromise
+}
+
+_r.each = _r.forEach = each
+function each(producer, iterator, context){
+  return chain(producer).each(iterator, context)
+}
+
+UnderProto.each = UnderProto.forEach = function(iterator, context){
+  var self = unwrap(this)
+    , result = []
+  return self.subscribe(
+      function(next){
+        result.push(next)
+      }
+    , function(){
+        var key = 0
+          , len = result.length
+        if(!self.producesObject){
+          for(; key < len; key++){
+            iterator.call(context, result[key], key, result)
+          }
+        } else if(len){
+          result = result[0]
+          for(key in result){
+            if(has(result, key)){
+              iterator.call(context, result[key], key, result)
+            }
+          }
+
+        }
+      })
 }
 
 })(this)
