@@ -493,7 +493,16 @@ function reduceArray(producer, func){
         return memo
       }
     , [])
+}
 
+function reduceObject(producer, func){
+  return reduce(
+      producer
+    , function(memo, val){
+        func.call(memo, val)
+        return memo
+      }
+    , {})
 }
 
 _r.reduceRight = _r.foldr = reduceRight
@@ -657,24 +666,40 @@ function sort(producer, context){
 
 _r.groupBy = groupBy
 function groupBy(producer, val, context){
-  var groups = {}
-  return produce(
-        producer
-      , context
-      , function(consumer, value){
-          var iterator = lookupIterator(value, val)
-            , key = iterator.call(context, value)
-            , group = groups[key]
-          if(isUndefined(group)){
-            group = []
-            groups[key] = group
-          }
-          _push.call(group, value)
-        }
-      , function(consumer){
-          resolveSingleValue(consumer, groups)
-        })
+  return reduceObject(producer, function(value){
+      var iterator = lookupIterator(value, val)
+        , key = iterator.call(context, value)
+        , group = this[key]
+      if(isUndefined(group)){
+        group = []
+        this[key] = group
+      }
+      _push.call(group, value)
+  })
 }
+
+_r.zipMapBy = zipMapBy
+function zipMapBy(producer, val, context){
+  return reduceObject(producer, function(value){
+      var iterator = lookupIterator(value, val)
+        , entry = iterator.call(context, value)
+      if(isArray(entry)){
+        if(entry.length === 2){
+          this[entry[0]] = entry[1]
+        } else {
+          this[entry[0]] = _slice.call(entry, 1)
+        }
+      } else {
+        this[entry] = value
+      }
+  })
+}
+
+_r.zipMap = zipMap
+function zipMap(producer, context){
+  return zipMapBy(producer, identity, context)
+}
+
 
 _r.toArray = toArray
 function toArray(producer){
@@ -776,35 +801,6 @@ _r.without = without
 function without(producer){
   var values = _slice.call(arguments, 1)
   return reject(function(val){return _indexOf.call(values, val) >= 0})
-}
-
-_r.zipMapBy = zipMapBy
-function zipMapBy(producer, val, context){
-  var zipped = {}
-  return produce(
-        producer
-      , context
-      , function(consumer, value){
-          var iterator = lookupIterator(value, val)
-            , entry = iterator.call(context, value)
-          if(isArray(entry)){
-            if(entry.length === 2){
-              zipped[entry[0]] = entry[1]
-            } else {
-              zipped[entry[0]] = _slice.call(entry, 1)
-            }
-          } else {
-            zipped[entry] = value
-          }
-        }
-      , function(consumer){
-          resolveSingleValue(zipped)
-        })
-}
-
-_r.zipMap = zipMap
-function zipMap(producer, context){
-  return zipMapBy(producer, identity, context)
 }
 
 function Underarm(obj, func, args) {
