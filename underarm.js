@@ -48,6 +48,7 @@ var ObjectProto = Object.prototype
   , _has = function(obj, key) {
     return obj && hasOwnProp.call(obj, key)
   }
+  , _pop = ArrayProto.pop
   , _push = ArrayProto.push
   , _slice = ArrayProto.slice
   , _splice = ArrayProto.splice
@@ -177,10 +178,10 @@ var Consumer = (function(){
   P.dispose = dispose
   function dispose(){
     var onDisposes = this.onDisposes
-      onDispose = onDisposes.pop()
+      onDispose = _pop.call(onDisposes)
     while(onDispose){
       onDispose()
-      onDispose = onDisposes.pop()
+      onDispose = _pop.call(onDisposes)
     }
     this.disposed = true
   }
@@ -375,6 +376,31 @@ produce.defaults = {
   , error: function(consumer, err){consumer.error(err)}
 }
 
+_r.seq = seq
+function seq(producer, context){
+  return produce(
+      producer
+    , context
+    , function(consumer, value){
+        if(isArray(value)){
+          var i = 0
+            , len = value.length
+          for(; i < len; i++){
+            consumer.next(value[i])
+          }
+        } else if(isObject(value)){
+          var key
+          for(key in value){
+            if(_has(value, key)){
+              consumer.next([key, value[key]])
+            }
+          }
+        } else {
+          consumer.next(value)
+        }
+    })
+}
+
 function produceWithIterator(producer, context, iterator, iterate, iterComplete, error){
   if(isUndefined(iterator)){
     iterator = identity
@@ -457,6 +483,17 @@ function reduce(producer, iterator, memo, context){
       , function(consumer){
           resolveSingleValue(consumer, memo)
         })
+}
+
+function reduceArray(producer, func){
+  return reduce(
+      producer
+    , function(memo, val){
+        func.call(memo, val)
+        return memo
+      }
+    , [])
+
 }
 
 _r.reduceRight = _r.foldr = reduceRight
@@ -607,22 +644,10 @@ function min(producer, iterator, context){
 
 _r.sortBy = sortBy
 function sortBy(producer, val, context){
-  var values = []
-  return produce(
-      producer
-    , context
-    , function(consumer, value){
-        var iterator = lookupIterator(value, val)
-        _splice.call(values, _sortedIndex(values, value, iterator), 0, value)
-      }
-    , function(consumer){
-        var i = 0
-          , len = values.length
-        for(; i < len; i++){
-          consumer.next(values[i])
-        }
-        consumer.complete()
-      })
+  return seq(reduceArray(producer, function(value){
+    var iterator = lookupIterator(value, val)
+    _splice.call(this, _sortedIndex(this, value, iterator), 0, value)
+  }))
 }
 
 _r.sort = sort
@@ -653,18 +678,17 @@ function groupBy(producer, val, context){
 
 _r.toArray = toArray
 function toArray(producer){
-  return reduce(
-      producer
-    , function(memo, val){
-        _push.call(memo, val)
-        return memo
-      }
-    , [])
+  return reduceArray(producer, _push)
 }
 
 _r.size = size
 function size(producer){
   return reduce(producer, function(memo, val){return memo+1}, 0)
+}
+
+_r.reverse = reverse
+function reverse(producer){
+  return seq(reduceArray(producer, _unshift))
 }
 
 _r.slice = slice
@@ -752,31 +776,6 @@ _r.without = without
 function without(producer){
   var values = _slice.call(arguments, 1)
   return reject(function(val){return _indexOf.call(values, val) >= 0})
-}
-
-_r.seq = seq
-function seq(producer, context){
-  return produce(
-      producer
-    , context
-    , function(consumer, value){
-        if(isArray(value)){
-          var i = 0
-            , len = value.length
-          for(; i < len; i++){
-            consumer.next(value[i])
-          }
-        } else if(isObject(value)){
-          var key
-          for(key in value){
-            if(_has(value, key)){
-              consumer.next([key, value[key]])
-            }
-          }
-        } else {
-          consumer.next(value)
-        }
-    })
 }
 
 _r.zipMapBy = zipMapBy
@@ -883,7 +882,7 @@ UnderProto.value = function(){
       }
     }
 
-    while(node = stack.pop()){
+    while(node = _pop.call(stack)){
       args = _slice.call(node._args)
       _unshift.call(args, result)
       result = node._func.apply(_r, args)

@@ -746,6 +746,14 @@ describe('producer tests', function(){
       expect(value).to.be.eql(6)
     })
   })
+  describe('reverse', function(){
+    it('should reverse array', function(){
+      var values = [5, 2, 3, 4, 1]
+        , values2
+      _r(values).reverse().then(function(result){values2 = result})
+      expect(values.reverse()).to.be.eql(values2)
+    })
+  })
   describe('slice', function(){
     it('should retrieve first three', function(){
       var value
