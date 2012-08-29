@@ -979,6 +979,201 @@ describe('producer tests', function(){
       expect(value).to.be.eql([])
     })
   })
+  describe('splice', function(){
+    it('should add elements and not remove if howMany 0', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .splice(0, 0)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .splice(-6, 0, 7)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([7, 1, 2, 3, 4, 5, 6])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .splice(0, 0, 7, 8)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([7, 8, 1, 2, 3, 4, 5, 6])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(1, 0, 7, 8, 9)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 7, 8, 9, 2, 3, 4, 5, 6])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(-5, 0, 7, 8, 9, 10)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 7, 8, 9, 10, 2, 3, 4, 5, 6])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(5, 0, 8, 9)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 8, 9, 6])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(-1, 0, 7)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 7, 6])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(6, 0, 7, 8)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6, 7, 8])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(10, 0, 10)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6, 10])
+    })
+    it('should remove elements if howMany defined and no toAdd', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .splice(0, 0)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .splice(-6, 1)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([2, 3, 4, 5, 6])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .splice(0, 2)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([3, 4, 5, 6])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(1, 3)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 5, 6])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(-5, 4)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 6])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(5, 3)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(-1, 2)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(6, 10)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(10, 10)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6])
+    })
+    it('should remove all after index if howMany undefined', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .splice(0)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .splice(-6)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(1)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(-5)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(2)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(-4)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(5)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(-1)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(6)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(10)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6])
+    })
+    it('should add and remove elements', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .splice(0, 0, 1)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 1, 2, 3, 4, 5, 6])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .splice(-6, 1, 7)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([7, 2, 3, 4, 5, 6])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .splice(0, 0, 7, 8)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([7, 8, 1, 2, 3, 4, 5, 6])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(1, 0, 7, 8, 9)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 7, 8, 9, 2, 3, 4, 5, 6])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(-5, 2, 7, 8, 9, 10)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 7, 8, 9, 10, 4, 5, 6])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(5, 4, 8, 9)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 8, 9])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(-1, 1, 7)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 7])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(6, 2, 7, 8)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6, 7, 8])
+
+       _r([1, 2, 3, 4, 5, 6])
+        .splice(10, 10, 10)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6, 10])
+    })
+  })
   describe('compact', function(){
     it('should remove falsey values', function(){
       var value

@@ -700,7 +700,6 @@ function zipMap(producer, context){
   return zipMapBy(producer, identity, context)
 }
 
-
 _r.toArray = toArray
 function toArray(producer){
   return reduceArray(producer, _push)
@@ -790,6 +789,72 @@ function last(producer, n){
 _r.rest = _r.tail = rest
 function rest(producer, n){
   return slice(producer, isUndefined(n) ? 1 : n)
+}
+
+_r.splice = splice
+function splice(producer, index, howMany){
+  var idx = 0
+    , removeAll = isUndefined(howMany)
+    , toAdd = _slice.call(arguments, 3)
+    , toAddI = 0
+    , toAddLen = toAdd.length
+    , addToAdd = function(consumer, next){
+        if(idx === index
+          || (!next && idx < index)){
+
+          for(; toAddI < toAddLen; toAddI++){
+            consumer.next(toAdd[toAddI])
+          }
+        }
+        if(!next){
+          consumer.complete()
+        }
+      }
+    , consumerNext = function(consumer, value){
+        if(idx < index || (!removeAll && idx >= index + howMany)){
+          consumer.next(value)
+        }
+      }
+
+  if(index >= 0){
+    return produce(
+        producer
+      , null
+      , function(consumer, value){
+          addToAdd(consumer, true)
+          consumerNext(consumer, value)
+
+          if(removeAll && idx === index){
+            consumer.complete()
+          }
+          idx++
+        }
+      , addToAdd)
+  }
+
+  var results = []
+  return produce(
+        producer
+      , null
+      , function(consumer, value){
+          _push.call(results, value)
+        }
+      , function(consumer){
+          var len = results.length
+          index = len + index
+
+          for(; idx < len; idx++){
+            addToAdd(consumer, true)
+            consumerNext(consumer, results[idx])
+
+            if(removeAll && idx === index){
+              break
+            }
+          }
+          consumer.complete()
+        }
+      , addToAdd)
+
 }
 
 _r.compact = compact
