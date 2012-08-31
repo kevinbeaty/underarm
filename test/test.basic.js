@@ -40,6 +40,7 @@ describe('basic tests', function(){
       expect(_r.push).to.be.a('function')
       expect(_r.shift).to.be.a('function')
       expect(_r.unshift).to.be.a('function')
+      expect(_r.join).to.be.a('function')
       expect(_r.concat).to.be.a('function')
       expect(_r.compact).to.be.a('function')
     })

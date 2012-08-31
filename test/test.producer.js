@@ -1268,6 +1268,52 @@ describe('producer tests', function(){
       expect(value).to.be.eql([7, 4, [5, 6], 6, 1, 2, 3])
     })
   })
+  describe('join', function(){
+    it('should join with separator', function(){
+      var value
+      _r(['a','b','c'])
+        .join(', ')
+        .then(function(result){value = result})
+      expect(value).to.be.eql('a, b, c')
+
+      _r(['a','b','c'])
+        .join('::')
+        .then(function(result){value = result})
+      expect(value).to.be.eql('a::b::c')
+
+      _r([1, 2, 3])
+        .join(' + ')
+        .then(function(result){value = result})
+      expect(value).to.be.eql('1 + 2 + 3')
+    })
+    it('should join , if separator undefined', function(){
+      var value
+      _r(['a','b','c'])
+        .join()
+        .then(function(result){value = result})
+      expect(value).to.be.eql('a,b,c')
+    })
+    it('should pass value as string single value', function(){
+      var value
+      _r('a')
+        .join()
+        .then(function(result){value = result})
+      expect(value).to.be.eql('a')
+
+      _r(1)
+        .join(':')
+        .then(function(result){value = result})
+      expect(value).to.be.eql('1')
+
+    })
+    it('should convert separator to string', function(){
+      var value
+      _r([1, 2, 3])
+        .join(5)
+        .then(function(result){value = result})
+      expect(value).to.be.eql('15253')
+    })
+  })
   describe('concat', function(){
     it('should concat at end', function(){
       var value

@@ -889,6 +889,20 @@ function unshift(producer){
     , _concat.call([producer, 0, 0], _slice.call(arguments, 1)))
 }
 
+_r.join = join
+function join(producer, separator){
+  if(isUndefined(separator)){
+    separator = ','
+  } else {
+    separator += ''
+  }
+  return reduce(
+      producer
+    , function(memo, val){
+        return memo+separator+val
+      })
+}
+
 _r.concat = concat
 function concat(producer){
   var toConcat = _slice.call(arguments, 1)
