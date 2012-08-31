@@ -1208,6 +1208,19 @@ describe('producer tests', function(){
       expect(value).to.be.eql([])
     })
   })
+  describe('push', function(){
+    it('should push at end', function(){
+      var value
+      _r([])
+        .push(3)
+        .push()
+        .push(1, 2)
+        .push(4, [5, 6], 6)
+        .push(7)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([3, 1, 2, 4, [5, 6], 6, 7])
+    })
+  })
   describe('shift', function(){
     it('should remove first object', function(){
       var value
@@ -1249,10 +1262,41 @@ describe('producer tests', function(){
         .unshift(3)
         .unshift()
         .unshift(1, 2)
-        .unshift(4, 5, 6)
+        .unshift(4, [5, 6], 6)
         .unshift(7)
         .then(function(result){value = result})
-      expect(value).to.be.eql([7, 4, 5, 6, 1, 2, 3])
+      expect(value).to.be.eql([7, 4, [5, 6], 6, 1, 2, 3])
+    })
+  })
+  describe('concat', function(){
+    it('should concat at end', function(){
+      var value
+      _r([])
+        .concat(3)
+        .concat()
+        .concat(1, 2)
+        .concat(4, [5, 6], 6)
+        .concat(7)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([3, 1, 2, 4, 5, 6, 6, 7])
+    })
+    it('should concat arrays', function(){
+      var value
+      _r([1])
+        .concat([1, 2])
+        .concat([4])
+        .concat([5, 6, 7])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 1, 2, 4, 5, 6, 7])
+    })
+    it('should concat producers', function(){
+      var value
+      _r([1])
+        .concat(_r([1, 2]).map(function(val){return val*2}))
+        .concat(_r([4]))
+        .concat(_r().first(3).attach([5, 6, 7, 8]))
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 4, 4, 5, 6, 7])
     })
   })
   describe('compact', function(){

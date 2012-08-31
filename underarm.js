@@ -853,9 +853,7 @@ function splice(producer, index, howMany){
             }
           }
           consumer.complete()
-        }
-      , addToAdd)
-
+        })
 }
 
 _r.pop = pop
@@ -863,6 +861,22 @@ function pop(producer){
   return splice(producer, -1, 1)
 }
 
+_r.push = push
+function push(producer){
+  var toPush = _slice.call(arguments, 1)
+  return produce(
+      producer
+    , null
+    , null
+    , function(consumer){
+        var i = 0
+          , len = toPush.length
+        for(; i < len; i++){
+          consumer.next(toPush[i])
+        }
+        consumer.complete()
+      })
+}
 
 _r.shift = shift
 function shift(producer){
@@ -873,6 +887,24 @@ _r.unshift = unshift
 function unshift(producer){
   return splice.apply(this
     , _concat.call([producer, 0, 0], _slice.call(arguments, 1)))
+}
+
+_r.concat = concat
+function concat(producer){
+  var toConcat = _slice.call(arguments, 1)
+    , i = 0
+    , len = toConcat.length
+    , countdown = function(consumer){
+        if(i < len){
+          produce(toConcat[i++], null, null, countdown)
+            .subscribe(consumer)
+        }
+        if(i === len){
+          consumer.complete()
+        }
+      }
+
+  return produce(producer, null, null, countdown)
 }
 
 _r.compact = compact
