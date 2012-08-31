@@ -53,6 +53,7 @@ var ObjectProto = Object.prototype
   , _slice = ArrayProto.slice
   , _splice = ArrayProto.splice
   , _unshift = ArrayProto.unshift
+  , _concat = ArrayProto.concat
   , _indexOf = ArrayProto.indexOf || function(obj){
     var i = 0
       , len = this.length
@@ -855,6 +856,23 @@ function splice(producer, index, howMany){
         }
       , addToAdd)
 
+}
+
+_r.pop = pop
+function pop(producer){
+  return splice(producer, -1, 1)
+}
+
+
+_r.shift = shift
+function shift(producer){
+  return splice(producer, 0, 1)
+}
+
+_r.unshift = unshift
+function unshift(producer){
+  return splice.apply(this
+    , _concat.call([producer, 0, 0], _slice.call(arguments, 1)))
 }
 
 _r.compact = compact

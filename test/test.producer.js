@@ -1174,6 +1174,87 @@ describe('producer tests', function(){
       expect(value).to.be.eql([1, 2, 3, 4, 5, 6, 10])
     })
   })
+  describe('pop', function(){
+    it('should remove last object', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .pop()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .pop()
+        .pop()
+        .pop()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3])
+
+      _r(value)
+        .pop()
+        .pop()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1])
+
+      _r(value)
+        .pop()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([])
+
+      _r(value)
+        .pop()
+        .pop()
+        .pop()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([])
+    })
+  })
+  describe('shift', function(){
+    it('should remove first object', function(){
+      var value
+      _r([1, 2, 3, 4, 5, 6])
+        .shift()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([2, 3, 4, 5, 6])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .shift()
+        .shift()
+        .shift()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([4, 5, 6])
+
+      _r(value)
+        .shift()
+        .shift()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([6])
+
+      _r(value)
+        .shift()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([])
+
+      _r(value)
+        .shift()
+        .shift()
+        .shift()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([])
+    })
+  })
+  describe('unshift', function(){
+    it('should unshift at beginning', function(){
+      var value
+      _r([])
+        .unshift(3)
+        .unshift()
+        .unshift(1, 2)
+        .unshift(4, 5, 6)
+        .unshift(7)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([7, 4, 5, 6, 1, 2, 3])
+    })
+  })
   describe('compact', function(){
     it('should remove falsey values', function(){
       var value

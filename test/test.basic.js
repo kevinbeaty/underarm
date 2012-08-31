@@ -36,6 +36,9 @@ describe('basic tests', function(){
       expect(_r.last).to.be.a('function')
       expect(_r.rest).to.be.a('function')
       expect(_r.splice).to.be.a('function')
+      expect(_r.pop).to.be.a('function')
+      expect(_r.shift).to.be.a('function')
+      expect(_r.unshift).to.be.a('function')
       expect(_r.compact).to.be.a('function')
     })
 
