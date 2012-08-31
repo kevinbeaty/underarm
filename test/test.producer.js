@@ -1314,6 +1314,54 @@ describe('producer tests', function(){
       expect(value).to.be.eql('15253')
     })
   })
+  describe('indexOf', function(){
+    it('should return first index of value', function(){
+      var value
+      _r(['b', 'a', 'c', 'a', 'a', 'd'])
+        .indexOf('a')
+        .then(function(result){value = result})
+      expect(value).to.be.eql(1)
+
+      _r(['b', 'a', 'c', 'a', 'a', 'd'])
+        .indexOf('b')
+        .then(function(result){value = result})
+      expect(value).to.be.eql(0)
+
+      _r(['b', 'a', 'c', 'a', 'a', 'd'])
+        .indexOf('d')
+        .then(function(result){value = result})
+      expect(value).to.be.eql(5)
+
+      _r(['b', 'a', 'c', 'a', 'a', 'd'])
+        .indexOf('e')
+        .then(function(result){value = result})
+      expect(value).to.be.eql(-1)
+    })
+  })
+  describe('lastIndexOf', function(){
+    it('should return last index of value', function(){
+      var value
+      _r(['b', 'a', 'c', 'a', 'a', 'd'])
+        .lastIndexOf('a')
+        .then(function(result){value = result})
+      expect(value).to.be.eql(4)
+
+      _r(['b', 'a', 'c', 'a', 'a', 'd'])
+        .lastIndexOf('b')
+        .then(function(result){value = result})
+      expect(value).to.be.eql(0)
+
+      _r(['b', 'a', 'c', 'a', 'a', 'd'])
+        .lastIndexOf('d')
+        .then(function(result){value = result})
+      expect(value).to.be.eql(5)
+
+      _r(['b', 'a', 'c', 'a', 'a', 'd'])
+        .lastIndexOf('e')
+        .then(function(result){value = result})
+      expect(value).to.be.eql(-1)
+    })
+  })
   describe('concat', function(){
     it('should concat at end', function(){
       var value

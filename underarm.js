@@ -903,6 +903,43 @@ function join(producer, separator){
       })
 }
 
+_r.indexOf = indexOf
+function indexOf(producer, value){
+  var idx = 0
+  return produceWithIterator(
+        producer
+      , context
+      , function(obj){return value === obj}
+      , function(consumer, value, found){
+          if(found){
+            resolveSingleValue(consumer, idx)
+          }
+          idx++
+        }
+      , function(consumer){
+          resolveSingleValue(consumer, -1)
+        })
+}
+
+_r.lastIndexOf = lastIndexOf
+function lastIndexOf(producer, value){
+  var idx = 0
+    , lastIdx = -1
+  return produceWithIterator(
+        producer
+      , context
+      , function(obj){return value === obj}
+      , function(consumer, value, found){
+          if(found){
+            lastIdx = idx
+          }
+          idx++
+        }
+      , function(consumer){
+          resolveSingleValue(consumer, lastIdx)
+        })
+}
+
 _r.concat = concat
 function concat(producer){
   var toConcat = _slice.call(arguments, 1)
