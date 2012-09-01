@@ -44,8 +44,10 @@ describe('basic tests', function(){
       expect(_r.indexOf).to.be.a('function')
       expect(_r.lastIndexOf).to.be.a('function')
       expect(_r.concat).to.be.a('function')
-      expect(_r.flatten).to.be.a('function')
       expect(_r.compact).to.be.a('function')
+      expect(_r.flatten).to.be.a('function')
+      expect(_r.without).to.be.a('function')
+      expect(_r.unique).to.be.a('function')
     })
 
     it('should have aliases', function(){
@@ -63,6 +65,7 @@ describe('basic tests', function(){
       expect(_r.invoke).to.be.equal(_r.call)
       expect(_r.first).to.be.equal(_r.head)
       expect(_r.rest).to.be.equal(_r.tail)
+      expect(_r.unique).to.be.equal(_r.uniq)
     })
 
     describe('identity', function(){

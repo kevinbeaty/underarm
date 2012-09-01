@@ -64,6 +64,9 @@ var ObjectProto = Object.prototype
     }
     return -1
   }
+  , _inArray = function(array, value){
+     return _indexOf.call(array, value) >= 0
+  }
   , _removeFrom = function(array, value){
       var idx = _indexOf.call(array, value)
       if(idx >= 0){
@@ -918,6 +921,11 @@ function concat(producer){
   return produce(producer, null, null, countdown)
 }
 
+_r.compact = compact
+function compact(producer){
+  return filter(producer, function(val){return !!val})
+}
+
 _r.flatten = flatten
 function flatten(producer, shallow){
   return produceWithIterator(
@@ -937,15 +945,29 @@ function flatten(producer, shallow){
       })
 }
 
-_r.compact = compact
-function compact(producer){
-  return filter(producer, function(val){return !!val})
-}
-
 _r.without = without
 function without(producer){
   var values = _slice.call(arguments, 1)
-  return reject(function(val){return _indexOf.call(values, val) >= 0})
+  return reject(producer, function(val){return _inArray(values, val)})
+}
+
+_r.uniq = _r.unique = unique
+function unique(producer, isSorted, iterator) {
+  var last = []
+  return produceWithIterator(
+      producer
+    , context
+    , iterator
+    , function(consumer, value, result){
+        if(!_inArray(last, result)){
+          consumer.next(result)
+        }
+        if(isSorted){
+          last[0] = result
+        } else {
+          _push.call(last, result)
+        }
+      })
 }
 
 function Underarm(obj, func, args) {

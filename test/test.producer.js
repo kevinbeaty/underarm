@@ -1393,6 +1393,17 @@ describe('producer tests', function(){
       expect(value).to.be.eql([1, 2, 4, 4, 5, 6, 7])
     })
   })
+  describe('compact', function(){
+    it('should remove falsey values', function(){
+      var value
+      _r([0, 1, 2, [], [1], false, true, void 0, 0
+          , 3, 4, null, NaN, undefined, "", 'hello', {}])
+        .compact()
+        .then(function(result){value = result})
+
+      expect(value).to.be.eql([1, 2, [], [1], true, 3, 4, 'hello', {}])
+    })
+  })
   describe('flatten', function(){
     it('should flatten nested arrays', function(){
       var value
@@ -1477,15 +1488,75 @@ describe('producer tests', function(){
 
     })
   })
-  describe('compact', function(){
-    it('should remove falsey values', function(){
+  describe('without', function(){
+    it('should remove values', function(){
       var value
-      _r([0, 1, 2, [], [1], false, true, void 0, 0
-          , 3, 4, null, NaN, undefined, "", 'hello', {}])
-        .compact()
+      _r([1, 2, 3, 4, 5])
+        .without(1)
+        .without(3, 4)
         .then(function(result){value = result})
+      expect(value).to.be.eql([2, 5])
 
-      expect(value).to.be.eql([1, 2, [], [1], true, 3, 4, 'hello', {}])
+      _r([1, 2, 3, 4, 5, 4, 1, 2, 6, 3])
+        .without(1, 3, 4)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([2, 5, 2, 6])
+    })
+  })
+  describe('unique', function(){
+    it('should remove duplicate values', function(){
+      var value
+      _r([1, 2, 3, 4, 5])
+        .unique()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5])
+
+      _r([1, 2, 3, 4, 5])
+        .unique(true)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5])
+
+      _r([1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5])
+        .unique()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5])
+
+      _r([1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5])
+        .unique(true)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5])
+
+      _r([1, 2, 3, 4, 5, 4, 1, 2, 6, 3])
+        .unique()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6])
+    })
+    it('should remove duplicate values with iterator', function(){
+      var value
+      _r([1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5])
+        .unique(false, _r.identity)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5])
+
+      _r([1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5])
+        .unique(true, _r.identity)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5])
+
+      _r([{a: 1, b:4}, {a:1, b:3}, {a:2, b:2}])
+        .unique(true, function(val){return val.a})
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2])
+
+      _r([{a: 1, b:4}, {a:1, b:3}, {a:2, b:2}])
+        .unique(false, function(val){return val.a})
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2])
+
+      _r([{a: 1, b:4}, {a:1, b:3}, {a:2, b:3}])
+        .unique(true, function(val){return val.b})
+        .then(function(result){value = result})
+      expect(value).to.be.eql([4, 3])
     })
   })
 })
