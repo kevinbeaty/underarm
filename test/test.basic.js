@@ -48,6 +48,7 @@ describe('basic tests', function(){
       expect(_r.flatten).to.be.a('function')
       expect(_r.without).to.be.a('function')
       expect(_r.unique).to.be.a('function')
+      expect(_r.union).to.be.a('function')
     })
 
     it('should have aliases', function(){

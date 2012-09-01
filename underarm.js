@@ -952,7 +952,7 @@ function without(producer){
 }
 
 _r.uniq = _r.unique = unique
-function unique(producer, isSorted, iterator) {
+function unique(producer, isSorted, iterator){
   var last = []
   return produceWithIterator(
       producer
@@ -968,6 +968,11 @@ function unique(producer, isSorted, iterator) {
           _push.call(last, result)
         }
       })
+}
+
+_r.union = union
+function union(){
+  return unique(flatten(_slice.call(arguments)))
 }
 
 function Underarm(obj, func, args) {

@@ -1559,4 +1559,46 @@ describe('producer tests', function(){
       expect(value).to.be.eql([4, 3])
     })
   })
+  describe('union', function(){
+    it('should compute union of arrays', function(){
+      var value
+      _r([1, 2, 3])
+        .union([1, 3, 2, 4, 1, 5])
+        .union([10, 8, 2, 1])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 10, 8])
+
+      _r([1, 2, 3])
+        .union([1, 3, 2, 4, 1, 5], [10, 8, 2, 1])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 10, 8])
+
+      var value
+      _r([])
+        .union([1, 2, 3], [1, 3, 2, 4, 1, 5], [10, 8, 2, 1])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 10, 8])
+    })
+    it('should compute union of producers', function(){
+      var value
+      _r([1, 2, 3, -1, -2, -3])
+        .union(_r([1, 3, 2, 4, 1, 5]).map(function(val){return -val}))
+        .union(_r([10, 8, 2, 1, -1, -5]).reverse())
+        .sort()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([-5, -4, -3, -2, -1, 1, 2, 3, 8, 10])
+
+      _r([1, 2, 3])
+        .union(_r([1, 3, 2, 4, 1, 5]).map(function(val){return -val}), _r.sort([10, 8, 2, 1]))
+        .sort()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([-5, -4, -3, -2, -1, 1, 2, 3, 8, 10])
+
+      var value
+      _r([])
+        .union(_r.sort([1, 2, 3]), _r.reverse([1, 3, 2, 4, 1, 5]), _r.map([10, 8, 2, 1], _r.identity))
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 5, 4, 10, 8])
+    })
+  })
 })
