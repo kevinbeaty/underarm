@@ -50,6 +50,7 @@ describe('basic tests', function(){
       expect(_r.unique).to.be.a('function')
       expect(_r.union).to.be.a('function')
       expect(_r.intersection).to.be.a('function')
+      expect(_r.difference).to.be.a('function')
     })
 
     it('should have aliases', function(){

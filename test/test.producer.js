@@ -1660,4 +1660,54 @@ describe('producer tests', function(){
       expect(value).to.be.eql([1, nested])
     })
   })
+  describe('difference', function(){
+    it('should compute difference of arrays', function(){
+      var value
+      _r([1, 2, 8, 7, 3, 4, 5, 6, 7, 10, 11, 6])
+        .difference([1, 3, 2, 4, 1, 5])
+        .difference([10, 8, 2, 1])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([7, 6, 7, 11, 6])
+
+      _r([-1, 0, 1, 2, 3, 11, 12])
+        .difference([1, 3, 2, 4, 1, 5], [10, 8, 2, 1])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([-1, 0, 11, 12])
+
+      var value
+      _r([3, 4, 10])
+        .difference([1, 2, 3], [1, 3, 2, 4, 1, 5], [10, 8, 2, 1])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([])
+    })
+    it('should compute difference of producers', function(){
+      var value
+      _r([1, 2, 3, -1, -2, -3, 1, 2, -3, -1, 11])
+        .difference(_r([1, 3, 2, 4, 1, 5, -1, -2]).map(function(val){return -val}))
+        .difference(_r([10, 8, 2, 1, -1, -5]).reverse())
+        .sort()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([3, 11])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .difference(_r([1, 3, 2, 4, 1, 5]).map(_r.identity), _r.sort([10, 8, 2, 1]))
+        .sort()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([6])
+
+      var value
+      _r([6, 1, 5, 7, 5, 2, 6])
+        .difference(_r.sort([4, 1, 2, 3]), _r.reverse([1, 3, 2, 4, 1, 5]), _r.map([10, 8, 2, 1], _r.identity))
+        .then(function(result){value = result})
+      expect(value).to.be.eql([6, 7, 6])
+    })
+    it('should not flatten nested arrays', function(){
+      var value
+      var nested = [3, 2]
+      _r([1, [2, 3], 3, nested, [3, 2]])
+        .difference([1, [2, 3], 2, nested, 4, 1, 5])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([[2,3], 3, [3, 2]])
+    })
+  })
 })

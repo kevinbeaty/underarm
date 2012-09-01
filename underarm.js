@@ -31,23 +31,23 @@ var ObjectProto = Object.prototype
   , ArrayProto = Array.prototype
   , toString = ObjectProto.toString
   , hasOwnProp = ObjectProto.hasOwnProperty
-  , isArray = Array.isArray || function(obj) {
-      return toString.call(obj) == '[object Array]'
-  }
-  , isUndefined = function(obj) {
-      return obj === void 0
-  }
-  , isObject = function(obj) {
-      return obj === Object(obj)
-  }
-  , isFunction = function(obj){
-      return toString.call(obj) == '[object Function]'
-  }
+  , predicateEqual = function(obj){
+      return function(value){
+        return value === obj
+      }
+    }
+  , predicateToString = function(str){
+      return function(value){
+        return toString.call(value) == str
+      }
+    }
+  , isArray = Array.isArray || predicateToString('[object Array]')
+  , isUndefined = predicateEqual()
+  , isObject = function(obj){return obj === Object(obj)}
+  , isFunction = predicateToString('[object Function]')
   , _min = Math.min
   , _max = Math.max
-  , _has = function(obj, key) {
-    return obj && hasOwnProp.call(obj, key)
-  }
+  , _has = function(obj, key){return obj && hasOwnProp.call(obj, key)}
   , _pop = ArrayProto.pop
   , _push = ArrayProto.push
   , _slice = ArrayProto.slice
@@ -55,24 +55,32 @@ var ObjectProto = Object.prototype
   , _unshift = ArrayProto.unshift
   , _concat = ArrayProto.concat
   , _indexOf = ArrayProto.indexOf || function(obj){
-    var i = 0
-      , len = this.length
-    for(; i < len; i++){
-      if(this[i] === obj){
-        return i
+      var i = 0
+        , len = this.length
+      for(; i < len; i++){
+        if(this[i] === obj){
+          return i
+        }
+      }
+      return -1
+    }
+  , _inArray = function(array, value){
+       return _indexOf.call(array, value) >= 0
+    }
+  , _removeFrom = function(array, predicate){
+      if(!isFunction(predicate)){
+        predicate = predicateEqual(predicate)
+      }
+
+      var i = 0
+        , len = array.length
+      for(; i < len; i++){
+        if(predicate(array[i], i, array)){
+          _splice.call(array, i--, 1)
+          len--
+        }
       }
     }
-    return -1
-  }
-  , _inArray = function(array, value){
-     return _indexOf.call(array, value) >= 0
-  }
-  , _removeFrom = function(array, value){
-      var idx = _indexOf.call(array, value)
-      if(idx >= 0){
-        _splice.call(array, idx, 1)
-      }
-  }
   , _sortedIndex = function(array, obj, iterator) {
       iterator = iterator ? iterator : identity
       var value = iterator(obj)
@@ -89,10 +97,10 @@ var ObjectProto = Object.prototype
         }
       }
       return low
-  }
+    }
   , lookupIterator = function(obj, val) {
-    return isFunction(val) ? val : function(obj){return obj[val]}
-  }
+      return isFunction(val) ? val : function(obj){return obj[val]}
+    }
   , console = root.console || {
         log:identity
       , error:identity
@@ -111,12 +119,11 @@ function defaultErrorHandler(handler){
 }
 
 var Producer = (function(){
-  function Producer(){
+  function Producer(onSubscribe){
     this.consumers = []
+    this.onSubscribe = onSubscribe
   }
   var P = Producer.prototype
-
-  P.onSubscribe = null
 
   P.subscribe = subscribe
   function subscribe(next, complete, error){
@@ -302,14 +309,14 @@ var singleValueResolveUndefined = singleValueResolveValue({})
   , singleValueResolveTrue = singleValueResolveValue({value:true})
   , singleValueResolveNegativeOne = singleValueResolveValue({value:-1})
 
-function seqNext(consumer, value, arrayOnly){
+function seqNext(consumer, value){
   if(isArray(value)){
     var i = 0
       , len = value.length
     for(; i < len; i++){
       consumer.next(value[i])
     }
-  } else if(!arrayOnly && isObject(value)){
+  } else if(isObject(value)){
     var key
     for(key in value){
       if(_has(value, key)){
@@ -321,23 +328,23 @@ function seqNext(consumer, value, arrayOnly){
   }
 }
 
-function seqNextResolve(value, arrayOnly){
+function seqNextResolve(value){
   return function(consumer){
-    seqNext(consumer, value, arrayOnly)
+    seqNext(consumer, value)
     consumer.complete()
   }
 }
 
 function isConsumer(producer){
-  return producer instanceof Consumer
+  return producer instanceof Underarm
+      || producer instanceof Consumer
       || producer instanceof Promise
-      || producer instanceof Underarm
 }
 
 function isProducer(producer){
-  return producer instanceof Producer
+  return producer instanceof Underarm
+      || producer instanceof Producer
       || producer instanceof Promise
-      || producer instanceof Underarm
 }
 
 function consumerWrap(next, complete, error){
@@ -346,23 +353,13 @@ function consumerWrap(next, complete, error){
     : new Consumer(next, complete, error)
 }
 
-function producerWrapSingle(value){
-  var producer = new Producer()
-  producer.onSubscribe = singleValueResolveValue({value:value})
-  return producer
-}
-
 function producerWrap(delegate){
-  var producer
-  if(isProducer(delegate)){
-    producer = delegate
-  } else if(isArray(delegate)){
-    producer = new Producer()
-    producer.onSubscribe = seqNextResolve(delegate, true)
-  } else {
-    producer = producerWrapSingle(delegate)
-  }
-  return producer
+  return isProducer(delegate)
+    ? delegate
+    : new Producer(
+        isArray(delegate)
+          ? seqNextResolve(delegate)
+          : singleValueResolveValue({value:delegate}))
 }
 
 function produce(delegate, context, next, complete, error){
@@ -607,7 +604,7 @@ function any(producer, iterator, context){
 
 _r.include = _r.contains = include
 function include(producer, obj, context){
-  return any(producer, function(value){return value === obj}, context)
+  return any(producer, predicateEqual(obj), context)
 }
 
 _r.invoke = _r.call = invoke
@@ -880,7 +877,7 @@ function indexOf(producer, value){
   return produceWithIterator(
         producer
       , context
-      , function(obj){return value === obj}
+      , predicateEqual(value)
       , function(consumer, value, found){
           if(found) singleValueResolve(consumer, idx)
           idx++
@@ -895,7 +892,7 @@ function lastIndexOf(producer, value){
   return produceWithIterator(
         producer
       , context
-      , function(obj){return value === obj}
+      , predicateEqual(value)
       , function(consumer, value, found){
           if(found) lastIdx.value = idx
           idx++
@@ -934,14 +931,14 @@ function flatten(producer, shallow){
     , function(val){
         if(isArray(val) || isProducer(val)){
           if(shallow){
-            return seq(producerWrapSingle(val))
+            return concat(val)
           }
           return flatten(val)
         }
         return val
       }
     , function(consumer, value, result){
-        seqNext(consumer, result, true)
+        seqNext(consumer, result)
       })
 }
 
@@ -972,7 +969,7 @@ function unique(producer, isSorted, iterator){
 
 _r.union = union
 function union(){
-  return unique(concat.apply(this, _slice.call(arguments)))
+  return unique(flatten(_slice.call(arguments), true))
 }
 
 _r.intersection = intersection
@@ -987,13 +984,12 @@ function intersection(producer){
               toIntersect[i++]
             , null
             , function(consumer, values){
-                var intI = 0
-                for(; intI < intersected.length; intI++){
-                  if(!_inArray(values, intersected[intI])){
-                    _splice.call(intersected, intI--, 1)
-                  }
+                _removeFrom(intersected, function(val){return !_inArray(values, val)})
+                if(!intersected.length){
+                  consumer.complete()
+                } else {
+                  countdown(consumer)
                 }
-                countdown(consumer)
               })
             .subscribe(consumer)
         }
@@ -1012,6 +1008,35 @@ function intersection(producer){
         }
       }
     , countdown)
+}
+
+
+_r.difference = difference
+function difference(producer){
+  var toSubtract = _slice.call(arguments, 1)
+    , i = 0
+    , len = toSubtract.length
+    , diffed
+    , countdown = function(consumer, result){
+        if(result) diffed = result
+
+        if(i < len){
+          produce(
+              toSubtract[i++]
+            , null
+            , function(consumer, value){
+                _removeFrom(diffed, value)
+                if(!diffed.length) consumer.complete()
+              }
+            , countdown)
+          .subscribe(diffed)
+        }
+        if(i === len){
+          seqNext(consumer, diffed)
+          consumer.complete()
+        }
+      }
+  return produceOnComplete(producer, null, countdown)
 }
 
 function Underarm(obj, func, args) {
