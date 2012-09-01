@@ -282,37 +282,22 @@ var Promise = (function(){
   return Promise
 })()
 
-function isProducer(producer){
-  return producer instanceof Producer
-      || producer instanceof Promise
-      || producer instanceof Underarm
+function singleValueResolve(consumer, value){
+  consumer.resolveSingleValue = true
+  consumer.next(value)
+  consumer.complete()
 }
 
-function isConsumer(producer){
-  return producer instanceof Consumer
-      || producer instanceof Promise
-      || producer instanceof Underarm
-}
-
-function consumerWrap(next, complete, error){
-  return isConsumer(next)
-    ? next
-    : new Consumer(next, complete, error)
-}
-
-function resolveSingleValue(consumer, value){
-    consumer.resolveSingleValue = true
-    consumer.next(value)
-    consumer.complete()
-}
-
-function producerWrapSingle(delegate){
-  var producer = new Producer()
-  producer.onSubscribe = function(consumer){
-    resolveSingleValue(consumer, delegate)
+function singleValueResolveValue(obj){
+  return function(consumer){
+    singleValueResolve(consumer, obj.value)
   }
-  return producer
 }
+
+var singleValueResolveUndefined = singleValueResolveValue({})
+  , singleValueResolveFalse = singleValueResolveValue({value:false})
+  , singleValueResolveTrue = singleValueResolveValue({value:true})
+  , singleValueResolveNegativeOne = singleValueResolveValue({value:-1})
 
 function seqNext(consumer, value, arrayOnly){
   if(isArray(value)){
@@ -340,13 +325,34 @@ function seqNextResolve(value, arrayOnly){
   }
 }
 
+function isConsumer(producer){
+  return producer instanceof Consumer
+      || producer instanceof Promise
+      || producer instanceof Underarm
+}
+
+function isProducer(producer){
+  return producer instanceof Producer
+      || producer instanceof Promise
+      || producer instanceof Underarm
+}
+
+function consumerWrap(next, complete, error){
+  return isConsumer(next)
+    ? next
+    : new Consumer(next, complete, error)
+}
+
+function producerWrapSingle(value){
+  var producer = new Producer()
+  producer.onSubscribe = singleValueResolveValue({value:value})
+  return producer
+}
+
 function producerWrap(delegate){
   var producer
   if(isProducer(delegate)){
     producer = delegate
-  } else if(isFunction(delegate)){
-    producer = new Producer()
-    producer.onSubscribe = delegate
   } else if(isArray(delegate)){
     producer = new Producer()
     producer.onSubscribe = seqNextResolve(delegate, true)
@@ -354,25 +360,6 @@ function producerWrap(delegate){
     producer = producerWrapSingle(delegate)
   }
   return producer
-}
-
-_r.promise = promise
-function promise(producer){
-  var promise = new Promise()
-  if(!isUndefined(producer)){
-    producer = producerWrap(producer)
-    producer.subscribe(
-        function(value){
-          promise.next(value)
-        }
-      , function(){
-          promise.complete()
-        }
-      , function(err){
-          promise.error(err)
-        })
-  }
-  return chain(promise)
 }
 
 function produce(delegate, context, next, complete, error){
@@ -401,9 +388,18 @@ produce.defaults = {
   , error: function(consumer, err){consumer.error(err)}
 }
 
-_r.seq = seq
-function seq(producer, context){
-  return produce(producer, context, seqNext)
+function produceOnComplete(producer, context, complete, error){
+  var values = []
+  return produce(
+        producer
+      , context
+      , function(consumer, value){
+          _push.call(values, value)
+        }
+      , function(consumer){
+          complete(consumer, values)
+        }
+      , error)
 }
 
 function produceWithIterator(producer, context, iterator, iterate, iterComplete, error){
@@ -461,6 +457,30 @@ function produceWithIterator(producer, context, iterator, iterate, iterComplete,
   return produce(producer, context, next, complete, error)
 }
 
+_r.promise = promise
+function promise(producer){
+  var promise = new Promise()
+  if(!isUndefined(producer)){
+    producer = producerWrap(producer)
+    producer.subscribe(
+        function(value){
+          promise.next(value)
+        }
+      , function(){
+          promise.complete()
+        }
+      , function(err){
+          promise.error(err)
+        })
+  }
+  return chain(promise)
+}
+
+_r.seq = seq
+function seq(producer, context){
+  return produce(producer, context, seqNext)
+}
+
 _r.map = _r.collect = map
 function map(producer, iterator, context){
   return produceWithIterator(
@@ -475,53 +495,42 @@ function map(producer, iterator, context){
 _r.reduce = _r.foldl = _r.inject = reduce
 function reduce(producer, iterator, memo, context){
   var initial = arguments.length > 2
+    , memo = {value:memo}
   return produce(
         producer
       , context
       , function(consumer, value){
           if(!initial){
-            memo = value
+            memo.value = value
             initial = true
           } else {
-            memo = iterator.call(context, memo, value)
+            memo.value = iterator.call(context, memo.value, value)
           }
         }
-      , function(consumer){
-          resolveSingleValue(consumer, memo)
-        })
+      , singleValueResolveValue(memo))
 }
 
-function reduceArray(producer, func){
-  return reduce(
-      producer
-    , function(memo, val){
-        func.call(memo, val)
-        return memo
-      }
-    , [])
+function reduceMemoType(memoType){
+  return function(producer, func){
+    return reduce(
+        producer
+      , function(memo, val){
+          func.call(memo, val)
+          return memo
+        }
+      , new memoType)
+  }
 }
-
-function reduceObject(producer, func){
-  return reduce(
-      producer
-    , function(memo, val){
-        func.call(memo, val)
-        return memo
-      }
-    , {})
-}
+var reduceArray = reduceMemoType(Array)
+var reduceObject = reduceMemoType(Object)
 
 _r.reduceRight = _r.foldr = reduceRight
 function reduceRight(producer, iterator, memo, context){
   var initial = arguments.length > 2
-    , values = []
-  return produce(
+  return produceOnComplete(
         producer
       , context
-      , function(consumer, value){
-          _push.call(values, value)
-        }
-      , function(consumer){
+      , function(consumer, values){
           var i = values.length - 1
           for(; i >= 0; i--){
             if(!initial){
@@ -531,7 +540,7 @@ function reduceRight(producer, iterator, memo, context){
               memo = iterator.call(context, memo, values[i])
             }
           }
-          resolveSingleValue(consumer, memo)
+          singleValueResolve(consumer, memo)
         })
 }
 
@@ -542,11 +551,9 @@ function find(producer, iterator, context){
       , context
       , iterator
       , function(consumer, value, found){
-          if(found){
-            resolveSingleValue(consumer, value)
-          }
+          if(found) singleValueResolve(consumer, value)
         }
-      , resolveSingleValue)
+      , singleValueResolveUndefined)
 }
 
 _r.filter = _r.select = filter
@@ -578,13 +585,9 @@ function every(producer, iterator, context){
     , context
     , iterator
     , function(consumer, value, passes){
-        if(!passes){
-          resolveSingleValue(consumer, false)
-        }
+        if(!passes) singleValueResolveFalse(consumer)
       }
-    , function(consumer){
-        resolveSingleValue(consumer, true)
-      })
+    , singleValueResolveTrue)
 }
 
 _r.any = _r.some = any
@@ -594,13 +597,9 @@ function any(producer, iterator, context){
     , context
     , iterator
     , function(consumer, value, passes){
-        if(passes){
-          resolveSingleValue(consumer, true)
-        }
+        if(passes) singleValueResolveTrue(consumer)
       }
-    , function(consumer){
-        resolveSingleValue(consumer, false)
-      })
+    , singleValueResolveFalse)
 }
 
 _r.include = _r.contains = include
@@ -634,9 +633,7 @@ function max(producer, iterator, context){
           max.computed = computed
         }
       }
-    , function(consumer){
-        resolveSingleValue(consumer, max.value)
-      })
+    , singleValueResolveValue(max))
 }
 
 _r.min = min
@@ -652,9 +649,7 @@ function min(producer, iterator, context){
           min.computed = computed
         }
       }
-    , function(consumer){
-        resolveSingleValue(consumer, min.value)
-      })
+    , singleValueResolveValue(min))
 }
 
 _r.sortBy = sortBy
@@ -732,7 +727,7 @@ function sliceWithSingleValueOption(producer, singleValueOption, begin, end){
 
   if(begin >= 0 && (!hasEnd || end >= 0)){
     if(singleValueOption && hasEnd && (end - begin === 1)){
-      return produce(producer, null, resolveSingleValue)
+      return produce(producer, null, singleValueResolve)
     }
 
     return produce(
@@ -749,14 +744,10 @@ function sliceWithSingleValueOption(producer, singleValueOption, begin, end){
         })
   }
 
-  var results = []
-  return produce(
+  return produceOnComplete(
         producer
       , null
-      , function(consumer, value){
-          _push.call(results, value)
-        }
-      , function(consumer){
+      , function(consumer, results){
           var i = 0
             , len = results.length
 
@@ -765,7 +756,7 @@ function sliceWithSingleValueOption(producer, singleValueOption, begin, end){
 
           if(singleValueOption && (!hasEnd && begin === len - 1)
               || (hasEnd && (end - begin === 1))){
-            resolveSingleValue(consumer, results[begin])
+            singleValueResolve(consumer, results[begin])
           } else {
             for(i = _max(0, begin); i < _min(len, end); i++){
               consumer.next(results[i])
@@ -833,14 +824,10 @@ function splice(producer, index, howMany){
       , addToAdd)
   }
 
-  var results = []
-  return produce(
+  return produceOnComplete(
         producer
       , null
-      , function(consumer, value){
-          _push.call(results, value)
-        }
-      , function(consumer){
+      , function(consumer, results){
           var len = results.length
           index = len + index
 
@@ -880,16 +867,8 @@ function unshift(producer){
 
 _r.join = join
 function join(producer, separator){
-  if(isUndefined(separator)){
-    separator = ','
-  } else {
-    separator += ''
-  }
-  return reduce(
-      producer
-    , function(memo, val){
-        return memo+separator+val
-      })
+  separator = isUndefined(separator) ? ',' : separator += ''
+  return reduce(producer, function(memo, val){return memo+separator+val})
 }
 
 _r.indexOf = indexOf
@@ -900,33 +879,25 @@ function indexOf(producer, value){
       , context
       , function(obj){return value === obj}
       , function(consumer, value, found){
-          if(found){
-            resolveSingleValue(consumer, idx)
-          }
+          if(found) singleValueResolve(consumer, idx)
           idx++
         }
-      , function(consumer){
-          resolveSingleValue(consumer, -1)
-        })
+      , singleValueResolveNegativeOne)
 }
 
 _r.lastIndexOf = lastIndexOf
 function lastIndexOf(producer, value){
   var idx = 0
-    , lastIdx = -1
+    , lastIdx = {value: -1}
   return produceWithIterator(
         producer
       , context
       , function(obj){return value === obj}
       , function(consumer, value, found){
-          if(found){
-            lastIdx = idx
-          }
+          if(found) lastIdx.value = idx
           idx++
         }
-      , function(consumer){
-          resolveSingleValue(consumer, lastIdx)
-        })
+      , singleValueResolveValue(lastIdx))
 }
 
 _r.concat = concat
