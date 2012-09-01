@@ -1600,5 +1600,64 @@ describe('producer tests', function(){
         .then(function(result){value = result})
       expect(value).to.be.eql([1, 2, 3, 5, 4, 10, 8])
     })
+    it('should not flatten nested arrays', function(){
+      var value
+      _r([1, [2], 3])
+        .union([1, [3, 2], 4, 1, 5])
+        .union([[[[10]]], 8, 2, 1])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, [2], 3, [3, 2], 4, 5, [[[10]]], 8, 2])
+    })
+  })
+  describe('intersection', function(){
+    it('should compute intersection of arrays', function(){
+      var value
+      _r([1, 2, 3])
+        .intersection([1, 3, 2, 4, 1, 5])
+        .intersection([10, 8, 2, 1])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2])
+
+      _r([1, 2, 3])
+        .intersection([1, 3, 2, 4, 1, 5], [10, 8, 2, 1])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2])
+
+      var value
+      _r([3])
+        .intersection([1, 2, 3], [1, 3, 2, 4, 1, 5], [10, 8, 2, 1])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([])
+    })
+    it('should compute intersection of producers', function(){
+      var value
+      _r([1, 2, 3, -1, -2, -3, 1, 2, -3, -1])
+        .intersection(_r([1, 3, 2, 4, 1, 5, -1, -2]).map(function(val){return -val}))
+        .intersection(_r([10, 8, 2, 1, -1, -5]).reverse())
+        .sort()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([-1, 1, 2])
+
+      _r([1, 2, 3])
+        .intersection(_r([1, 3, 2, 4, 1, 5]).map(_r.identity), _r.sort([10, 8, 2, 1]))
+        .sort()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2])
+
+      var value
+      _r([1, 3])
+        .intersection(_r.sort([1, 2, 3]), _r.reverse([1, 3, 2, 4, 1, 5]), _r.map([10, 8, 2, 1], _r.identity))
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1])
+    })
+    it('should not flatten nested arrays', function(){
+      var value
+        , nested = [2]
+      _r([1, nested, 3])
+        .intersection([1, nested, [3, 2], 4, 1, 5])
+        .intersection([[[[10]]], nested, 8, 2, 1])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, nested])
+    })
   })
 })

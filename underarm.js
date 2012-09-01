@@ -972,7 +972,46 @@ function unique(producer, isSorted, iterator){
 
 _r.union = union
 function union(){
-  return unique(flatten(_slice.call(arguments)))
+  return unique(concat.apply(this, _slice.call(arguments)))
+}
+
+_r.intersection = intersection
+function intersection(producer){
+  var intersected = []
+  var toIntersect = _slice.call(arguments, 1)
+    , i = 0
+    , len = toIntersect.length
+    , countdown = function(consumer){
+        if(i < len){
+          produceOnComplete(
+              toIntersect[i++]
+            , null
+            , function(consumer, values){
+                var intI = 0
+                for(; intI < intersected.length; intI++){
+                  if(!_inArray(values, intersected[intI])){
+                    _splice.call(intersected, intI--, 1)
+                  }
+                }
+                countdown(consumer)
+              })
+            .subscribe(consumer)
+        }
+        if(i === len){
+          seqNext(consumer, intersected)
+          consumer.complete()
+        }
+      }
+
+  return produce(
+      producer
+    , null
+    , function(consumer, value){
+        if(!_inArray(intersected, value)){
+          _push.call(intersected, value)
+        }
+      }
+    , countdown)
 }
 
 function Underarm(obj, func, args) {
