@@ -294,24 +294,10 @@ function isConsumer(producer){
       || producer instanceof Underarm
 }
 
-function consumerWrap(next, complete, error){
-  return isConsumer(next)
-    ? next
-    : new Consumer(next, complete, error)
-}
-
 function resolveSingleValue(consumer, value){
     consumer.resolveSingleValue = true
     consumer.next(value)
     consumer.complete()
-}
-
-function producerWrapSingle(delegate){
-  var producer = new Producer()
-  producer.onSubscribe = function(consumer){
-    resolveSingleValue(consumer, delegate)
-  }
-  return producer
 }
 
 function seqNext(consumer, value, arrayOnly){
@@ -338,6 +324,20 @@ function seqNextResolve(value, arrayOnly){
     seqNext(consumer, value, arrayOnly)
     consumer.complete()
   }
+}
+
+function consumerWrap(next, complete, error){
+  return isConsumer(next)
+    ? next
+    : new Consumer(next, complete, error)
+}
+
+function producerWrapSingle(delegate){
+  var producer = new Producer()
+  producer.onSubscribe = function(consumer){
+    resolveSingleValue(consumer, delegate)
+  }
+  return producer
 }
 
 function producerWrap(delegate){

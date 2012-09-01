@@ -44,6 +44,7 @@ describe('basic tests', function(){
       expect(_r.indexOf).to.be.a('function')
       expect(_r.lastIndexOf).to.be.a('function')
       expect(_r.concat).to.be.a('function')
+      expect(_r.flatten).to.be.a('function')
       expect(_r.compact).to.be.a('function')
     })
 

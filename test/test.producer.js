@@ -1393,6 +1393,90 @@ describe('producer tests', function(){
       expect(value).to.be.eql([1, 2, 4, 4, 5, 6, 7])
     })
   })
+  describe('flatten', function(){
+    it('should flatten nested arrays', function(){
+      var value
+      _r([1, [2], [3, [[4]]]])
+        .flatten()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4])
+
+      _r([1, [[[2, [3]]]], [[4, [[[[5]]]]], 6], 7])
+        .flatten()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6, 7])
+
+      _r([1, [2, 3], [[4, 5], 6], 7])
+        .flatten()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6, 7])
+
+      _r([1, [2, 3], [4, 5, 6], 7])
+        .flatten()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6, 7])
+
+      _r([1, 2, 3, 4, 5, 6, 7])
+        .flatten()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6, 7])
+    })
+    it('should flatten nested arrays shallow', function(){
+      var value
+      _r([1, [2], [3, [[4]]]])
+        .flatten(true)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, [[4]]])
+
+      _r([1, [[[2, [3]]]], [[4, [[[[5]]]]], 6], 7])
+        .flatten(true)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, [[2, [3]]], [4, [[[[5]]]]], 6, 7])
+
+      _r([1, [2, 3], [[4, 5], 6], 7])
+        .flatten(true)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, [4, 5], 6, 7])
+
+      _r([1, [2, 3], [4, 5, 6], 7])
+        .flatten(true)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6, 7])
+
+      _r([1, 2, 3, 4, 5, 6, 7])
+        .flatten(true)
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6, 7])
+    })
+    it('should flatten nested producers', function(){
+      var value
+      _r([1, [[[2, [_r([1,2,3]).any()]]]], [[_r([1,2]).map(function(x){return x*2}), [[[[5]]]]], 6], 7])
+        .flatten()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, true, 2, 4, 5, 6, 7])
+
+      _r([1, [_r.all([1,1,false]), 3], [[4, _r([4,2,1]).sort()], 6], 7])
+        .flatten()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, false, 3, 4, 1, 2, 4, 6, 7])
+
+      _r([1, [[_r([2, 3]).reverse()]], _r([4, 5, 6]).last(2), _r(7).first()])
+        .flatten()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 3, 2, 5, 6, 7])
+
+      _r(_r([_r([1, 2, 3]), _r([4, 5, 6, 7]).reverse().sort()]).reverse())
+        .flatten()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([4, 5, 6, 7, 1, 2, 3])
+
+      _r([_r([1,2,3]), _r([4, 5, 6]), [7, 8], 9, 10])
+        .flatten()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+    })
+  })
   describe('compact', function(){
     it('should remove falsey values', function(){
       var value
