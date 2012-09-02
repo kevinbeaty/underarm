@@ -1202,6 +1202,25 @@ function defaults(producer){
       })
 }
 
+_r.tap = tap
+function tap(producer, doNext, doComplete, doError){
+  return produce(
+      producer
+    , null
+    , function(consumer, obj){
+        if(isFunction(doNext)) doNext(obj)
+        consumer.next(obj)
+      }
+    , function(consumer){
+        if(isFunction(doComplete)) doComplete()
+        consumer.complete()
+      }
+    , function(consumer, error){
+        if(isFunction(doError)) doError(error)
+        consumer.error(error)
+      })
+}
+
 function Underarm(obj, func, args) {
   if(isUndefined(obj)){
     this._detached = true

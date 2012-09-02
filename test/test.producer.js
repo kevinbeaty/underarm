@@ -1967,4 +1967,112 @@ describe('producer tests', function(){
       expect(values).to.eql([{b:4, c:5, d:6, e:9},{a:1, b:2, c:3, d:6, e:9}])
     })
   })
+  describe('tap', function(){
+    it('should tap next', function(){
+      var values = []
+        , tapped = []
+      _r([1, 2, 3, 4, 5])
+        .tap(function(val){tapped.push(val)})
+        .then(function(val){values = val})
+      expect(values).to.eql([1, 2, 3, 4, 5])
+      expect(values).to.eql(tapped)
+    })
+    it('should tap next, complete', function(){
+      var values = []
+        , tapped = []
+        , expected = []
+        , promise = _r.promise()
+        , completed = false
+      _r(promise)
+        .tap(function(val){tapped.push(val)}, function(){completed = true})
+        .then(function(val){values = val})
+
+      expect(tapped).to.eql(expected)
+      expect(values).to.eql([])
+      expect(completed).to.be(false)
+
+      promise.next(1)
+      expected.push(1)
+
+      expect(tapped).to.eql(expected)
+      expect(values).to.eql([])
+      expect(completed).to.be(false)
+
+      promise.next(2)
+      promise.next(3)
+      expected.push(2)
+      expected.push(3)
+
+      expect(tapped).to.eql(expected)
+      expect(values).to.eql([])
+      expect(completed).to.be(false)
+
+      promise.complete()
+
+      expect(tapped).to.eql(expected)
+      expect(values).to.eql(tapped)
+      expect(completed).to.be(true)
+
+      promise.next(4)
+      promise.next(5)
+      promise.error('err')
+
+      expect(tapped).to.eql(expected)
+      expect(values).to.eql(tapped)
+      expect(completed).to.be(true)
+    })
+    it('should tap next, error', function(){
+      var values = []
+        , tapped = []
+        , expected = []
+        , promise = _r.promise()
+        , completed = false
+        , error = null
+        , errorToSend = 'expected error from tap test'
+      _r(promise)
+        .tap(function(val){tapped.push(val)}
+          , function(){completed = true}
+          , function(err){error = err})
+        .then(function(val){values = val})
+
+      expect(tapped).to.eql(expected)
+      expect(values).to.eql([])
+      expect(completed).to.be(false)
+      expect(error).to.be(null)
+
+      promise.next(1)
+      expected.push(1)
+
+      expect(tapped).to.eql(expected)
+      expect(values).to.eql([])
+      expect(completed).to.be(false)
+      expect(error).to.be(null)
+
+      promise.next(2)
+      promise.next(3)
+      expected.push(2)
+      expected.push(3)
+
+      expect(tapped).to.eql(expected)
+      expect(values).to.eql([])
+      expect(completed).to.be(false)
+      expect(error).to.be(null)
+
+      promise.error(errorToSend)
+
+      expect(tapped).to.eql(expected)
+      expect(values).to.eql([])
+      expect(completed).to.be(false)
+      expect(error).to.eql(errorToSend)
+
+      promise.next(4)
+      promise.next(5)
+      promise.complete()
+
+      expect(values).to.eql([])
+      expect(tapped).to.eql(expected)
+      expect(completed).to.be(false)
+      expect(error).to.eql(errorToSend)
+    })
+  })
 })

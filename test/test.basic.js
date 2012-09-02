@@ -57,6 +57,7 @@ describe('basic tests', function(){
       expect(_r.extend).to.be.a('function')
       expect(_r.pick).to.be.a('function')
       expect(_r.defaults).to.be.a('function')
+      expect(_r.tap).to.be.a('function')
     })
 
     it('should have aliases', function(){
