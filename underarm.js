@@ -1145,6 +1145,63 @@ function values(producer){
   return pluck(seq(producer), 1)
 }
 
+_r.extend = extend
+function extend(producer){
+  var sources = _slice.call(arguments, 1)
+  return produce(
+      producer
+    , null
+    , function(consumer, obj){
+        _forEach.call(sources, function(source){
+          var key
+          for(key in source){
+            obj[key] = source[key]
+          }
+        })
+        consumer.next(obj)
+      })
+}
+
+_r.pick = pick
+function pick(producer){
+  var args = _slice.call(arguments, 1)
+    , keys = []
+
+   _forEach.call(args, function(arg){
+     _forEach.call(isArray(arg) ? arg : [arg], function(key){
+       _push.call(keys, key)
+     })
+   })
+
+  return produce(
+      producer
+    , null
+    , function(consumer, obj){
+        var result = {}
+        _forEach.call(keys, function(key){
+          if(key in obj) result[key] = obj[key]
+        })
+        consumer.next(result)
+      })
+}
+
+_r.defaults = defaults
+function defaults(producer){
+  var sources = _slice.call(arguments, 1)
+  return produce(
+      producer
+    , null
+    , function(consumer, obj){
+        _forEach.call(sources, function(source){
+          var key
+          for(key in source){
+            if(obj[key] == null) obj[key] = source[key]
+          }
+        })
+        consumer.next(obj)
+      })
+}
+
 function Underarm(obj, func, args) {
   if(isUndefined(obj)){
     this._detached = true

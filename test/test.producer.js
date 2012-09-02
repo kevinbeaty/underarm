@@ -1925,4 +1925,46 @@ describe('producer tests', function(){
       expect(values).to.eql([['a', 1], ['b', 2], ['c', 3]])
     })
   })
+  describe('extend', function(){
+    it('should extend entries', function(){
+      var values = []
+      _r([{}, {a:1, b:2, c:3}])
+        .extend({b:4, c:5, d:6}, {c:7, d:8}, {e: 9})
+        .then(function(val){values = val})
+      expect(values).to.eql([{b:4, c:7, d:8, e:9},{a:1, b:4, c:7, d:8, e:9}])
+    })
+  })
+  describe('pick', function(){
+    it('should pick entries', function(){
+      var values = []
+      _r([{a:0}, {a:1, b:2, c:3}])
+        .pick('a', 'b')
+        .then(function(val){values = val})
+      expect(values).to.eql([{a:0}, {a:1, b:2}])
+
+      _r([{a:0}, {a:1, b:2, c:3}])
+        .pick(['a', 'c'])
+        .then(function(val){values = val})
+      expect(values).to.eql([{a:0}, {a:1, c:3}])
+
+      _r([{a:0}, {a:1, b:2, c:3}])
+        .pick(['a','b'], 'c')
+        .then(function(val){values = val})
+      expect(values).to.eql([{a:0}, {a:1, b:2, c:3}])
+
+      _r([{a:0}, {a:1, b:2, c:3}])
+        .pick(['a'], ['b', 'c'])
+        .then(function(val){values = val})
+      expect(values).to.eql([{a:0}, {a:1, b:2, c:3}])
+    })
+  })
+  describe('defaults', function(){
+    it('should fill defaults', function(){
+      var values = []
+      _r([{}, {a:1, b:2, c:3}])
+        .defaults({b:4, c:5, d:6}, {c:7, d:8}, {e: 9})
+        .then(function(val){values = val})
+      expect(values).to.eql([{b:4, c:5, d:6, e:9},{a:1, b:2, c:3, d:6, e:9}])
+    })
+  })
 })
