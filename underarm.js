@@ -52,17 +52,59 @@ var ObjectProto = Object.prototype
   , _push = ArrayProto.push
   , _slice = ArrayProto.slice
   , _splice = ArrayProto.splice
+  , _shift = ArrayProto.shift
   , _unshift = ArrayProto.unshift
   , _concat = ArrayProto.concat
-  , _indexOf = ArrayProto.indexOf || function(obj){
+  , __breaker = {}
+  , __each = function(iterator, context){
       var i = 0
         , len = this.length
       for(; i < len; i++){
-        if(this[i] === obj){
-          return i
+        if(iterator.call(context || this, this[i], i, this) === __breaker){
+          break
         }
       }
-      return -1
+    }
+  , _forEach = ArrayProto.forEach || __each
+  , _forIn = function(iterator, context){
+      var key
+      for(key in this){
+        if(_has(this, key)){
+          if(iterator.call(context || this, this[key], key, this) === __breaker){
+            break
+          }
+        }
+      }
+    }
+  , _some = ArrayProto.some || function(iterator, context){
+      var any = false
+      __each.call(this, function(val, i, arr){
+        if(iterator.call(context, val, i, arr)){
+          any = true
+          return __breaker
+        }
+      }, context)
+      return any
+    }
+  , _every = ArrayProto.every || function(iterator, context){
+      var all = true
+      __each.call(this, function(val, i, arr){
+        if(!iterator.call(context, val, i, arr)){
+          all = false
+          return __breaker
+        }
+      }, context)
+      return all
+    }
+  , _indexOf = ArrayProto.indexOf || function(obj){
+      var idx = -1
+      __each.call(this, function(val, i){
+        if(val === obj){
+          idx = i
+          return __breaker
+        }
+      }, context)
+      return idx
     }
   , _inArray = function(array, value){
        return _indexOf.call(array, value) >= 0
@@ -199,10 +241,12 @@ var Consumer = (function(){
 
   P.onDispose = onDispose
   function onDispose(onDispose){
-    if(this.disposed){
-      onDispose()
-    } else {
-      _push.call(this.onDisposes, onDispose)
+    if(isFunction(onDispose)){
+      if(this.disposed){
+        onDispose()
+      } else {
+        _push.call(this.onDisposes, onDispose)
+      }
     }
   }
 
@@ -282,11 +326,10 @@ var Promise = (function(){
   }
 
   function eachConsumer(target, action, val){
-    var i = 0
-      , consumers = target.producer.consumers
-    for(; i < consumers.length; i++){
-      consumers[i][action](val)
-    }
+    var consumers = _slice.call(target.producer.consumers)
+    _forEach.call(consumers, function(consumer){
+      consumer[action](val)
+    })
   }
 
   return Promise
@@ -311,18 +354,13 @@ var singleValueResolveUndefined = singleValueResolveValue({})
 
 function seqNext(consumer, value){
   if(isArray(value)){
-    var i = 0
-      , len = value.length
-    for(; i < len; i++){
-      consumer.next(value[i])
-    }
+    _forEach.call(value, function(val){
+      consumer.next(val)
+    })
   } else if(isObject(value)){
-    var key
-    for(key in value){
-      if(_has(value, key)){
-        consumer.next([key, value[key]])
-      }
-    }
+    _forIn.call(value, function(val, key){
+      consumer.next([key, val])
+    })
   } else {
     consumer.next(value)
   }
@@ -1010,7 +1048,6 @@ function intersection(producer){
     , countdown)
 }
 
-
 _r.difference = difference
 function difference(producer){
   var toSubtract = _slice.call(arguments, 1)
@@ -1201,22 +1238,14 @@ UnderProto.each = UnderProto.forEach = function(iterator, context){
           , resolveSingleValue = consumer.resolveSingleValue
         if(len){
           if(!resolveSingleValue){
-            for(; key < len; key++){
-              iterator.call(context, result[key], key, result)
-            }
+            _forEach.call(result, iterator, context)
           } else {
             var singleValue = result[0]
             if(singleValue && singleValue.length === +singleValue.length){
               len = singleValue.length
-              for(; key < len; key++){
-                iterator.call(context, singleValue[key], key, singleValue)
-              }
+              _forEach.call(result, iterator, context)
             } else if(isObject(singleValue)){
-              for(key in singleValue){
-                if(_has(singleValue, key)){
-                  iterator.call(context, singleValue[key], key, singleValue)
-                }
-              }
+              _forIn.call(singleValue, iterator, context)
             } else {
               iterator.call(context, singleValue, 0, result)
             }
