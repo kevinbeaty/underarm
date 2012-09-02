@@ -1710,4 +1710,130 @@ describe('producer tests', function(){
       expect(value).to.be.eql([[2,3], 3, [3, 2]])
     })
   })
+  describe('zip', function(){
+    it('should zip arrays', function(){
+      var value
+      _r.then(_r.zip([1, 2, 3], [4, 5, 6])
+        , function(result){value = result})
+      expect(value).to.be.eql([[1, 4], [2, 5], [3, 6]])
+
+      _r([3, 2, 1])
+        .zip([4, 5, 6], [7, 8, 8])
+      .then(function(result){value = result})
+      expect(value).to.be.eql([[3, 4, 7], [2, 5, 8], [1, 6, 8]])
+
+
+      _r([1, 2, 8, 7, 3, 4, 5, 6, 7, 10, 11, 6])
+        .zip([1, 3, 2, 4, 1, 5])
+        .zip([10, 8, 2, 1])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([[[1, 1], 10], [[2, 3], 8], [[8, 2], 2], [[7, 4], 1]])
+
+      _r([-1, 0, 1, 2, 3, 11, 12])
+        .zip([1, 3, 2, 4, 1, 5], [10, 8, 2, 1])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([[-1, 1, 10], [0, 3, 8], [1, 2, 2], [2, 4, 1]])
+
+      var value
+      _r([3, 4, 10])
+        .zip([1, 2, 3], [1, 3, 2, 4, 1, 5], [10, 8, 2, 1])
+        .then(function(result){value = result})
+      expect(value).to.be.eql([[3, 1, 1, 10], [4, 2, 3, 8], [10, 3, 2, 2]])
+    })
+    it('should zip producers', function(){
+      var value
+      _r([1, 2, 3])
+        .zip(_r([1, 3, 2, 4]).map(function(val){return -val}))
+        .zip(_r([10, 8, 2, 1, -1, -5]).reverse())
+        .flatten()
+        .then(function(result){value = result})
+      expect(value).to.be.eql([1, -1, -5, 2, -3, -1, 3, -2, 1])
+
+      _r([1, 2, 3, 4, 5, 6])
+        .zip(_r([1, 3, 2, 4, 1, 5]).map(_r.identity), _r.sort([1, 10, 2, 8]))
+        .then(function(result){value = result})
+      expect(value).to.be.eql([[1, 1, 1], [2, 3, 2], [3, 2, 8], [4, 4, 10]])
+
+      var value
+      _r([6, 1, 5, 7, 5, 2, 6])
+        .zip(_r.sort([4, 1, 2]), _r.reverse([1, 3, 2, 4, 1, 5]), _r.map([10, 8, 2, 1], _r.identity))
+        .then(function(result){value = result})
+      expect(value).to.be.eql([[6, 1, 5, 10], [1, 2, 1, 8], [5, 4, 4, 2]])
+    })
+    it('should shortcut on min depth', function(){
+      var value = null
+        , progress = []
+        , promise = _r.promise()
+      _r([1, 2, 3])
+        .zip(promise)
+        .then(function(result){value = result}, null, function(val){progress.push(val)})
+      expect(value).to.be.eql(null)
+      expect(progress).to.be.eql([])
+
+      promise.next(4)
+      expect(value).to.be.eql(null)
+      expect(progress).to.be.eql([[1, 4]])
+
+      promise.next(5)
+      expect(value).to.be.eql(null)
+      expect(progress).to.be.eql([[1, 4], [2, 5]])
+
+      promise.next(6)
+      expect(value).to.be.eql([[1, 4], [2, 5], [3, 6]])
+      expect(progress).to.be.eql([[1, 4], [2, 5], [3, 6]])
+
+      promise.next(7)
+      expect(value).to.be.eql([[1, 4], [2, 5], [3, 6]])
+      expect(progress).to.be.eql([[1, 4], [2, 5], [3, 6]])
+
+      promise.complete()
+      expect(value).to.be.eql([[1, 4], [2, 5], [3, 6]])
+      expect(progress).to.be.eql([[1, 4], [2, 5], [3, 6]])
+    })
+    it('should zip promises', function(){
+      var value = null
+        , progress = []
+        , promise1 = _r.promise()
+        , promise2 = _r.promise()
+      _r(promise1)
+        .zip(promise2)
+        .then(function(result){value = result}, null, function(val){progress.push(val)})
+      expect(value).to.be.eql(null)
+      expect(progress).to.be.eql([])
+
+      promise2.next(4)
+      expect(value).to.be.eql(null)
+      expect(progress).to.be.eql([])
+
+      promise1.next(1)
+      expect(progress).to.be.eql([[1, 4]])
+
+      promise2.next(5)
+      expect(progress).to.be.eql([[1, 4]])
+
+      promise1.next(2)
+      expect(progress).to.be.eql([[1, 4], [2, 5]])
+
+      promise1.next(3)
+      expect(progress).to.be.eql([[1, 4], [2, 5]])
+
+      promise2.next(6)
+      expect(progress).to.be.eql([[1, 4], [2, 5], [3, 6]])
+
+      expect(value).to.be.eql(null)
+
+      promise1.complete()
+
+      expect(value).to.be.eql([[1, 4], [2, 5], [3, 6]])
+      expect(progress).to.be.eql([[1, 4], [2, 5], [3, 6]])
+
+      promise2.next(7)
+      expect(value).to.be.eql([[1, 4], [2, 5], [3, 6]])
+      expect(progress).to.be.eql([[1, 4], [2, 5], [3, 6]])
+
+      promise2.complete()
+      expect(value).to.be.eql([[1, 4], [2, 5], [3, 6]])
+      expect(progress).to.be.eql([[1, 4], [2, 5], [3, 6]])
+    })
+  })
 })

@@ -25,8 +25,6 @@ describe('basic tests', function(){
       expect(_r.sortBy).to.be.a('function')
       expect(_r.sort).to.be.a('function')
       expect(_r.groupBy).to.be.a('function')
-      expect(_r.zipMap).to.be.a('function')
-      expect(_r.zipMapBy).to.be.a('function')
       expect(_r.toArray).to.be.a('function')
       expect(_r.size).to.be.a('function')
       expect(_r.reverse).to.be.a('function')
@@ -51,6 +49,9 @@ describe('basic tests', function(){
       expect(_r.union).to.be.a('function')
       expect(_r.intersection).to.be.a('function')
       expect(_r.difference).to.be.a('function')
+      expect(_r.zip).to.be.a('function')
+      expect(_r.zipMap).to.be.a('function')
+      expect(_r.zipMapBy).to.be.a('function')
     })
 
     it('should have aliases', function(){

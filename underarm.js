@@ -717,28 +717,6 @@ function groupBy(producer, val, context){
   })
 }
 
-_r.zipMapBy = zipMapBy
-function zipMapBy(producer, val, context){
-  return reduceObject(producer, function(value){
-      var iterator = lookupIterator(value, val)
-        , entry = iterator.call(context, value)
-      if(isArray(entry)){
-        if(entry.length === 2){
-          this[entry[0]] = entry[1]
-        } else {
-          this[entry[0]] = _slice.call(entry, 1)
-        }
-      } else {
-        this[entry] = value
-      }
-  })
-}
-
-_r.zipMap = zipMap
-function zipMap(producer, context){
-  return zipMapBy(producer, identity, context)
-}
-
 _r.toArray = toArray
 function toArray(producer){
   return reduceArray(producer, _push)
@@ -1074,6 +1052,87 @@ function difference(producer){
         }
       }
   return produceOnComplete(producer, null, countdown)
+}
+
+_r.zip = zip
+function zip(){
+  var producer = new Producer()
+    , toZips = _slice.call(arguments)
+
+  producer.onSubscribe = function(consumer){
+    var delegates = []
+      , completeDepth = Infinity
+      , checkComplete = function(){
+          var readyForComplete = delegates.length === toZips.length
+            && _every.call(delegates, function(other){
+                  return other.depth >= completeDepth
+                })
+          if(readyForComplete){
+            consumer.complete()
+          }
+        }
+      , next = function(delegate, val){
+          _push.call(delegate.values, val)
+          delegate.depth++
+
+          var readyForNext = delegates.length === toZips.length
+            && _every.call(delegates, function(other){
+                  return other.values.length
+                })
+
+          if(readyForNext){
+            var zipped = []
+            _forEach.call(delegates, function(delegate){
+              _push.call(zipped, _shift.call(delegate.values))
+            })
+            consumer.next(zipped)
+          }
+          checkComplete()
+        }
+      , complete = function(delegate){
+          if(delegate.depth < completeDepth){
+            completeDepth = delegate.depth
+          }
+          checkComplete()
+        }
+
+    _forEach.call(toZips, function(toZip, i){
+      var delegate = delegates[i] = {
+            producer: producerWrap(toZip)
+          , values: []
+          , depth: 0
+          }
+       , dispose = delegate.producer.subscribe(
+          function(val){next(delegate, val)}
+        , function(){complete(delegate)}
+        , function(err){consumer.error(err)}
+        )
+      consumer.onDispose(dispose)
+    })
+  }
+  return producer
+}
+
+_r.zipMapBy = zipMapBy
+function zipMapBy(producer, val, context){
+  return reduceObject(producer, function(value){
+      var iterator = lookupIterator(value, val)
+        , entry = iterator.call(context, value)
+      if(isArray(entry)){
+        if(entry.length === 2){
+          this[entry[0]] = entry[1]
+        } else {
+          this[entry[0]] = _slice.call(entry, 1)
+        }
+      } else {
+        this[entry] = value
+      }
+  })
+}
+
+_r.zipMap = zipMap
+function zipMap(producer, context){
+  return zipMapBy(producer, identity, context)
 }
 
 function Underarm(obj, func, args) {
