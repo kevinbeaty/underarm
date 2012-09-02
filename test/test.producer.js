@@ -1895,4 +1895,34 @@ describe('producer tests', function(){
       expect(values.age40.name).to.be.eql('sue')
     })
   })
+  describe('keys', function(){
+    it('should iterate keys', function(){
+      var values = []
+      _r({a:1, b:2, c:3})
+        .keys()
+        .sort()
+        .then(function(val){values = val})
+      expect(values).to.eql(['a', 'b', 'c'])
+    })
+  })
+  describe('values', function(){
+    it('should iterate values', function(){
+      var values = []
+      _r({a:1, b:2, c:3})
+        .values()
+        .sort()
+        .then(function(val){values = val})
+      expect(values).to.eql([1, 2, 3])
+    })
+  })
+  describe('entries', function(){
+    it('should iterate entries', function(){
+      var values = []
+      _r({a:1, b:2, c:3})
+        .entries()
+        .sort()
+        .then(function(val){values = val})
+      expect(values).to.eql([['a', 1], ['b', 2], ['c', 3]])
+    })
+  })
 })

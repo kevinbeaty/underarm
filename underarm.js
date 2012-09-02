@@ -514,7 +514,7 @@ function promise(producer){
   return chain(promise)
 }
 
-_r.seq = seq
+_r.seq = _r.entries = seq
 function seq(producer, context){
   return produce(producer, context, seqNext)
 }
@@ -1133,6 +1133,16 @@ function zipObjectBy(producer, val, context){
 _r.zipObject = zipObject
 function zipObject(producer, context){
   return zipObjectBy(producer, identity, context)
+}
+
+_r.keys = keys
+function keys(producer){
+  return pluck(seq(producer), 0)
+}
+
+_r.values = values
+function values(producer){
+  return pluck(seq(producer), 1)
 }
 
 function Underarm(obj, func, args) {

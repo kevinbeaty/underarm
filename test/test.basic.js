@@ -52,9 +52,12 @@ describe('basic tests', function(){
       expect(_r.zip).to.be.a('function')
       expect(_r.zipObject).to.be.a('function')
       expect(_r.zipObjectBy).to.be.a('function')
+      expect(_r.keys).to.be.a('function')
+      expect(_r.values).to.be.a('function')
     })
 
     it('should have aliases', function(){
+      expect(_r.seq).to.be.equal(_r.entries)
       expect(_r.each).to.be.equal(_r.forEach)
       expect(_r.map).to.be.equal(_r.collect)
       expect(_r.reduce).to.be.equal(_r.foldl)
