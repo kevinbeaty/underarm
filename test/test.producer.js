@@ -1836,4 +1836,63 @@ describe('producer tests', function(){
       expect(progress).to.be.eql([[1, 4], [2, 5], [3, 6]])
     })
   })
+  describe('zipObject', function(){
+    var value
+    it('should zip two arrays to object', function(){
+      _r(['a','b', 'c', 'd'])
+        .zip([1, 2, 3, 4])
+        .zipObject()
+        .then(function(result){value = result})
+      expect(value).to.be.eql({a:1, b:2, c:3, d:4})
+    })
+    it('should zip seq object back to object', function(){
+      _r({a:1, b:2, c:3, d:4})
+        .seq()
+        .zipObject()
+        .then(function(result){value = result})
+      expect(value).to.be.eql({a:1, b:2, c:3, d:4})
+    })
+    it('should zip two producers to object', function(){
+      _r(_r.map(['a','b', 'c', 'd'], function(val){return val.toUpperCase()}))
+        .zip(_r([1, 2, 3, 4]).map(function(val){return -val}))
+        .zipObject()
+        .then(function(result){value = result})
+      expect(value).to.be.eql({A:-1, B:-2, C:-3, D:-4})
+    })
+  })
+  describe('zipObjectBy', function(){
+    it('should zip object on identity', function(){
+      var values = []
+
+      _r(['a', 'b', 'c', 'b', 'c', 'c'])
+        .zipObjectBy(_r.identity)
+        .then(function(value){values = value})
+
+      expect(values.a).to.be.eql('a')
+      expect(values.b).to.be.eql('b')
+      expect(values.c).to.be.eql('c')
+    })
+    it('should zip with property', function(){
+      var values = []
+
+      _r([{name:'bob', age:20}, {name:'frank', age:30},{name:'sue', age:40}])
+        .zipObjectBy('name')
+        .then(function(val){values = val})
+
+      expect(values.sue.age).to.eql(40)
+      expect(values.frank.age).to.be.eql(30)
+      expect(values.bob.age).to.be.eql(20)
+    })
+    it('should zip with iterator', function(){
+      var values = []
+
+      _r([{name:'bob', age:20}, {name:'frank', age:30},{name:'sue', age:40}])
+        .zipObjectBy(function(val){return 'age'+val.age})
+        .then(function(val){values = val})
+
+      expect(values.age20.name).to.eql('bob')
+      expect(values.age30.name).to.be.eql('frank')
+      expect(values.age40.name).to.be.eql('sue')
+    })
+  })
 })

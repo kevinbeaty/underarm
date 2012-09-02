@@ -1113,8 +1113,8 @@ function zip(){
   return producer
 }
 
-_r.zipMapBy = zipMapBy
-function zipMapBy(producer, val, context){
+_r.zipObjectBy = zipObjectBy
+function zipObjectBy(producer, val, context){
   return reduceObject(producer, function(value){
       var iterator = lookupIterator(value, val)
         , entry = iterator.call(context, value)
@@ -1130,9 +1130,9 @@ function zipMapBy(producer, val, context){
   })
 }
 
-_r.zipMap = zipMap
-function zipMap(producer, context){
-  return zipMapBy(producer, identity, context)
+_r.zipObject = zipObject
+function zipObject(producer, context){
+  return zipObjectBy(producer, identity, context)
 }
 
 function Underarm(obj, func, args) {

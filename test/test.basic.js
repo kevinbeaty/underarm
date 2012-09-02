@@ -50,8 +50,8 @@ describe('basic tests', function(){
       expect(_r.intersection).to.be.a('function')
       expect(_r.difference).to.be.a('function')
       expect(_r.zip).to.be.a('function')
-      expect(_r.zipMap).to.be.a('function')
-      expect(_r.zipMapBy).to.be.a('function')
+      expect(_r.zipObject).to.be.a('function')
+      expect(_r.zipObjectBy).to.be.a('function')
     })
 
     it('should have aliases', function(){
