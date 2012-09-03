@@ -16,17 +16,6 @@ if (typeof exports !== 'undefined') {
   root['_r'] = _r
 }
 
-_r.noConflict = noConflict
-function noConflict(){
-  root._r = old_r
-  return _r
-}
-
-_r.identity = identity
-function identity(value){
-  return value
-}
-
 var ObjectProto = Object.prototype
   , ArrayProto = Array.prototype
   , toString = ObjectProto.toString
@@ -157,11 +146,6 @@ var ObjectProto = Object.prototype
   , _nextTick = (!isUndefined(process) && isFunction(process.nextTick))
       ? process.nextTick : function(callback){setTimeout(callback, 0)}
 
-_r.defaultErrorHandler = defaultErrorHandler
-function defaultErrorHandler(handler){
-  errorHandler = handler
-}
-
 var Producer = (function(){
   function Producer(onSubscribe){
     this.consumers = []
@@ -291,7 +275,6 @@ var Promise = (function(){
   function next(value){
     if(this.unfulfilled){
       eachConsumer(this, 'next', value)
-      this.value = value
     }
   }
 
@@ -306,19 +289,19 @@ var Promise = (function(){
 
   P.complete = complete
   function complete(){
-    if(this.unfulfilled){
-      eachConsumer(this, 'complete')
-      this.unfulfilled = false
-      this.fulfilled = true
-    }
+    this.resolve()
   }
 
   P.resolve = resolve
   function resolve(value){
-    if(!isUndefined(value)){
-      this.next(value)
+    if(this.unfulfilled){
+      if(!isUndefined(value)){
+        this.resolvedValue = value
+      }
+      eachConsumer(this, 'complete')
+      this.unfulfilled = false
+      this.fulfilled = true
     }
-    this.complete()
   }
 
   P.dispose = dispose
@@ -495,25 +478,6 @@ function produceWithIterator(producer, context, iterator, iterate, iterComplete,
         }
       }
   return produce(producer, context, next, complete, error)
-}
-
-_r.promise = promise
-function promise(producer){
-  var promise = new Promise()
-  if(!isUndefined(producer)){
-    producer = producerWrap(producer)
-    producer.subscribe(
-        function(value){
-          promise.next(value)
-        }
-      , function(){
-          promise.complete()
-        }
-      , function(err){
-          promise.error(err)
-        })
-  }
-  return chain(promise)
 }
 
 _r.seq = _r.entries = seq
@@ -1302,7 +1266,6 @@ function unwrap(obj){
   return (obj instanceof Underarm) ? obj.value() : obj
 }
 
-_r.mixin = mixin
 function mixin(obj) {
   var name
     , func
@@ -1322,7 +1285,29 @@ function mixin(obj) {
   }
 }
 
-_r.mixin(_r)
+mixin(_r)
+_r.mixin = mixin
+
+_r.noConflict = noConflict
+function noConflict(){
+  root._r = old_r
+  return _r
+}
+
+_r.identity = identity
+function identity(value){
+  return value
+}
+
+_r.promise = promise
+function promise(){
+  return chain(new Promise)
+}
+
+_r.defaultErrorHandler = defaultErrorHandler
+function defaultErrorHandler(handler){
+  errorHandler = handler
+}
 
 var UnderProto = Underarm.prototype
 
@@ -1389,41 +1374,79 @@ UnderProto.complete = function(){
 }
 
 _r.then = then
-function then(producer, callback, errback, progback, context){
-  return chain(producer).then(callback, errback, progback, context)
+function then(producer, resolve, error, progress, context){
+  return chain(producer).then(resolve, error, progress, context)
 }
 
-UnderProto.then = function(callback, errback, progback, context){
+UnderProto.then = function(resolve, error, progress, context){
   var nextPromise = promise()
+    , self = unwrap(this)
     , results = []
     , consumer = new Consumer(
-      function(result){
-        if(isFunction(progback)){
-          progback.call(context, result)
+        function(result){
+          if(isFunction(progress)){
+            progress.call(context, result)
+          }
+          if(consumer.resolveSingleValue){
+            results = [result]
+          } else {
+            _push.call(results, result)
+          }
+          nextPromise.next(result)
         }
-        nextPromise.next(result)
-        _push.call(results, result)
-      }
-    , function(){
-        if(isFunction(callback)){
-          callback.call(
-              context
-            , consumer.resolveSingleValue
-              ? results[results.length - 1]
-              : results)
+      , function(){
+          var result =
+                  _has(self, 'resolvedValue')
+                ? self.resolvedValue
+                : consumer.resolveSingleValue
+                ? results[results.length - 1]
+                : results
+          if(isFunction(resolve)){
+            resolve.call(context, result)
+          }
+          nextPromise.resolve(result)
         }
-        nextPromise.complete()
-      }
-    , function(err){
-        if(isFunction(errback)){
-          errback.call(context, err)
-        }
-        nextPromise.error(err)
-      })
-
-  unwrap(this).subscribe(consumer)
+      , function(err){
+          if(isFunction(error)){
+            error.call(context, err)
+          }
+          nextPromise.error(err)
+        })
+  self.subscribe(consumer)
 
   return nextPromise
+}
+
+UnderProto.callback = function(){
+  return this.callbackWithBoundPromise(function(val){this.next(val)})
+}
+
+UnderProto.ncallback = function(){
+  return this.callbackWithBoundPromise(
+    function(err, val){
+      if(err){
+        this.error(err)
+      } else {
+        this.next(val)
+      }
+    })
+}
+
+UnderProto.callbackWithBoundPromise = function(callback){
+  var subj = promise()
+    , cb = function(){callback.apply(subj, arguments)}
+
+  cb.next = function(next){subj.next(next)}
+  cb.resolve = function(val){subj.resolve(val)}
+  cb.complete = function(){subj.complete()}
+  cb.error = function(err){subj.error(err)}
+
+  var nextSubj = this.attach(subj).then()
+  cb.then = function(resolve, error, progress){
+    return nextSubj.then(resolve, error, progress)
+  }
+
+  return cb
 }
 
 _r.each = _r.forEach = each

@@ -514,4 +514,297 @@ describe('promise tests', function(){
 
     })
   })
+  describe('callback', function(){
+    it('should callback until producer complete', function(){
+      var progress = []
+        , expected = []
+        , result = null
+        , error = null
+        , cb = _r()
+            .map(function(val){return val.toUpperCase()})
+            .first(3)
+            .callback()
+
+      cb.then(
+          function(results){result = results}
+        , function(err){error = err}
+        , function(next){progress.push(next)})
+
+      cb('a')
+      expected.push('A')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb('b')
+      expected.push('B')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb('c')
+      expected.push('C')
+      expect(result).to.eql(expected)
+      expect(error).to.be(null)
+      expect(progress).to.eql(expected)
+
+      cb('d')
+      expect(result).to.eql(expected)
+      expect(error).to.be(null)
+      expect(progress).to.eql(expected)
+    })
+    it('should callback until callback complete', function(){
+      var progress = []
+        , expected = []
+        , result = null
+        , error = null
+        , cb = _r()
+            .map(function(val){return val.toUpperCase()})
+            .callback()
+
+      cb.then(
+          function(results){result = results}
+        , function(err){error = err}
+        , function(next){progress.push(next)})
+
+      cb('a')
+      expected.push('A')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb('b')
+      expected.push('B')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb('c')
+      expected.push('C')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb.complete()
+      expect(result).to.eql(expected)
+      expect(error).to.be(null)
+      expect(progress).to.eql(expected)
+
+      cb('d')
+      expect(result).to.eql(expected)
+      expect(error).to.be(null)
+      expect(progress).to.eql(expected)
+    })
+    it('should callback until callback error', function(){
+      var progress = []
+        , expected = []
+        , result = null
+        , error = null
+        , errorToSend = 'expected error callback test'
+        , cb = _r()
+            .map(function(val){return val.toUpperCase()})
+            .callback()
+
+      cb.then(
+          function(results){result = results}
+        , function(err){error = err}
+        , function(next){progress.push(next)})
+
+      cb('a')
+      expected.push('A')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb('b')
+      expected.push('B')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb('c')
+      expected.push('C')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb.error(errorToSend)
+      expect(result).to.eql(null)
+      expect(error).to.be(errorToSend)
+      expect(progress).to.eql(expected)
+
+      cb('d')
+      expect(result).to.eql(null)
+      expect(error).to.be(errorToSend)
+      expect(progress).to.eql(expected)
+    })
+  })
+  describe('ncallback', function(){
+    it('should callback until producer complete', function(){
+      var progress = []
+        , expected = []
+        , result = null
+        , error = null
+        , cb = _r()
+            .map(function(val){return val.toUpperCase()})
+            .first(3)
+            .ncallback()
+
+      cb.then(
+          function(results){result = results}
+        , function(err){error = err}
+        , function(next){progress.push(next)})
+
+      cb(null, 'a')
+      expected.push('A')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb(null, 'b')
+      expected.push('B')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb(null, 'c')
+      expected.push('C')
+      expect(result).to.eql(expected)
+      expect(error).to.be(null)
+      expect(progress).to.eql(expected)
+
+      cb(null, 'd')
+      expect(result).to.eql(expected)
+      expect(error).to.be(null)
+      expect(progress).to.eql(expected)
+    })
+    it('should callback until error through node callback', function(){
+      var progress = []
+        , expected = []
+        , result = null
+        , error = null
+        , errorToSend = 'expected error callback test'
+        , cb = _r()
+            .map(function(val){return val.toUpperCase()})
+            .ncallback()
+
+      cb.then(
+          function(results){result = results}
+        , function(err){error = err}
+        , function(next){progress.push(next)})
+
+      cb(null, 'a')
+      expected.push('A')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb(null, 'b')
+      expected.push('B')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb(null, 'c')
+      expected.push('C')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb(errorToSend)
+      expect(result).to.eql(null)
+      expect(error).to.be(errorToSend)
+      expect(progress).to.eql(expected)
+
+      cb(null, 'd')
+      expect(result).to.eql(null)
+      expect(error).to.be(errorToSend)
+      expect(progress).to.eql(expected)
+    })
+    it('should callback until callback complete', function(){
+      var progress = []
+        , expected = []
+        , result = null
+        , error = null
+        , cb = _r()
+            .map(function(val){return val.toUpperCase()})
+            .ncallback()
+
+      cb.then(
+          function(results){result = results}
+        , function(err){error = err}
+        , function(next){progress.push(next)})
+
+      cb(null, 'a')
+      expected.push('A')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb(null, 'b')
+      expected.push('B')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb(null, 'c')
+      expected.push('C')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb.complete()
+      expect(result).to.eql(expected)
+      expect(error).to.be(null)
+      expect(progress).to.eql(expected)
+
+      cb(null, 'd')
+      expect(result).to.eql(expected)
+      expect(error).to.be(null)
+      expect(progress).to.eql(expected)
+    })
+    it('should callback until callback error', function(){
+      var progress = []
+        , expected = []
+        , result = null
+        , error = null
+        , errorToSend = 'expected error callback test'
+        , cb = _r()
+            .map(function(val){return val.toUpperCase()})
+            .ncallback()
+
+      cb.then(
+          function(results){result = results}
+        , function(err){error = err}
+        , function(next){progress.push(next)})
+
+      cb(null, 'a')
+      expected.push('A')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb(null, 'b')
+      expected.push('B')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb(null, 'c')
+      expected.push('C')
+      expect(result).to.be(null)
+      expect(error).to.be(null)
+      expect(progress).to.be.eql(expected)
+
+      cb.error(errorToSend)
+      expect(result).to.eql(null)
+      expect(error).to.be(errorToSend)
+      expect(progress).to.eql(expected)
+
+      cb(null, 'd')
+      expect(result).to.eql(null)
+      expect(error).to.be(errorToSend)
+      expect(progress).to.eql(expected)
+    })
+  })
 })
