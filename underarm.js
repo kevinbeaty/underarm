@@ -192,12 +192,12 @@ var Consumer = (function(){
     appendToMethod(this, 'next', next)
     appendToMethod(this, 'complete', complete)
     appendToMethod(this, 'error', error)
+
     this.onDisposes = []
+    this.disposed = false
+    this.resolveSingleValue = false
   }
   var P = Consumer.prototype
-
-  P.disposed = false
-  P.resolveSingleValue = false
 
   P.next = next
   function next(value){
@@ -253,20 +253,22 @@ var Consumer = (function(){
 
 var Deferred = (function(){
   function Deferred(){
+    Consumer.call(this)
+
     this.producer = new Producer(function(consumer){
       consumer.resolveSingleValue = true
     })
     this.promise = chain(this.producer)
+    this.resolveSingleValue = true
+
+    this.disposed = false
+    this.unfulfilled = true
+    this.fulfilled = false
+    this.failed = false
   }
+  Deferred.prototype = new Consumer
 
   var P = Deferred.prototype
-
-  P.resolveSingleValue = true
-
-  P.disposed = false
-  P.unfulfilled = true
-  P.fulfilled = false
-  P.failed = false
 
   P.subscribe = subscribe
   function subscribe(next, complete, error){
@@ -318,6 +320,7 @@ var Deferred = (function(){
     _forEach.call(consumers, function(consumer){
       consumer[action](val)
     })
+    Consumer.prototype[action].call(target, val)
   }
 
   Deferred.extend = function(wrapper, wrapped){
@@ -373,9 +376,7 @@ function seqNextResolve(value){
 }
 
 function isConsumer(producer){
-  return producer instanceof Underarm
-      || producer instanceof Consumer
-      || producer instanceof Deferred
+  return producer instanceof Consumer
 }
 
 function isProducer(producer){
@@ -1274,6 +1275,8 @@ function Underarm(obj, func, args) {
   }
 }
 
+var UnderProto = Underarm.prototype
+
 _r.chain = chain
 function chain(obj){
   return (obj instanceof Underarm) ? obj : new Underarm(obj)
@@ -1287,7 +1290,7 @@ function mixin(obj) {
   var name
     , func
     , addToWrapper = function(name, func){
-        Underarm.prototype[name] = function() {
+        UnderProto[name] = function() {
           var args = _slice.call(arguments)
           return new Underarm(this, func, args)
         }
@@ -1325,8 +1328,6 @@ _r.defaultErrorHandler = defaultErrorHandler
 function defaultErrorHandler(handler){
   errorHandler = handler
 }
-
-var UnderProto = Underarm.prototype
 
 UnderProto.attach = function(producer){
   var node = this
