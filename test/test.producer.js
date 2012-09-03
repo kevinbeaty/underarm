@@ -205,20 +205,21 @@ describe('producer tests', function(){
     })
     it('should calculate on complete', function(){
       var values = []
-        , promise = _r.promise()
+        , deferred = _r.deferred()
+        , promise = deferred.promise
 
       promise
         .reduceRight(function(memo, val){return memo - val}, 5)
         .subscribe(function(val){values.push(val)})
 
-      promise.next(1)
-      promise.next(2)
-      promise.next(3)
-      promise.next(4)
+      deferred.next(1)
+      deferred.next(2)
+      deferred.next(3)
+      deferred.next(4)
 
       expect(values).to.be.eql([])
 
-      promise.complete()
+      deferred.complete()
       expect(values).to.be.eql([5-4-3-2-1])
     })
     it('should iterate each as array if memo not object', function(){
@@ -250,16 +251,17 @@ describe('producer tests', function(){
   })
   describe('find', function(){
     it('should find first value', function(){
-      var promise = _r.promise()
+      var deferred = _r.deferred()
+        , promise = deferred.promise
         , values = []
         , find = _r.find(promise, function(val){values.push(val); return (val%2 === 0)})
         , values2 = []
         , s = find.subscribe(function(val){values2.push(val)})
 
-      promise.next(1)
-      promise.next(2)
-      promise.next(3)
-      promise.next(4)
+      deferred.next(1)
+      deferred.next(2)
+      deferred.next(3)
+      deferred.next(4)
 
       expect(values).to.be.eql([1, 2])
       expect(values2).to.be.eql([2])
@@ -409,26 +411,26 @@ describe('producer tests', function(){
   describe('contains', function(){
     it('should short circuit on true', function(){
       var values = []
-        , promise = _r.promise()
+        , deferred = _r.deferred()
+        , promise = deferred.promise
 
       promise
         .contains(5)
         .subscribe(function(val){values.push(val)})
 
-      promise.next(3)
-      promise.next(4)
+      deferred.next(3)
+      deferred.next(4)
 
       expect(values).to.be.eql([])
 
-      promise.next(5)
+      deferred.next(5)
       expect(values).to.be.eql([true])
 
-      promise.next(6)
+      deferred.next(6)
       expect(values).to.be.eql([true])
     })
     it('should chain to true', function(){
       var values = []
-        , promise = _r.promise()
 
       _r.chain([1, 2, 3, 4])
         .contains(3)
@@ -438,7 +440,6 @@ describe('producer tests', function(){
     })
     it('should chain to false', function(){
       var values = []
-        , promise = _r.promise()
 
       _r.chain([1, 2, 3, 4])
         .contains(6)
@@ -592,20 +593,21 @@ describe('producer tests', function(){
     })
     it('should calculate on complete', function(){
       var values = []
-        , promise = _r.promise()
+        , deferred = _r.deferred()
+        , promise = deferred.promise
 
       promise
         .sortBy(_r.identity)
         .subscribe(function(val){values.push(val)})
 
-      promise.next(4)
-      promise.next(-3)
-      promise.next(1)
-      promise.next(2)
+      deferred.next(4)
+      deferred.next(-3)
+      deferred.next(1)
+      deferred.next(2)
 
       expect(values).to.be.eql([])
 
-      promise.complete()
+      deferred.complete()
       expect(values).to.be.eql([-3, 1, 2, 4])
     })
     it('should sort with each', function(){
@@ -632,20 +634,20 @@ describe('producer tests', function(){
     })
     it('should calculate on complete', function(){
       var values = []
-        , promise = _r.promise()
+        , deferred = _r.deferred()
 
-      promise
+      deferred.promise
         .sort()
         .subscribe(function(val){values.push(val)})
 
-      promise.next(4)
-      promise.next(-3)
-      promise.next(1)
-      promise.next(2)
+      deferred.next(4)
+      deferred.next(-3)
+      deferred.next(1)
+      deferred.next(2)
 
       expect(values).to.be.eql([])
 
-      promise.complete()
+      deferred.complete()
       expect(values).to.be.eql([-3, 1, 2, 4])
     })
     it('should sort with each', function(){
@@ -696,18 +698,18 @@ describe('producer tests', function(){
     })
     it('should calculate on complete', function(){
       var values = []
-        , promise = _r.promise()
+        , deferred = _r.deferred()
 
-      promise
+      deferred
         .groupBy(function(val){return val.charAt(0)})
         .subscribe(function(val){values = val})
 
-      promise.next('fred')
-      promise.next('fran')
-      promise.next('sam')
-      promise.next('frank')
+      deferred.next('fred')
+      deferred.next('fran')
+      deferred.next('sam')
+      deferred.next('frank')
 
-      promise.complete()
+      deferred.complete()
 
       expect(values.f).to.be.eql(['fred', 'fran', 'frank'])
       expect(values.s).to.be.eql(['sam'])
@@ -1763,38 +1765,38 @@ describe('producer tests', function(){
     it('should shortcut on min depth', function(){
       var value = null
         , progress = []
-        , promise = _r.promise()
+        , deferred = _r.deferred()
       _r([1, 2, 3])
-        .zip(promise)
+        .zip(deferred.promise)
         .then(function(result){value = result}, null, function(val){progress.push(val)})
       expect(value).to.be.eql(null)
       expect(progress).to.be.eql([])
 
-      promise.next(4)
+      deferred.next(4)
       expect(value).to.be.eql(null)
       expect(progress).to.be.eql([[1, 4]])
 
-      promise.next(5)
+      deferred.next(5)
       expect(value).to.be.eql(null)
       expect(progress).to.be.eql([[1, 4], [2, 5]])
 
-      promise.next(6)
+      deferred.next(6)
       expect(value).to.be.eql([[1, 4], [2, 5], [3, 6]])
       expect(progress).to.be.eql([[1, 4], [2, 5], [3, 6]])
 
-      promise.next(7)
+      deferred.next(7)
       expect(value).to.be.eql([[1, 4], [2, 5], [3, 6]])
       expect(progress).to.be.eql([[1, 4], [2, 5], [3, 6]])
 
-      promise.complete()
+      deferred.complete()
       expect(value).to.be.eql([[1, 4], [2, 5], [3, 6]])
       expect(progress).to.be.eql([[1, 4], [2, 5], [3, 6]])
     })
     it('should zip promises', function(){
       var value = null
         , progress = []
-        , promise1 = _r.promise()
-        , promise2 = _r.promise()
+        , promise1 = _r.deferred()
+        , promise2 = _r.deferred()
       _r(promise1)
         .zip(promise2)
         .then(function(result){value = result}, null, function(val){progress.push(val)})
@@ -1981,9 +1983,9 @@ describe('producer tests', function(){
       var values = []
         , tapped = []
         , expected = []
-        , promise = _r.promise()
+        , deferred = _r.deferred()
         , completed = false
-      _r(promise)
+      _r(deferred.promise)
         .tap(function(val){tapped.push(val)}, function(){completed = true})
         .then(function(val){values = val})
 
@@ -1991,15 +1993,15 @@ describe('producer tests', function(){
       expect(values).to.eql([])
       expect(completed).to.be(false)
 
-      promise.next(1)
+      deferred.next(1)
       expected.push(1)
 
       expect(tapped).to.eql(expected)
       expect(values).to.eql([])
       expect(completed).to.be(false)
 
-      promise.next(2)
-      promise.next(3)
+      deferred.next(2)
+      deferred.next(3)
       expected.push(2)
       expected.push(3)
 
@@ -2007,15 +2009,15 @@ describe('producer tests', function(){
       expect(values).to.eql([])
       expect(completed).to.be(false)
 
-      promise.complete()
+      deferred.complete()
 
       expect(tapped).to.eql(expected)
       expect(values).to.eql(tapped)
       expect(completed).to.be(true)
 
-      promise.next(4)
-      promise.next(5)
-      promise.error('err')
+      deferred.next(4)
+      deferred.next(5)
+      deferred.error('err')
 
       expect(tapped).to.eql(expected)
       expect(values).to.eql(tapped)
@@ -2025,11 +2027,11 @@ describe('producer tests', function(){
       var values = []
         , tapped = []
         , expected = []
-        , promise = _r.promise()
+        , deferred = _r.deferred()
         , completed = false
         , error = null
         , errorToSend = 'expected error from tap test'
-      _r(promise)
+      _r(deferred)
         .tap(function(val){tapped.push(val)}
           , function(){completed = true}
           , function(err){error = err})
@@ -2040,7 +2042,7 @@ describe('producer tests', function(){
       expect(completed).to.be(false)
       expect(error).to.be(null)
 
-      promise.next(1)
+      deferred.next(1)
       expected.push(1)
 
       expect(tapped).to.eql(expected)
@@ -2048,8 +2050,8 @@ describe('producer tests', function(){
       expect(completed).to.be(false)
       expect(error).to.be(null)
 
-      promise.next(2)
-      promise.next(3)
+      deferred.next(2)
+      deferred.next(3)
       expected.push(2)
       expected.push(3)
 
@@ -2058,16 +2060,16 @@ describe('producer tests', function(){
       expect(completed).to.be(false)
       expect(error).to.be(null)
 
-      promise.error(errorToSend)
+      deferred.error(errorToSend)
 
       expect(tapped).to.eql(expected)
       expect(values).to.eql([])
       expect(completed).to.be(false)
       expect(error).to.eql(errorToSend)
 
-      promise.next(4)
-      promise.next(5)
-      promise.complete()
+      deferred.next(4)
+      deferred.next(5)
+      deferred.complete()
 
       expect(values).to.eql([])
       expect(tapped).to.eql(expected)
@@ -2078,14 +2080,14 @@ describe('producer tests', function(){
   describe('defer', function(){
     it('should defer next', function(done){
       var step = 0
-        , promise = _r.promise()
-      promise
+        , deferred = _r.deferred()
+      deferred
         .defer()
         .subscribe(function(val){
             expect(step).to.eql(1)
             done()
           })
-      promise.next(1)
+      deferred.next(1)
       step++
     })
     it('should defer complete', function(done){
@@ -2100,28 +2102,28 @@ describe('producer tests', function(){
     })
     it('should defer error', function(done){
       var step = 0
-        , promise = _r.promise()
-      promise
+        , deferred = _r.deferred()
+      deferred
         .defer()
         .then(null, function(err){
             expect(step).to.eql(1)
             done()
           })
-      promise.error('expected error defer test')
+      deferred.error('expected error defer test')
       step++
     })
   })
   describe('delay', function(){
     it('should delay next', function(done){
       var step = 0
-        , promise = _r.promise()
-      promise
+        , deferred = _r.deferred()
+      deferred
         .delay(20)
         .subscribe(function(val){
             expect(step).to.eql(1)
             done()
           })
-      promise.next(1)
+      deferred.next(1)
       setTimeout(function(){step++}, 5)
     })
     it('should delay complete', function(done){
@@ -2136,44 +2138,44 @@ describe('producer tests', function(){
     })
     it('should delay error', function(done){
       var step = 0
-        , promise = _r.promise()
-      promise
+        , deferred = _r.deferred()
+      deferred
         .delay(20)
         .then(null, function(err){
             expect(step).to.eql(1)
             done()
           })
-      promise.error('expected error delay test')
+      deferred.error('expected error delay test')
       setTimeout(function(){step++}, 5)
     })
   })
   describe('debounce', function(){
     it('should debounce trailing next', function(done){
-      var promise = _r.promise()
-      promise
+      var deferred = _r.deferred()
+      deferred
         .delay(1)
         .debounce(10)
         .subscribe(function(val){
             expect(val).to.eql(3)
             done()
           })
-      promise.next(1)
-      promise.next(2)
-      promise.next(3)
+      deferred.next(1)
+      deferred.next(2)
+      deferred.next(3)
 
     })
     it('should debounce leading next', function(done){
-      var promise = _r.promise()
-      promise
+      var deferred = _r.deferred()
+      deferred
         .delay(1)
         .debounce(10, true)
         .subscribe(function(val){
             expect(val).to.eql(1)
             done()
           })
-      promise.next(1)
-      promise.next(2)
-      promise.next(3)
+      deferred.next(1)
+      deferred.next(2)
+      deferred.next(3)
 
     })
     it('should debounce trailing complete', function(done){
@@ -2195,9 +2197,9 @@ describe('producer tests', function(){
           })
     })
     it('should debounce trailing error', function(done){
-      var promise = _r.promise()
+      var deferred = _r.deferred()
         , values = []
-      promise
+      deferred
         .delay(1)
         .debounce(10)
         .then(
@@ -2207,12 +2209,12 @@ describe('producer tests', function(){
               done()
             }
           , function(val){values.push(val)})
-      promise.error('expected error testing debounce')
+      deferred.error('expected error testing debounce')
     })
     it('should debounce leading error', function(done){
-      var promise = _r.promise()
+      var deferred = _r.deferred()
         , values = []
-      promise
+      deferred
         .delay(1)
         .debounce(10, true)
         .then(
@@ -2222,7 +2224,7 @@ describe('producer tests', function(){
               done()
             }
           , function(val){values.push(val)})
-      promise.error('expected error testing debounce')
+      deferred.error('expected error testing debounce')
     })
   })
 })

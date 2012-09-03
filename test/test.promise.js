@@ -1,43 +1,73 @@
-describe('promise tests', function(){
+describe('deferred tests', function(){
   describe('then', function(){
-    it('should resolve value', function(){
-      var promise = _r.promise()
+    it('should resolve value using deferred', function(){
+      var deferred = _r.deferred()
         , result = 0
 
-      promise.then(function(val){result = val})
-      promise.resolve(1)
+      deferred.then(function(val){result = val})
+      deferred.resolve(1)
 
       expect(result).to.be.eql(1)
     })
-    it('should reject error', function(){
-      var promise = _r.promise()
+    it('should resolve value using promise', function(){
+      var deferred = _r.deferred()
+        , result = 0
+
+      deferred.promise.then(function(val){result = val})
+      deferred.resolve(1)
+
+      expect(result).to.be.eql(1)
+    })
+    it('should reject error using deferred', function(){
+      var deferred = _r.deferred()
         , result = 0
         , error = new Error
 
-      promise.then(null, function(err){result = err})
-      promise.error(error)
+      deferred.then(null, function(err){result = err})
+      deferred.error(error)
 
       expect(result).to.be.eql(error)
     })
-    it('should call progback on next', function(){
-      var promise = _r.promise()
+    it('should reject error using promise', function(){
+      var deferred = _r.deferred()
+        , result = 0
+        , error = new Error
+
+      deferred.promise.then(null, function(err){result = err})
+      deferred.error(error)
+
+      expect(result).to.be.eql(error)
+    })
+    it('should call progback on next with deferred', function(){
+      var deferred = _r.deferred()
         , result = []
 
-      promise.then(null, null, function(val){result.push(val)})
-      promise.next(2)
-      promise.next(3)
-      promise.next(4)
+      deferred.then(null, null, function(val){result.push(val)})
+      deferred.next(2)
+      deferred.next(3)
+      deferred.next(4)
 
       expect(result).to.be.eql([2, 3, 4])
     })
-    it('should chain', function(){
-      var promise = _r.promise()
+    it('should call progback on next with promise', function(){
+      var deferred = _r.deferred()
+        , result = []
+
+      deferred.promise.then(null, null, function(val){result.push(val)})
+      deferred.next(2)
+      deferred.next(3)
+      deferred.next(4)
+
+      expect(result).to.be.eql([2, 3, 4])
+    })
+    it('should chain deferred', function(){
+      var deferred = _r.deferred()
         , result1 = 0
         , result2 = 0
         , result3 = 0
         , result4 = 0
 
-      promise
+      deferred
         .then(function(val){
             expect(result1).to.be.eql(0)
             expect(result2).to.be.eql(0)
@@ -66,7 +96,50 @@ describe('promise tests', function(){
             expect(result4).to.be.eql(0)
             result4 = val
           })
-      promise.resolve(1)
+      deferred.resolve(1)
+
+      expect(result1).to.be.eql(1)
+      expect(result2).to.be.eql(1)
+      expect(result3).to.be.eql(1)
+      expect(result4).to.be.eql(1)
+    })
+    it('should chain promise', function(){
+      var deferred = _r.deferred()
+        , result1 = 0
+        , result2 = 0
+        , result3 = 0
+        , result4 = 0
+
+      deferred.promise
+        .then(function(val){
+            expect(result1).to.be.eql(0)
+            expect(result2).to.be.eql(0)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result1 = val
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(0)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result2 = val
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(1)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result3 = val
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(1)
+            expect(result3).to.be.eql(1)
+            expect(result4).to.be.eql(0)
+            result4 = val
+          })
+      deferred.resolve(1)
 
       expect(result1).to.be.eql(1)
       expect(result2).to.be.eql(1)
@@ -74,139 +147,153 @@ describe('promise tests', function(){
       expect(result4).to.be.eql(1)
     })
   })
-  describe('promise', function(){
+  describe('deferred', function(){
     it('should have methods', function(){
-      var promise = _r.promise()
-      expect(promise).to.be.ok()
-      expect(promise.subscribe).to.be.a('function')
-      expect(promise.next).to.be.a('function')
-      expect(promise.error).to.be.a('function')
-      expect(promise.complete).to.be.a('function')
+      var deferred = _r.deferred()
+      expect(deferred).to.be.ok()
+      expect(deferred.promise).to.be.ok()
+      expect(deferred.subscribe).to.be.a('function')
+      expect(deferred.next).to.be.a('function')
+      expect(deferred.error).to.be.a('function')
+      expect(deferred.complete).to.be.a('function')
+      expect(deferred.resolve).to.be.a('function')
+      expect(deferred.then).to.be.a('function')
+    })
+    it('promise should not have next, complete, error, resolve', function(){
+      var deferred = _r.deferred()
+      expect(deferred.promise).to.be.ok()
+      expect(deferred.promise).to.be.ok()
+      expect(deferred.promise.subscribe).to.be.a('function')
+      expect(deferred.promise.next).to.not.be.a('function')
+      expect(deferred.promise.complete).to.not.be.a('function')
+      expect(deferred.promise.resolve).to.not.be.a('function')
+      expect(deferred.promise.error).to.not.be.a('function')
+      expect(deferred.promise.then).to.be.a('function')
     })
     it('should subscribe with disposable', function(){
-      var promise = _r.promise()
-        , d = promise.subscribe()
+      var deferred = _r.deferred()
+        , d = deferred.subscribe()
       expect(d).to.be.ok()
       expect(d.dispose).to.be.a('function')
       d.dispose()
     })
     it('should subscribe next', function(){
-      var promise = _r.promise()
+      var deferred = _r.deferred()
         , values = []
         , next = function(value){
           values.push(value)
         }
       expect(values).to.be.empty()
 
-      promise.subscribe(next)
+      deferred.subscribe(next)
       expect(values).to.be.empty()
 
-      promise.next(1)
+      deferred.next(1)
       expect(values).to.eql([1])
 
-      promise.next('2')
+      deferred.next('2')
       expect(values).to.eql([1, '2'])
 
-      promise.next({a:3, b:4})
+      deferred.next({a:3, b:4})
       expect(values).to.eql([1, '2', {a:3, b:4}])
 
-      promise.next([5, 6])
+      deferred.next([5, 6])
       expect(values).to.eql([1, '2', {a:3, b:4}, [5, 6]])
 
-      promise.complete()
-      promise.next('should not add after complete')
+      deferred.complete()
+      deferred.next('should not add after complete')
       expect(values).to.eql([1, '2', {a:3, b:4}, [5, 6]])
     })
     it('should not send next after complete', function(){
-      var promise = _r.promise()
+      var deferred = _r.deferred()
         , values = []
         , next = function(value){
           values.push(value)
         }
       expect(values).to.be.empty()
 
-      promise.subscribe(next)
+      deferred.subscribe(next)
       expect(values).to.be.empty()
 
-      promise.next(1)
+      deferred.next(1)
       expect(values).to.eql([1])
 
-      promise.next(2)
+      deferred.next(2)
       expect(values).to.eql([1, 2])
 
-      promise.next(3)
+      deferred.next(3)
       expect(values).to.eql([1, 2, 3])
 
-      promise.next(4)
+      deferred.next(4)
       expect(values).to.eql([1, 2, 3, 4])
 
-      promise.complete()
-      promise.next(5)
+      deferred.complete()
+      deferred.next(5)
       expect(values).to.eql([1, 2, 3, 4])
     })
     it('should not send next after error', function(){
-      var promise = _r.promise()
+      var deferred = _r.deferred()
         , values = []
         , next = function(value){
           values.push(value)
         }
       expect(values).to.be.empty()
 
-      promise.subscribe(next)
+      deferred.subscribe(next)
       expect(values).to.be.empty()
 
-      promise.next(1)
+      deferred.next(1)
       expect(values).to.eql([1])
 
-      promise.next(2)
+      deferred.next(2)
       expect(values).to.eql([1, 2])
 
-      promise.next(3)
+      deferred.next(3)
       expect(values).to.eql([1, 2, 3])
 
-      promise.next(4)
+      deferred.next(4)
       expect(values).to.eql([1, 2, 3, 4])
 
-      promise.error(new Error)
+      deferred.error(new Error)
       expect(values).to.eql([1, 2, 3, 4])
 
-      promise.next(5)
-      promise.complete()
-      promise.error(new Error)
+      deferred.next(5)
+      deferred.complete()
+      deferred.error(new Error)
       expect(values).to.eql([1, 2, 3, 4])
     })
     it('should not send next after dispose', function(){
-      var promise = _r.promise()
+      var deferred = _r.deferred()
         , values = []
         , next = function(value){
           values.push(value)
         }
-        , d = promise.subscribe(next)
+        , d = deferred.subscribe(next)
 
       expect(values).to.be.empty()
 
-      promise.next(1)
+      deferred.next(1)
       expect(values).to.eql([1])
 
-      promise.next(2)
+      deferred.next(2)
       expect(values).to.eql([1, 2])
 
-      promise.next(3)
+      deferred.next(3)
       expect(values).to.eql([1, 2, 3])
 
-      promise.next(4)
+      deferred.next(4)
       expect(values).to.eql([1, 2, 3, 4])
 
       d.dispose()
       expect(values).to.eql([1, 2, 3, 4])
 
-      promise.next(5)
-      promise.complete()
-      promise.error(new Error)
+      deferred.next(5)
+      deferred.complete()
+      deferred.error(new Error)
       expect(values).to.eql([1, 2, 3, 4])
     })
     it('should subscribe complete', function(){
-      var promise = _r.promise()
+      var deferred = _r.deferred()
         , values = []
         , finished = false
         , next = function(value){
@@ -219,28 +306,28 @@ describe('promise tests', function(){
       expect(values).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.subscribe(next, complete)
+      deferred.subscribe(next, complete)
       expect(values).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.next(1)
+      deferred.next(1)
       expect(values).to.eql([1])
       expect(finished).to.be(false)
 
-      promise.next(2)
+      deferred.next(2)
       expect(values).to.eql([1, 2])
       expect(finished).to.be(false)
 
-      promise.complete()
+      deferred.complete()
       expect(finished).to.be(true)
 
-      promise.next(3)
-      promise.complete()
-      promise.error(new Error)
+      deferred.next(3)
+      deferred.complete()
+      deferred.error(new Error)
       expect(values).to.eql([1, 2])
     })
     it('should not complete after error', function(){
-      var promise = _r.promise()
+      var deferred = _r.deferred()
         , values = []
         , finished = false
         , next = function(value){
@@ -253,28 +340,28 @@ describe('promise tests', function(){
       expect(values).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.subscribe(next, complete)
+      deferred.subscribe(next, complete)
       expect(values).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.next(1)
+      deferred.next(1)
       expect(values).to.eql([1])
       expect(finished).to.be(false)
 
-      promise.next(2)
+      deferred.next(2)
       expect(values).to.eql([1, 2])
       expect(finished).to.be(false)
 
-      promise.error(new Error)
+      deferred.error(new Error)
       expect(finished).to.be(false)
 
-      promise.next(3)
-      promise.complete()
-      promise.error(new Error)
+      deferred.next(3)
+      deferred.complete()
+      deferred.error(new Error)
       expect(values).to.eql([1, 2])
     })
     it('should not complete after dispose', function(){
-      var promise = _r.promise()
+      var deferred = _r.deferred()
         , values = []
         , finished = false
         , next = function(value){
@@ -283,7 +370,7 @@ describe('promise tests', function(){
         , complete = function(){
           finished = true
         }
-        , d = promise.subscribe(next, complete)
+        , d = deferred.subscribe(next, complete)
 
       expect(values).to.be.empty()
       expect(finished).to.be(false)
@@ -291,24 +378,24 @@ describe('promise tests', function(){
       expect(values).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.next(1)
+      deferred.next(1)
       expect(values).to.eql([1])
       expect(finished).to.be(false)
 
-      promise.next(2)
+      deferred.next(2)
       expect(values).to.eql([1, 2])
       expect(finished).to.be(false)
 
       d.dispose()
       expect(finished).to.be(false)
 
-      promise.next(3)
-      promise.complete()
-      promise.error(new Error)
+      deferred.next(3)
+      deferred.complete()
+      deferred.error(new Error)
       expect(values).to.eql([1, 2])
     })
     it('should subscribe error', function(){
-      var promise = _r.promise()
+      var deferred = _r.deferred()
         , values = []
         , finished = false
         , errors = []
@@ -326,34 +413,34 @@ describe('promise tests', function(){
       expect(errors).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.subscribe(next, complete, error)
+      deferred.subscribe(next, complete, error)
       expect(values).to.be.empty()
       expect(errors).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.next(1)
+      deferred.next(1)
       expect(values).to.eql([1])
       expect(errors).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.next(2)
+      deferred.next(2)
       expect(values).to.eql([1, 2])
       expect(errors).to.be.empty()
       expect(finished).to.be(false)
 
       var err = new Error
-      promise.error(err)
+      deferred.error(err)
       expect(finished).to.be(false)
       expect(errors).to.eql([err])
 
-      promise.next(3)
-      promise.error(err)
-      promise.complete()
+      deferred.next(3)
+      deferred.error(err)
+      deferred.complete()
       expect(values).to.eql([1, 2])
       expect(errors).to.eql([err])
     })
     it('should not error after complete', function(){
-      var promise = _r.promise()
+      var deferred = _r.deferred()
         , values = []
         , finished = false
         , errors = []
@@ -371,39 +458,39 @@ describe('promise tests', function(){
       expect(errors).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.subscribe(next, complete, error)
+      deferred.subscribe(next, complete, error)
       expect(values).to.be.empty()
       expect(errors).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.next(1)
+      deferred.next(1)
       expect(values).to.eql([1])
       expect(errors).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.next(2)
+      deferred.next(2)
       expect(values).to.eql([1, 2])
       expect(errors).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.complete()
+      deferred.complete()
       expect(values).to.eql([1, 2])
       expect(errors).to.be.empty()
       expect(finished).to.be(true)
 
-      promise.error(new Error)
+      deferred.error(new Error)
       expect(finished).to.be(true)
       expect(errors).to.be.empty()
 
-      promise.next(3)
-      promise.error(new Error)
-      promise.complete()
+      deferred.next(3)
+      deferred.error(new Error)
+      deferred.complete()
       expect(values).to.eql([1, 2])
       expect(finished).to.be(true)
       expect(errors).to.be.empty()
     })
     it('should not error after dispose', function(){
-      var promise = _r.promise()
+      var deferred = _r.deferred()
         , values = []
         , finished = false
         , errors = []
@@ -416,18 +503,18 @@ describe('promise tests', function(){
         , error = function(err){
           errors.push(err)
         }
-        , d = promise.subscribe(next, complete, error)
+        , d = deferred.subscribe(next, complete, error)
 
       expect(values).to.be.empty()
       expect(errors).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.next(1)
+      deferred.next(1)
       expect(values).to.eql([1])
       expect(errors).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.next(2)
+      deferred.next(2)
       expect(values).to.eql([1, 2])
       expect(errors).to.be.empty()
       expect(finished).to.be(false)
@@ -437,19 +524,19 @@ describe('promise tests', function(){
       expect(errors).to.be.empty()
       expect(finished).to.be(false)
 
-      promise.error(new Error)
+      deferred.error(new Error)
       expect(finished).to.be(false)
       expect(errors).to.be.empty()
 
-      promise.next(3)
-      promise.error(new Error)
-      promise.complete()
+      deferred.next(3)
+      deferred.error(new Error)
+      deferred.complete()
       expect(values).to.eql([1, 2])
       expect(finished).to.be(false)
       expect(errors).to.be.empty()
     })
     it('should allow multiple subscriptions', function(){
-      var promise = _r.promise()
+      var deferred = _r.deferred()
         , values1 = []
         , values2 = []
         , finished1 = false
@@ -474,10 +561,10 @@ describe('promise tests', function(){
         , error2 = function(err){
           errors2.push(err)
         }
-        , d1 = promise.subscribe(next1, complete1, error1)
-        , d2 = promise.subscribe(next2, complete2, error2)
+        , d1 = deferred.subscribe(next1, complete1, error1)
+        , d2 = deferred.subscribe(next2, complete2, error2)
 
-      promise.next(1)
+      deferred.next(1)
       expect(values1).to.eql([1])
       expect(values2).to.eql([1])
       expect(errors1).to.be.empty()
@@ -485,7 +572,7 @@ describe('promise tests', function(){
       expect(finished1).to.be(false)
       expect(finished2).to.be(false)
 
-      promise.next(2)
+      deferred.next(2)
       expect(values1).to.eql([1, 2])
       expect(values2).to.eql([1, 2])
       expect(errors1).to.be.empty()
@@ -495,7 +582,7 @@ describe('promise tests', function(){
 
       d2.dispose()
 
-      promise.next(3)
+      deferred.next(3)
       expect(values1).to.eql([1, 2, 3])
       expect(values2).to.eql([1, 2])
       expect(errors1).to.be.empty()
@@ -503,8 +590,8 @@ describe('promise tests', function(){
       expect(finished1).to.be(false)
       expect(finished2).to.be(false)
 
-      promise.complete()
-      promise.next(4)
+      deferred.complete()
+      deferred.next(4)
       expect(values1).to.eql([1, 2, 3])
       expect(values2).to.eql([1, 2])
       expect(errors1).to.be.empty()

@@ -251,11 +251,15 @@ var Consumer = (function(){
   return Consumer
 })()
 
-var Promise = (function(){
-  function Promise(){
-    this.producer = new Producer()
+var Deferred = (function(){
+  function Deferred(){
+    this.producer = new Producer(function(consumer){
+      consumer.resolveSingleValue = true
+    })
+    this.promise = chain(this.producer)
   }
-  var P = Promise.prototype
+
+  var P = Deferred.prototype
 
   P.resolveSingleValue = true
 
@@ -266,9 +270,7 @@ var Promise = (function(){
 
   P.subscribe = subscribe
   function subscribe(next, complete, error){
-    var consumer = consumerWrap(next, complete, error)
-    consumer.resolveSingleValue = true
-    return this.producer.subscribe(consumer)
+    return this.producer.subscribe(next, complete, error)
   }
 
   P.next = next
@@ -297,6 +299,7 @@ var Promise = (function(){
     if(this.unfulfilled){
       if(!isUndefined(value)){
         this.resolvedValue = value
+        this.producer.resolvedValue = value
       }
       eachConsumer(this, 'complete')
       this.unfulfilled = false
@@ -317,7 +320,18 @@ var Promise = (function(){
     })
   }
 
-  return Promise
+  Deferred.extend = function(wrapper, wrapped){
+    if(wrapped instanceof Deferred){
+      wrapper.promise = wrapped.promise
+      _forEach.call(
+          ['next', 'complete', 'error', 'resolve', 'dispose']
+        , function(prop){
+            wrapper[prop] = function(){wrapped[prop].apply(wrapped, arguments)}
+          })
+    }
+  }
+
+  return Deferred
 })()
 
 function singleValueResolve(consumer, value){
@@ -361,13 +375,13 @@ function seqNextResolve(value){
 function isConsumer(producer){
   return producer instanceof Underarm
       || producer instanceof Consumer
-      || producer instanceof Promise
+      || producer instanceof Deferred
 }
 
 function isProducer(producer){
   return producer instanceof Underarm
       || producer instanceof Producer
-      || producer instanceof Promise
+      || producer instanceof Deferred
 }
 
 function consumerWrap(next, complete, error){
@@ -1253,7 +1267,10 @@ function Underarm(obj, func, args) {
     this._func = func
     this._args = args
   } else {
-    this._wrapped = producerWrap(obj)
+    var wrapped = producerWrap(obj)
+    this._wrapped = wrapped
+
+    Deferred.extend(this, wrapped)
   }
 }
 
@@ -1299,9 +1316,9 @@ function identity(value){
   return value
 }
 
-_r.promise = promise
-function promise(){
-  return chain(new Promise)
+_r.deferred = deferred
+function deferred(){
+  return chain(new Deferred)
 }
 
 _r.defaultErrorHandler = defaultErrorHandler
@@ -1357,29 +1374,13 @@ UnderProto.subscribe = function(next, complete, error){
   return unwrap(this).subscribe(next, complete, error)
 }
 
-UnderProto.resolve = function(result){
-  return unwrap(this).resolve(result)
-}
-
-UnderProto.error = function(result){
-  return unwrap(this).error(result)
-}
-
-UnderProto.next = function(result){
-  return unwrap(this).next(result)
-}
-
-UnderProto.complete = function(){
-  return unwrap(this).complete()
-}
-
 _r.then = then
 function then(producer, resolve, error, progress, context){
   return chain(producer).then(resolve, error, progress, context)
 }
 
 UnderProto.then = function(resolve, error, progress, context){
-  var nextPromise = promise()
+  var nextPromise = deferred()
     , self = unwrap(this)
     , results = []
     , consumer = new Consumer(
@@ -1433,17 +1434,17 @@ UnderProto.ncallback = function(){
 }
 
 UnderProto.callbackWithBoundPromise = function(callback){
-  var subj = promise()
-    , cb = function(){callback.apply(subj, arguments)}
+  var d = deferred()
+    , cb = function(){callback.apply(d, arguments)}
 
-  cb.next = function(next){subj.next(next)}
-  cb.resolve = function(val){subj.resolve(val)}
-  cb.complete = function(){subj.complete()}
-  cb.error = function(err){subj.error(err)}
+  cb.next = function(next){d.next(next)}
+  cb.resolve = function(val){d.resolve(val)}
+  cb.complete = function(){d.complete()}
+  cb.error = function(err){d.error(err)}
 
-  var nextSubj = this.attach(subj).then()
+  var nextD = this.attach(d).then()
   cb.then = function(resolve, error, progress){
-    return nextSubj.then(resolve, error, progress)
+    return nextD.then(resolve, error, progress)
   }
 
   return cb
