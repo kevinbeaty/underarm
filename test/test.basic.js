@@ -6,6 +6,7 @@ describe('basic tests', function(){
       expect(_r.noConflict).to.be.a('function')
       expect(_r.identity).to.be.a('function')
       expect(_r.defaultErrorHandler).to.be.a('function')
+      expect(_r.when).to.be.a('function')
       expect(_r.deferred).to.be.a('function')
       expect(_r.each).to.be.a('function')
       expect(_r.seq).to.be.a('function')

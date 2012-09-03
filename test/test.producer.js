@@ -139,7 +139,7 @@ describe('producer tests', function(){
       var producer = _r([1, 2, 3, 4])
         , reduce = _r.reduce(producer, function(memo, val){memo.push(val); return memo}, [])
         , values = []
-        , s = _r.then(reduce, function(val){values.push(val)})
+        , s = _r.when(reduce, function(val){values.push(val)})
 
       expect(values).to.be.eql([[1, 2, 3, 4]])
     })
@@ -199,7 +199,7 @@ describe('producer tests', function(){
       var producer = _r([1, 2, 3, 4])
         , reduce = _r.reduceRight(producer, function(memo, val){memo.push(val); return memo}, [])
         , values = []
-        , s = _r.then(reduce, function(val){values.push(val)})
+        , s = _r.when(reduce, function(val){values.push(val)})
 
       expect(values).to.be.eql([[4, 3, 2, 1]])
     })
@@ -1715,7 +1715,7 @@ describe('producer tests', function(){
   describe('zip', function(){
     it('should zip arrays', function(){
       var value
-      _r.then(_r.zip([1, 2, 3], [4, 5, 6])
+      _r.when(_r.zip([1, 2, 3], [4, 5, 6])
         , function(result){value = result})
       expect(value).to.be.eql([[1, 4], [2, 5], [3, 6]])
 

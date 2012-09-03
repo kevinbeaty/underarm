@@ -479,7 +479,7 @@ function produceWithIterator(producer, context, iterator, iterate, iterComplete,
               iterate(consumer, value, result)
             } else {
               promisesCount++
-              then(result
+              when(result
                 , function(resolved){
                     iterate(consumer, value, resolved)
                     promiseCountdown()
@@ -1374,9 +1374,18 @@ UnderProto.subscribe = function(next, complete, error){
   return unwrap(this).subscribe(next, complete, error)
 }
 
-_r.then = then
-function then(producer, resolve, error, progress, context){
+_r.when = when
+function when(producer, resolve, error, progress, context){
   return chain(producer).then(resolve, error, progress, context)
+}
+
+function nextPromiseSend(promise, action, callback, result, context){
+  var nextResult = result
+  if(isFunction(callback)){
+    nextResult = callback.call(context, result)
+    if(isUndefined(nextResult)) nextResult = result
+  }
+  promise[action](nextResult)
 }
 
 UnderProto.then = function(resolve, error, progress, context){
@@ -1385,15 +1394,12 @@ UnderProto.then = function(resolve, error, progress, context){
     , results = []
     , consumer = new Consumer(
         function(result){
-          if(isFunction(progress)){
-            progress.call(context, result)
-          }
           if(consumer.resolveSingleValue){
             results = [result]
           } else {
             _push.call(results, result)
           }
-          nextPromise.next(result)
+          nextPromiseSend(nextPromise, 'next', progress, result, context)
         }
       , function(){
           var result =
@@ -1402,16 +1408,10 @@ UnderProto.then = function(resolve, error, progress, context){
                 : consumer.resolveSingleValue
                 ? results[results.length - 1]
                 : results
-          if(isFunction(resolve)){
-            resolve.call(context, result)
-          }
-          nextPromise.resolve(result)
+          nextPromiseSend(nextPromise, 'resolve', resolve, result, context)
         }
       , function(err){
-          if(isFunction(error)){
-            error.call(context, err)
-          }
-          nextPromise.error(err)
+          nextPromiseSend(nextPromise, 'error', error, err, context)
         })
   self.subscribe(consumer)
 
