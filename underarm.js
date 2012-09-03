@@ -154,6 +154,8 @@ var ObjectProto = Object.prototype
         console.log(err)
       }
     }
+  , _nextTick = (!isUndefined(process) && isFunction(process.nextTick))
+      ? process.nextTick : function(callback){setTimeout(callback, 0)}
 
 _r.defaultErrorHandler = defaultErrorHandler
 function defaultErrorHandler(handler){
@@ -1217,6 +1219,64 @@ function tap(producer, doNext, doComplete, doError){
       }
     , function(consumer, error){
         if(isFunction(doError)) doError(error)
+        consumer.error(error)
+      })
+}
+
+function delayConsumer(action, delayFun, arg){
+  return function(consumer, val){
+    var fun = function(){
+      consumer[action](val)
+    }
+    delayFun(fun, arg)
+  }
+}
+
+function produceDelayConsumer(producer, delayFun, arg){
+  var args = _slice.call(arguments, 2)
+  return produce(
+      producer
+    , null
+    , delayConsumer('next', delayFun, arg)
+    , delayConsumer('complete', delayFun, arg)
+    , delayConsumer('error', delayFun, arg))
+}
+
+
+_r.delay = delay
+function delay(producer, wait){
+  return produceDelayConsumer(producer, setTimeout, wait)
+}
+
+_r.defer = defer
+function defer(producer){
+  return produceDelayConsumer(producer, _nextTick)
+}
+
+_r.debounce = debounce
+function debounce(producer, wait, immediate){
+  var timeout = null
+    , sendIt = identity
+  return produce(
+      producer
+    , null
+    , function(consumer, obj){
+        var callNow = immediate && !timeout
+        sendIt = function(){
+            timeout = null
+            if(!immediate) consumer.next(obj)
+          }
+        clearTimeout(timeout)
+        timeout = setTimeout(sendIt, wait)
+        if(callNow) consumer.next(obj)
+      }
+    , function(consumer){
+        clearTimeout(timeout)
+        sendIt()
+        consumer.complete()
+      }
+    , function(consumer, error){
+        clearTimeout(timeout)
         consumer.error(error)
       })
 }

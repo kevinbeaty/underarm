@@ -2075,4 +2075,154 @@ describe('producer tests', function(){
       expect(error).to.eql(errorToSend)
     })
   })
+  describe('defer', function(){
+    it('should defer next', function(done){
+      var step = 0
+        , promise = _r.promise()
+      promise
+        .defer()
+        .subscribe(function(val){
+            expect(step).to.eql(1)
+            done()
+          })
+      promise.next(1)
+      step++
+    })
+    it('should defer complete', function(done){
+      var step = 0
+      _r([1, 2, 3])
+        .defer()
+        .then(function(val){
+            expect(step).to.eql(1)
+            done()
+          })
+      step++
+    })
+    it('should defer error', function(done){
+      var step = 0
+        , promise = _r.promise()
+      promise
+        .defer()
+        .then(null, function(err){
+            expect(step).to.eql(1)
+            done()
+          })
+      promise.error('expected error defer test')
+      step++
+    })
+  })
+  describe('delay', function(){
+    it('should delay next', function(done){
+      var step = 0
+        , promise = _r.promise()
+      promise
+        .delay(20)
+        .subscribe(function(val){
+            expect(step).to.eql(1)
+            done()
+          })
+      promise.next(1)
+      setTimeout(function(){step++}, 5)
+    })
+    it('should delay complete', function(done){
+      var step = 0
+      _r([1, 2, 3])
+        .delay(20)
+        .then(function(val){
+            expect(step).to.eql(1)
+            done()
+          })
+      setTimeout(function(){step++}, 5)
+    })
+    it('should delay error', function(done){
+      var step = 0
+        , promise = _r.promise()
+      promise
+        .delay(20)
+        .then(null, function(err){
+            expect(step).to.eql(1)
+            done()
+          })
+      promise.error('expected error delay test')
+      setTimeout(function(){step++}, 5)
+    })
+  })
+  describe('debounce', function(){
+    it('should debounce trailing next', function(done){
+      var promise = _r.promise()
+      promise
+        .delay(1)
+        .debounce(10)
+        .subscribe(function(val){
+            expect(val).to.eql(3)
+            done()
+          })
+      promise.next(1)
+      promise.next(2)
+      promise.next(3)
+
+    })
+    it('should debounce leading next', function(done){
+      var promise = _r.promise()
+      promise
+        .delay(1)
+        .debounce(10, true)
+        .subscribe(function(val){
+            expect(val).to.eql(1)
+            done()
+          })
+      promise.next(1)
+      promise.next(2)
+      promise.next(3)
+
+    })
+    it('should debounce trailing complete', function(done){
+      _r([1, 2, 3])
+        .delay(1)
+        .debounce(10)
+        .then(function(val){
+            expect(val).to.eql([3])
+            done()
+          })
+    })
+    it('should debounce leading complete', function(done){
+      _r([1, 2, 3])
+        .delay(1)
+        .debounce(10, true)
+        .then(function(val){
+            expect(val).to.eql([1])
+            done()
+          })
+    })
+    it('should debounce trailing error', function(done){
+      var promise = _r.promise()
+        , values = []
+      promise
+        .delay(1)
+        .debounce(10)
+        .then(
+            null
+          , function(err){
+              expect(values).to.eql([])
+              done()
+            }
+          , function(val){values.push(val)})
+      promise.error('expected error testing debounce')
+    })
+    it('should debounce leading error', function(done){
+      var promise = _r.promise()
+        , values = []
+      promise
+        .delay(1)
+        .debounce(10, true)
+        .then(
+            null
+          , function(err){
+              expect(values).to.eql([])
+              done()
+            }
+          , function(val){values.push(val)})
+      promise.error('expected error testing debounce')
+    })
+  })
 })
