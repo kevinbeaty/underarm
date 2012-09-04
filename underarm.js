@@ -327,7 +327,7 @@ var Deferred = (function(){
     if(wrapped instanceof Deferred){
       wrapper.promise = wrapped.promise
       _forEach.call(
-          ['next', 'complete', 'error', 'resolve', 'dispose']
+          ['next', 'complete', 'error', 'resolve', 'dispose', 'onDispose']
         , function(prop){
             wrapper[prop] = function(){wrapped[prop].apply(wrapped, arguments)}
           })
@@ -375,8 +375,10 @@ function seqNextResolve(value){
   }
 }
 
-function isConsumer(producer){
-  return producer instanceof Consumer
+function isConsumer(consumer){
+  return consumer instanceof Consumer
+    || (consumer instanceof Underarm
+        && consumer._wrapped instanceof Consumer)
 }
 
 function isProducer(producer){
@@ -1380,17 +1382,24 @@ function when(producer, resolve, error, progress, context){
   return chain(producer).then(resolve, error, progress, context)
 }
 
-function nextPromiseSend(promise, action, callback, result, context){
+function nextDeferredSend(deferred, action, callback, result, context){
   var nextResult = result
   if(isFunction(callback)){
     nextResult = callback.call(context, result)
     if(isUndefined(nextResult)) nextResult = result
   }
-  promise[action](nextResult)
+
+  if(isProducer(nextResult)){
+    when(nextResult
+        , function(val){deferred[action](val)}
+        , function(error){deferred.error(error)})
+  } else {
+    deferred[action](nextResult)
+  }
 }
 
 UnderProto.then = function(resolve, error, progress, context){
-  var nextPromise = deferred()
+  var nextDeferred = deferred()
     , self = unwrap(this)
     , results = []
     , consumer = new Consumer(
@@ -1400,31 +1409,31 @@ UnderProto.then = function(resolve, error, progress, context){
           } else {
             _push.call(results, result)
           }
-          nextPromiseSend(nextPromise, 'next', progress, result, context)
+          nextDeferredSend(nextDeferred, 'next', progress, result, context)
         }
       , function(){
           var result =
                   _has(self, 'resolvedValue')
                 ? self.resolvedValue
                 : consumer.resolveSingleValue
-                ? results[results.length - 1]
-                : results
-          nextPromiseSend(nextPromise, 'resolve', resolve, result, context)
+                  ? results[results.length - 1]
+                  : results
+          nextDeferredSend(nextDeferred, 'resolve', resolve, result, context)
         }
       , function(err){
-          nextPromiseSend(nextPromise, 'error', error, err, context)
+          nextDeferredSend(nextDeferred, 'error', error, err, context)
         })
   self.subscribe(consumer)
 
-  return nextPromise
+  return nextDeferred
 }
 
 UnderProto.callback = function(){
-  return this.callbackWithBoundPromise(function(val){this.next(val)})
+  return this.callbackWithBoundDeferred(function(val){this.next(val)})
 }
 
 UnderProto.ncallback = function(){
-  return this.callbackWithBoundPromise(
+  return this.callbackWithBoundDeferred(
     function(err, val){
       if(err){
         this.error(err)
@@ -1434,7 +1443,7 @@ UnderProto.ncallback = function(){
     })
 }
 
-UnderProto.callbackWithBoundPromise = function(callback){
+UnderProto.callbackWithBoundDeferred = function(callback){
   var d = deferred()
     , cb = function(){callback.apply(d, arguments)}
 

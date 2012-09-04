@@ -146,6 +146,222 @@ describe('deferred tests', function(){
       expect(result3).to.be.eql(1)
       expect(result4).to.be.eql(1)
     })
+    it('should chain deferred and transform results', function(){
+      var deferred = _r.deferred()
+        , result1 = 0
+        , result2 = 0
+        , result3 = 0
+        , result4 = 0
+
+      deferred
+        .then(function(val){
+            expect(result1).to.be.eql(0)
+            expect(result2).to.be.eql(0)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result1 = val
+            return val * 2
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(0)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result2 = val
+            return val * 2
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(2)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result3 = val
+            return val * 2
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(2)
+            expect(result3).to.be.eql(4)
+            expect(result4).to.be.eql(0)
+            result4 = val
+            return val * 2
+          })
+      deferred.resolve(1)
+
+      expect(result1).to.be.eql(1)
+      expect(result2).to.be.eql(2)
+      expect(result3).to.be.eql(4)
+      expect(result4).to.be.eql(8)
+    })
+    it('should chain promise and transform results', function(){
+      var deferred = _r.deferred()
+        , result1 = 0
+        , result2 = 0
+        , result3 = 0
+        , result4 = 0
+
+      deferred.promise
+        .then(function(val){
+            expect(result1).to.be.eql(0)
+            expect(result2).to.be.eql(0)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result1 = val
+            return val * 2
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(0)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result2 = val
+            return val * 2
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(2)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result3 = val
+            return val * 2
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(2)
+            expect(result3).to.be.eql(4)
+            expect(result4).to.be.eql(0)
+            result4 = val
+            return val * 2
+          })
+      deferred.resolve(1)
+
+      expect(result1).to.be.eql(1)
+      expect(result2).to.be.eql(2)
+      expect(result3).to.be.eql(4)
+      expect(result4).to.be.eql(8)
+    })
+    it('should chain promise and transform results with producers', function(){
+      var deferred = _r.deferred()
+        , result1 = 0
+        , result2 = 0
+        , result3 = 0
+        , result4 = 0
+
+      deferred.promise
+        .then(function(val){
+            expect(result1).to.be.eql(0)
+            expect(result2).to.be.eql(0)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result1 = val
+            return _r(val)
+              .map(function(mapped){return mapped * 2})
+              .first()
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(0)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result2 = val
+            return _r(val)
+              .map(function(mapped){return mapped * 3})
+              .first()
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(2)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result3 = val
+            return _r(val)
+              .map(function(mapped){return mapped * 4})
+              .first()
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(2)
+            expect(result3).to.be.eql(6)
+            expect(result4).to.be.eql(0)
+            result4 = val
+            return _r(val)
+              .map(function(mapped){return mapped * 5})
+              .first()
+          })
+      deferred.resolve(1)
+
+      expect(result1).to.be.eql(1)
+      expect(result2).to.be.eql(2)
+      expect(result3).to.be.eql(6)
+      expect(result4).to.be.eql(24)
+    })
+    it('should chain promise and transform results with promises', function(){
+      var deferred = _r.deferred()
+        , result1 = 0
+        , result2 = 0
+        , result3 = 0
+        , result4 = 0
+        , deferred1 = _r.deferred()
+        , deferred2 = _r.deferred()
+        , deferred3 = _r.deferred()
+
+      deferred.promise
+        .then(function(val){
+            expect(result1).to.be.eql(0)
+            expect(result2).to.be.eql(0)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result1 = val
+            return deferred1.promise
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(0)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result2 = val
+            return deferred2
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(2)
+            expect(result3).to.be.eql(0)
+            expect(result4).to.be.eql(0)
+            result3 = val
+            return deferred3.promise
+          })
+        .then(function(val){
+            expect(result1).to.be.eql(1)
+            expect(result2).to.be.eql(2)
+            expect(result3).to.be.eql(6)
+            expect(result4).to.be.eql(0)
+            result4 = val
+          })
+
+      deferred.resolve(1)
+      expect(result1).to.be.eql(1)
+      expect(result2).to.be.eql(0)
+      expect(result3).to.be.eql(0)
+      expect(result4).to.be.eql(0)
+
+      deferred1.resolve(2)
+      expect(result1).to.be.eql(1)
+      expect(result2).to.be.eql(2)
+      expect(result3).to.be.eql(0)
+      expect(result4).to.be.eql(0)
+
+      deferred2.resolve(6)
+      expect(result1).to.be.eql(1)
+      expect(result2).to.be.eql(2)
+      expect(result3).to.be.eql(6)
+      expect(result4).to.be.eql(0)
+
+      deferred3.resolve(24)
+      expect(result1).to.be.eql(1)
+      expect(result2).to.be.eql(2)
+      expect(result3).to.be.eql(6)
+      expect(result4).to.be.eql(24)
+    })
   })
   describe('deferred', function(){
     it('should have methods', function(){
