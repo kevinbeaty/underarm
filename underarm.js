@@ -442,6 +442,16 @@ function produceOnComplete(producer, context, complete, error){
       , error)
 }
 
+function iteratorCall(iterator, value, context){
+  if(isUndefined(iterator)){
+    return iterator
+  } else if(isFunction(iterator)){
+    return iterator.call(context, value)
+  } else {
+    return chain(iterator).attach(value)
+  }
+}
+
 function produceWithIterator(producer, context, iterator, iterate, iterComplete, error){
   if(isUndefined(iterator)){
     iterator = identity
@@ -472,11 +482,7 @@ function produceWithIterator(producer, context, iterator, iterate, iterComplete,
 
         if(!consumer.disposed){
           try {
-            if(isFunction(iterator)){
-              result = iterator.call(context, value)
-            } else {
-              result = chain(iterator).attach(value)
-            }
+            result = iteratorCall(iterator, value, context)
 
             if(!isProducer(result)){
               iterate(consumer, value, result)
@@ -1383,12 +1389,7 @@ function when(producer, resolve, error, progress, context){
 }
 
 function nextDeferredSend(deferred, action, callback, result, context){
-  var nextResult
-  if(isFunction(callback)){
-    nextResult = callback.call(context, result)
-  } else if(!isUndefined(callback)){
-    nextResult = chain(callback).attach(result)
-  }
+  var nextResult = iteratorCall(callback, result, context)
 
   if(isProducer(nextResult)){
     when(nextResult
