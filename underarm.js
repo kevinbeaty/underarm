@@ -288,6 +288,12 @@ var Deferred = (function(){
       eachConsumer(this, 'error', error)
       this.unfulfilled = false
       this.failed = true
+
+      this.producer.onSubscribe = function(consumer){
+        consumer.resolveSingleValue = true
+        consumer.error(error)
+        consumer.complete()
+      }
     }
   }
 
@@ -306,6 +312,18 @@ var Deferred = (function(){
       eachConsumer(this, 'complete')
       this.unfulfilled = false
       this.fulfilled = true
+
+      this.producer.onSubscribe = function(consumer){
+        consumer.resolveSingleValue = true
+        if(isFunction(consumer.resolve)){
+          consumer.resolve(value)
+        } else {
+          if(!isUndefined(value)){
+            consumer.next(value)
+          }
+          consumer.complete()
+        }
+      }
     }
   }
 

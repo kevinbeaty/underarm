@@ -18,6 +18,22 @@ describe('deferred tests', function(){
 
       expect(result).to.be.eql(1)
     })
+    it('should resolve after resolve', function(){
+      var deferred = _r.deferred()
+        , result = 0
+
+      deferred.promise.then(function(val){result = val})
+      deferred.resolve(1)
+
+      expect(result).to.be.eql(1)
+
+      result = 0
+
+      deferred.promise.then(function(val){result = val})
+
+      expect(result).to.be.eql(1)
+
+    })
     it('should resolve promise with detached iterator', function(){
       var deferred = _r.deferred()
         , result = 0
@@ -52,7 +68,7 @@ describe('deferred tests', function(){
     it('should reject error using deferred', function(){
       var deferred = _r.deferred()
         , result = 0
-        , error = new Error
+        , error = 'expected error promise test'
 
       deferred.then(null, function(err){result = err})
       deferred.error(error)
@@ -62,12 +78,29 @@ describe('deferred tests', function(){
     it('should reject error using promise', function(){
       var deferred = _r.deferred()
         , result = 0
-        , error = new Error
+        , error = 'expected error promise test'
 
       deferred.promise.then(null, function(err){result = err})
       deferred.error(error)
 
       expect(result).to.be.eql(error)
+    })
+    it('should reject error after error', function(){
+      var deferred = _r.deferred()
+        , result = 0
+        , error
+
+      deferred.promise.then(function(val){result = val}, function(err){error = err})
+      deferred.error('promise test error')
+      deferred.resolve(1)
+
+      expect(result).to.be.eql(0)
+      expect(error).to.be.eql('promise test error')
+
+      error = null
+
+      deferred.promise.then(null, function(err){error = err})
+      expect(error).to.be.eql('promise test error')
     })
     it('should call progback on next with deferred', function(){
       var deferred = _r.deferred()
@@ -501,12 +534,12 @@ describe('deferred tests', function(){
       deferred.next(4)
       expect(values).to.eql([1, 2, 3, 4])
 
-      deferred.error(new Error)
+      deferred.error('promise test error')
       expect(values).to.eql([1, 2, 3, 4])
 
       deferred.next(5)
       deferred.complete()
-      deferred.error(new Error)
+      deferred.error('promise test error')
       expect(values).to.eql([1, 2, 3, 4])
     })
     it('should not send next after dispose', function(){
