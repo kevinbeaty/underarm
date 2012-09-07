@@ -18,6 +18,37 @@ describe('deferred tests', function(){
 
       expect(result).to.be.eql(1)
     })
+    it('should resolve promise with detached iterator', function(){
+      var deferred = _r.deferred()
+        , result = 0
+
+      deferred.promise
+        .then(_r().map(function(x){return x*2}).first())
+        .then(function(val){result = val})
+      deferred.resolve(1)
+
+      expect(result).to.be.eql(2)
+    })
+    it('should resolve promise with promise', function(done){
+      var deferred = _r.deferred()
+        , resolve = _r.deferred()
+
+      deferred.promise
+        .then(resolve.promise)
+        .then(function(result){
+            expect(result).to.be.eql(43)
+            done()
+          })
+
+      _r(43)
+        .delay(10)
+        .first()
+        .then(function(val){
+          resolve.resolve(val)
+      })
+
+      deferred.resolve()
+    })
     it('should reject error using deferred', function(){
       var deferred = _r.deferred()
         , result = 0

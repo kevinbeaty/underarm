@@ -1383,10 +1383,11 @@ function when(producer, resolve, error, progress, context){
 }
 
 function nextDeferredSend(deferred, action, callback, result, context){
-  var nextResult = result
+  var nextResult
   if(isFunction(callback)){
     nextResult = callback.call(context, result)
-    if(isUndefined(nextResult)) nextResult = result
+  } else if(!isUndefined(callback)){
+    nextResult = chain(callback).attach(result)
   }
 
   if(isProducer(nextResult)){
@@ -1394,6 +1395,7 @@ function nextDeferredSend(deferred, action, callback, result, context){
         , function(val){deferred[action](val)}
         , function(error){deferred.error(error)})
   } else {
+    if(isUndefined(nextResult)) nextResult = result
     deferred[action](nextResult)
   }
 }
