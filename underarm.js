@@ -34,6 +34,7 @@ var ObjectProto = Object.prototype
   , isUndefined = predicateEqual()
   , isObject = function(obj){return obj === Object(obj)}
   , isFunction = predicateToString('[object Function]')
+  , isRegExp = predicateToString('[object RegExp]')
   , _min = Math.min
   , _max = Math.max
   , _has = function(obj, key){return obj && hasOwnProp.call(obj, key)}
@@ -461,10 +462,12 @@ function produceOnComplete(producer, context, complete, error){
 }
 
 function iteratorCall(iterator, value, context){
-  if(isUndefined(iterator)){
-    return iterator
-  } else if(isFunction(iterator)){
+  if(isFunction(iterator)){
     return iterator.call(context, value)
+  } else if(isRegExp(iterator)){
+    return iterator.exec(value)
+  } else if(isUndefined(iterator)){
+    return iterator
   } else {
     return chain(iterator).attach(value)
   }

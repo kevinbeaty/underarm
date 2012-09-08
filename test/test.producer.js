@@ -112,6 +112,16 @@ describe('producer tests', function(){
 
       expect(values).to.be.eql([false, false, true, false])
     })
+    it('should allow RegExp iterator', function(){
+      var values = []
+
+      _r.chain(['bob is a cat', '', 'fred is a dog', 'nothing'])
+        .map(/(\w+) is a (\w+)/)
+        .map(function(match){return match && [match[1], match[2]]})
+        .subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([['bob', 'cat'], null, ['fred', 'dog'], null])
+    })
     it('should iterate each as array', function(){
       var values = []
         , indeces = []
@@ -266,6 +276,13 @@ describe('producer tests', function(){
       expect(values).to.be.eql([1, 2])
       expect(values2).to.be.eql([2])
     })
+    it('should find first match', function(){
+      var result
+      _r(['bob', 'frank', 'barb', 'fred', 'ed'])
+        .find(/^ba/)
+        .then(function(val){result = val})
+      expect(result).to.be('barb')
+    })
     it('should iterate each as array if found not object', function(){
       var values = []
         , indeces = []
@@ -319,6 +336,13 @@ describe('producer tests', function(){
       expect(indeces).to.be.eql([0, 1])
       expect(result).to.be.eql([2, 4])
     })
+    it('should filter matched', function(){
+      var result
+      _r(['bob', 'frank', 'barb', 'fred', 'ed'])
+        .filter(/ed$/)
+        .then(function(val){result = val})
+      expect(result).to.be.eql(['fred', 'ed'])
+    })
   })
   describe('reject', function(){
     it('should reject original values', function(){
@@ -345,6 +369,13 @@ describe('producer tests', function(){
       expect(values2).to.be.eql([1, 3])
       expect(indeces).to.be.eql([0, 1])
       expect(result).to.be.eql([1, 3])
+    })
+    it('should reject matched', function(){
+      var result
+      _r(['bob', 'frank', 'barb', 'fred', 'ed'])
+        .reject(/f/)
+        .then(function(val){result = val})
+      expect(result).to.be.eql(['bob', 'barb', 'ed'])
     })
   })
   describe('every', function(){
@@ -875,6 +906,16 @@ describe('producer tests', function(){
         .then(function(result){value = result})
 
       expect(value).to.be.eql([1, 2, 3, 4, 5, 6])
+    })
+    it('should slice as detached iterator', function(){
+      var values = []
+
+      _r.chain(['bob is a cat', '', 'fred is a dog', 'nothing'])
+        .map(/(\w+) is a (\w+)/)
+        .map(_r().slice(1,3))
+        .subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([['bob', 'cat'], [], ['fred', 'dog'], []])
     })
   })
   describe('first', function(){
