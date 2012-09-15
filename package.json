@@ -1,15 +1,15 @@
 {
   "name": "underarm",
   "version": "0.0.1",
-  "description": "Underscore Meets Reactive Extensions",
+  "description": "Underscore meets Reactive Programming",
   "main": "underarm.js",
-  "homepage": "http://simplectic.com/underarm",
+  "homepage": "http://kevinbeaty.net/projects/underarm",
   "scripts": {
     "test": "mocha"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/simplectic/underarm.git"
+    "url": "https://github.com/kevinbeaty/underarm.git"
   },
   "keywords": [
     "underscore",
@@ -22,7 +22,6 @@
   "devDependencies": {
       "uglify-js": "*",
       "mocha": "*",
-      "expect.js": "*",
-      "node-static": "*"
+      "expect.js": "*"
   }
 }

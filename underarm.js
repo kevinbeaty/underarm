@@ -1,4 +1,4 @@
-/* underarm v0.0.1 | http://simplectic.com/underarm | License: MIT */
+/* underarm v0.0.1 | http://kevinbeaty.net/projects/underarm | License: MIT */
 ;(function(root){
 "use strict";
 
@@ -144,8 +144,7 @@ var ObjectProto = Object.prototype
         console.log(err)
       }
     }
-  , _nextTick = (!isUndefined(process) && isFunction(process.nextTick))
-      ? process.nextTick : function(callback){setTimeout(callback, 0)}
+  , _nextTick = function(callback){setTimeout(callback, 0)}
 
 var Producer = (function(){
   function Producer(onSubscribe){
@@ -464,13 +463,30 @@ function produceOnComplete(producer, context, complete, error){
 function iteratorCall(iterator, value, context){
   if(isFunction(iterator)){
     return iterator.call(context, value)
-  } else if(isRegExp(iterator)){
-    return iterator.exec(value)
-  } else if(isUndefined(iterator)){
-    return iterator
-  } else {
+  }
+
+  if(isProducer(iterator)){
     return chain(iterator).attach(value)
   }
+
+  if(isRegExp(iterator)){
+    return iterator.exec(value)
+  }
+
+  if(isArray(iterator)){
+    var defer = deferred()
+      , results = []
+      , count = iterator.length
+    _forEach.call(iterator, function(it, i){
+      chain(it).attach(value).then(function(res){
+        results[i] = res
+        if(!--count) defer.resolve(results)
+      })
+    })
+    return defer
+  }
+
+  return iterator
 }
 
 function produceWithIterator(producer, context, iterator, iterate, iterComplete, error){

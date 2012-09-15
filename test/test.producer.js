@@ -112,11 +112,20 @@ describe('producer tests', function(){
 
       expect(values).to.be.eql([false, false, true, false])
     })
+    it('should allow multiple detached iterators', function(){
+      var values = []
+
+      _r.chain([1, 2, 3, 4])
+        .map([_r().find(function(x){return x < 3}), _r().contains(3)])
+        .subscribe(function(val){values.push(val)})
+
+      expect(values).to.be.eql([[1, false], [2, false], [undefined, true], [undefined, false]])
+    })
     it('should allow RegExp iterator', function(){
       var values = []
 
       _r.chain(['bob is a cat', '', 'fred is a dog', 'nothing'])
-        .map(/(\w+) is a (\w+)/)
+        .map(/(\w+) is a (\w+)/g)
         .map(function(match){return match && [match[1], match[2]]})
         .subscribe(function(val){values.push(val)})
 

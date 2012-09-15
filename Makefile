@@ -12,9 +12,6 @@ clean:
 test: | node_modules
 	npm test
 
-serve: | node_modules
-	node bin/serve.js
-
 node_modules:
 	npm install
 
