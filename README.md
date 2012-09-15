@@ -1,4 +1,5 @@
 ## Underarm
+[![Build Status](https://secure.travis-ci.org/kevinbeaty/underarm.png)](http://travis-ci.org/kevinbeaty/underarm)
 
 Reactive Programming inspired by [underscore](http://underscorejs.org) and
 [Reactive Cocoa](https://github.com/github/ReactiveCocoa).
