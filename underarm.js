@@ -1,6 +1,7 @@
 /* underarm v0.0.1 | http://kevinbeaty.net/projects/underarm | License: MIT */
 ;(function(root){
 "use strict";
+/*global setTimeout:true, clearTimeout:true */
 
 var _r = function(obj) {
   return chain(obj)
@@ -11,9 +12,10 @@ _r.VERSION = '0.0.1';
 var old_r = root._r
 
 if (typeof exports !== 'undefined') {
+  /*global exports:true */
   exports._r = _r
 } else {
-  root['_r'] = _r
+  root._r = _r
 }
 
 var ObjectProto = Object.prototype
@@ -86,7 +88,7 @@ var ObjectProto = Object.prototype
       }, context)
       return all
     }
-  , _indexOf = ArrayProto.indexOf || function(obj){
+  , _indexOf = ArrayProto.indexOf || function(obj, context){
       var idx = -1
       __each.call(this, function(val, i){
         if(val === obj){
@@ -133,20 +135,21 @@ var ObjectProto = Object.prototype
   , lookupIterator = function(obj, val) {
       return isFunction(val) ? val : function(obj){return obj[val]}
     }
-  , console = root.console || {
-        log:identity
-      , error:identity
-    }
   , errorHandler = function(err){
-      if(isFunction(console.error)){
-        console.error(err)
-      } else if(isFunction(console.log)){
-        console.log(err)
+      /*global console:true*/
+      if(typeof console === 'object'){
+        if(isFunction(console.error)){
+          console.error(err)
+        } else if(isFunction(console.log)){
+          console.log(err)
+        }
       }
     }
   , _nextTick = function(callback){setTimeout(callback, 0)}
 
+
 var Producer = (function(){
+  /*jshint validthis:true*/
   function Producer(onSubscribe){
     this.consumers = []
     this.onSubscribe = onSubscribe
@@ -188,6 +191,7 @@ var Producer = (function(){
 })()
 
 var Consumer = (function(){
+  /*jshint validthis:true */
   function Consumer(next, complete, error){
     appendToMethod(this, 'next', next)
     appendToMethod(this, 'complete', complete)
@@ -226,12 +230,12 @@ var Consumer = (function(){
   }
 
   P.onDispose = onDispose
-  function onDispose(onDispose){
-    if(isFunction(onDispose)){
+  function onDispose(onDisp){
+    if(isFunction(onDisp)){
       if(this.disposed){
-        onDispose()
+        onDisp()
       } else {
-        _push.call(this.onDisposes, onDispose)
+        _push.call(this.onDisposes, onDisp)
       }
     }
   }
@@ -252,6 +256,7 @@ var Consumer = (function(){
 })()
 
 var Deferred = (function(){
+  /*jshint validthis:true */
   function Deferred(){
     Consumer.call(this)
 
@@ -266,7 +271,7 @@ var Deferred = (function(){
     this.fulfilled = false
     this.failed = false
   }
-  Deferred.prototype = new Consumer
+  Deferred.prototype = new Consumer()
 
   var P = Deferred.prototype
 
@@ -283,15 +288,15 @@ var Deferred = (function(){
   }
 
   P.error = error
-  function error(error){
+  function error(err){
     if(this.unfulfilled){
-      eachConsumer(this, 'error', error)
+      eachConsumer(this, 'error', err)
       this.unfulfilled = false
       this.failed = true
 
       this.producer.onSubscribe = function(consumer){
         consumer.resolveSingleValue = true
-        consumer.error(error)
+        consumer.error(err)
         consumer.complete()
       }
     }
@@ -420,9 +425,9 @@ function producerWrap(delegate){
           : singleValueResolveValue({value:delegate}))
 }
 
-function produce(delegate, context, next, complete, error){
+function produce(deleg, context, next, complete, error){
   var producer = new Producer()
-    , delegate = producerWrap(delegate)
+    , delegate = producerWrap(deleg)
 
   producer.onSubscribe = function(consumer){
     var wrap = function(wrapped){
@@ -557,9 +562,9 @@ function map(producer, iterator, context){
 }
 
 _r.reduce = _r.foldl = _r.inject = reduce
-function reduce(producer, iterator, memo, context){
+function reduce(producer, iterator, mem, context){
   var initial = arguments.length > 2
-    , memo = {value:memo}
+    , memo = {value:mem}
   return produce(
         producer
       , context
@@ -574,7 +579,7 @@ function reduce(producer, iterator, memo, context){
       , singleValueResolveValue(memo))
 }
 
-function reduceMemoType(memoType){
+function reduceMemoType(MemoType){
   return function(producer, func){
     return reduce(
         producer
@@ -582,7 +587,7 @@ function reduceMemoType(memoType){
           func.call(memo, val)
           return memo
         }
-      , new memoType)
+      , new MemoType())
   }
 }
 var reduceArray = reduceMemoType(Array)
@@ -686,34 +691,34 @@ function pluck(producer, key){
 
 _r.max = max
 function max(producer, iterator, context){
-  var max = {computed: -Infinity}
+  var mx = {computed: -Infinity}
   return produceWithIterator(
       producer
     , context
     , iterator
     , function(consumer, value, computed){
-        if(computed > max.computed){
-          max.value = value
-          max.computed = computed
+        if(computed > mx.computed){
+          mx.value = value
+          mx.computed = computed
         }
       }
-    , singleValueResolveValue(max))
+    , singleValueResolveValue(mx))
 }
 
 _r.min = min
 function min(producer, iterator, context){
-  var min = {computed: Infinity}
+  var mn = {computed: Infinity}
   return produceWithIterator(
       producer
     , context
     , iterator
     , function(consumer, value, computed){
-        if(computed < min.computed){
-          min.value = value
-          min.computed = computed
+        if(computed < mn.computed){
+          mn.value = value
+          mn.computed = computed
         }
       }
-    , singleValueResolveValue(min))
+    , singleValueResolveValue(mn))
 }
 
 _r.sortBy = sortBy
@@ -903,6 +908,7 @@ function shift(producer){
 
 _r.unshift = unshift
 function unshift(producer){
+  /*jshint validthis:true */
   return splice.apply(this
     , _concat.call([producer, 0, 0], _slice.call(arguments, 1)))
 }
@@ -918,7 +924,7 @@ function indexOf(producer, value){
   var idx = 0
   return produceWithIterator(
         producer
-      , context
+      , null
       , predicateEqual(value)
       , function(consumer, value, found){
           if(found) singleValueResolve(consumer, idx)
@@ -933,7 +939,7 @@ function lastIndexOf(producer, value){
     , lastIdx = {value: -1}
   return produceWithIterator(
         producer
-      , context
+      , null
       , predicateEqual(value)
       , function(consumer, value, found){
           if(found) lastIdx.value = idx
@@ -991,7 +997,7 @@ function without(producer){
 }
 
 _r.uniq = _r.unique = unique
-function unique(producer, isSorted, iterator){
+function unique(producer, isSorted, iterator, context){
   var last = []
   return produceWithIterator(
       producer
@@ -1221,6 +1227,7 @@ function defaults(producer){
         _forEach.call(sources, function(source){
           var key
           for(key in source){
+            /*jshint eqnull:true */
             if(obj[key] == null) obj[key] = source[key]
           }
         })
@@ -1366,7 +1373,7 @@ function identity(value){
 
 _r.deferred = deferred
 function deferred(){
-  return chain(new Deferred)
+  return chain(new Deferred())
 }
 
 _r.defaultErrorHandler = defaultErrorHandler
@@ -1375,6 +1382,7 @@ function defaultErrorHandler(handler){
 }
 
 UnderProto.attach = function(producer){
+  /*jshint boss:true */
   var node = this
   do {
     if(node._detached){
@@ -1386,11 +1394,11 @@ UnderProto.attach = function(producer){
 }
 
 UnderProto.value = function(){
+  /*jshint boss:true */
   var result = this._wrapped
   if(isUndefined(result)){
     var stack = []
       , node = this
-      , result
       , args
       , attached = true
 
