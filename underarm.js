@@ -1542,4 +1542,36 @@ UnderProto.each = UnderProto.forEach = function(iterator, context){
   return unwrap(this).subscribe(consumer)
 }
 
+_r.streamRead = streamRead
+function streamRead(s){
+  var defer = new Deferred()
+  s.on('data', function(data){
+    defer.next(data)
+  })
+
+  s.on('error', function(err){
+    defer.error(err)
+  })
+
+  s.on('close', function(){
+    defer.complete()
+  })
+
+  s.on('end', function(){
+    defer.complete()
+  })
+
+  return chain(defer)
+}
+
+UnderProto.pipe = pipe
+function pipe(out, options){
+  /*jshint validthis:true*/
+  var write = function(data){out.write(data)}
+    , end = (options && options.end === false)
+      ? null
+      : function(){out.end()}
+  this.subscribe(write, end, end)
+}
+
 })(this)
