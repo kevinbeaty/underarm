@@ -1,21 +1,18 @@
 /* underarm v0.0.1 | http://kevinbeaty.net/projects/underarm | License: MIT */
-;(function(root){
 "use strict";
-/*global setTimeout:true, clearTimeout:true */
 
 var _r = function(obj) {
   return chain(obj)
 }
+module.exports = _r
 
-_r.VERSION = '0.0.1';
+_r.VERSION = '0.0.1'
 
-var old_r = root._r
-
-if (typeof exports !== 'undefined') {
-  /*global exports:true */
-  exports._r = _r
-} else {
-  root._r = _r
+var old_r
+if(typeof window !== 'undefined'){
+  /*global window*/
+  old_r = window._r
+  window._r = _r
 }
 
 var ObjectProto = Object.prototype
@@ -136,7 +133,6 @@ var ObjectProto = Object.prototype
       return isFunction(val) ? val : function(obj){return obj[val]}
     }
   , errorHandler = function(err){
-      /*global console:true*/
       if(typeof console === 'object'){
         if(isFunction(console.error)){
           console.error(err)
@@ -145,7 +141,7 @@ var ObjectProto = Object.prototype
         }
       }
     }
-  , _nextTick = function(callback){setTimeout(callback, 0)}
+  , _nextTick = process.nextTick
 
 
 var Producer = (function(){
@@ -678,7 +674,7 @@ function include(producer, obj, context){
 
 _r.invoke = _r.call = invoke
 function invoke(producer, method){
-  var args = _slice.call(arguments, 2);
+  var args = _slice.call(arguments, 2)
   return map(producer, function(value){
       return (isFunction(method) ? method : value[method]).apply(value, args)
   })
@@ -821,7 +817,7 @@ function first(producer, n){
 
 _r.initial = initial
 function initial(producer, n){
-  return slice(producer, 0, isUndefined(n) ? -1 : -n);
+  return slice(producer, 0, isUndefined(n) ? -1 : -n)
 }
 
 _r.last = last
@@ -1362,8 +1358,10 @@ _r.mixin = mixin
 
 _r.noConflict = noConflict
 function noConflict(){
-  root._r = old_r
-  return _r
+  if(typeof window !== 'undefined'){
+    window._r = old_r
+    return _r
+  }
 }
 
 _r.identity = identity
@@ -1573,5 +1571,3 @@ function pipe(out, options){
       : function(){out.end()}
   this.subscribe(write, end, end)
 }
-
-})(this)

@@ -7,13 +7,17 @@
         <script src="/test/mocha/mocha.js"></script>
         <script>mocha.setup('bdd')</script>
         <script src="/test/expect/expect.js"></script>
-        <script src="/underarm.js"></script>
-        <!--<script src="/build/underarm-0.0.1.js"></script>-->
-        <!--<script src="/build/underarm-0.0.1.min.js"></script>-->
+        <script src="/build/underarm-0.0.2.js"></script>
+        <!--<script src="/build/underarm-0.0.2.min.js"></script>-->
         <script src="/test/test.basic.js"></script>
         <script src="/test/test.promise.js"></script>
         <script src="/test/test.producer.js"></script>
-        <script>window.onload=function(){mocha.run()}</script>
+        <script>
+        window.onload=function(){
+            var runner = mocha.run()
+            runner.globals(['navigator', 'console'])
+        }
+        </script>
     </head>
     <body>
         <div id="mocha"></div>
