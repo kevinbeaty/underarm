@@ -18,6 +18,9 @@ if(typeof window !== 'undefined'){
 var funcs = require('./lib/funcs')
   , arrays = require('./lib/arrays')
   , objects = require('./lib/objects')
+  , Consumer = require('./lib/consumer')
+  , Producer = require('./lib/producer')
+  , Deferred = require('./lib/deferred')
   , isArray = funcs.isArray
   , isUndefined = funcs.isUndefined
   , isObject = funcs.isObject
@@ -46,284 +49,25 @@ var funcs = require('./lib/funcs')
   , _nextTick = process.nextTick
   , identity = funcs.identity
   , predicateEqual = funcs.predicateEqual
+  , resolveValue = Consumer.resolveValue
+  , resolveUndefined = Consumer.resolveUndefined
+  , resolveFalse = Consumer.resolveFalse
+  , resolveTrue = Consumer.resolveTrue
+  , resolveNegativeOne = Consumer.resolveNegativeOne
+  , seqNext = Consumer.seqNext
+  , seqNextResolve = Consumer.seqNextResolve
+  , producerWrap = Producer.wrap
+  , isProducer = Producer.isProducer
+  , isConsumer = Consumer.isConsumer
 
-
-var Producer = (function(){
-  /*jshint validthis:true*/
-  function Producer(onSubscribe){
-    this.consumers = []
-    this.onSubscribe = onSubscribe
-  }
-  var P = Producer.prototype
-
-  P.subscribe = subscribe
-  function subscribe(next, complete, error){
-    var consumer = consumerWrap(next, complete, error)
-      , producer = this
-
-    _push.call(producer.consumers, consumer)
-    consumer.onDispose(function(){
-      producer.unsubscribe(consumer)
-    })
-
-    if(producer.onSubscribe){
-      var disposable = producer.onSubscribe(consumer)
-      if(!isUndefined(disposable)){
-        if(isFunction(disposable)){
-          consumer.onDispose(disposable)
-        } else if(isFunction(disposable.dispose)){
-          consumer.onDispose(function(){
-            disposable.dispose()
-          })
-        }
-      }
-    }
-
-    return consumer
-  }
-
-  P.unsubscribe = unsubscribe
-  function unsubscribe(consumer){
-    _removeFrom(this.consumers, consumer)
-  }
-
-  return Producer
-})()
-
-var Consumer = (function(){
-  /*jshint validthis:true */
-  function Consumer(next, complete, error){
-    appendToMethod(this, 'next', next)
-    appendToMethod(this, 'complete', complete)
-    appendToMethod(this, 'error', error)
-
-    this.onDisposes = []
-    this.disposed = false
-    this.resolveSingleValue = false
-  }
-  var P = Consumer.prototype
-
-  P.next = next
-  function next(value){
-  }
-
-  P.error = error
-  function error(err){
-    errorHandler(err)
-    this.dispose()
-  }
-
-  P.complete = complete
-  function complete(){
-    this.dispose()
-  }
-
-  P.dispose = dispose
-  function dispose(){
-    var onDisposes = this.onDisposes
-      onDispose = _pop.call(onDisposes)
-    while(onDispose){
-      onDispose()
-      onDispose = _pop.call(onDisposes)
-    }
-    this.disposed = true
-  }
-
-  P.onDispose = onDispose
-  function onDispose(onDisp){
-    if(isFunction(onDisp)){
-      if(this.disposed){
-        onDisp()
-      } else {
-        _push.call(this.onDisposes, onDisp)
-      }
-    }
-  }
-
-  function appendToMethod(obj, method, toAppend){
-    if(isFunction(toAppend)){
-      var func = obj[method]
-      obj[method] = function(arg){
-        if(!this.disposed){
-          toAppend.call(obj, arg)
-          func.call(obj, arg)
-        }
-      }
-    }
-  }
-
-  return Consumer
-})()
-
-var Deferred = (function(){
-  /*jshint validthis:true */
-  function Deferred(){
-    Consumer.call(this)
-
-    this.producer = new Producer(function(consumer){
-      consumer.resolveSingleValue = true
-    })
-    this.promise = chain(this.producer)
-    this.resolveSingleValue = true
-
-    this.disposed = false
-    this.unfulfilled = true
-    this.fulfilled = false
-    this.failed = false
-  }
-  Deferred.prototype = new Consumer()
-
-  var P = Deferred.prototype
-
-  P.subscribe = subscribe
-  function subscribe(next, complete, error){
-    return this.producer.subscribe(next, complete, error)
-  }
-
-  P.next = next
-  function next(value){
-    if(this.unfulfilled){
-      eachConsumer(this, 'next', value)
-    }
-  }
-
-  P.error = error
-  function error(err){
-    if(this.unfulfilled){
-      eachConsumer(this, 'error', err)
-      this.unfulfilled = false
-      this.failed = true
-
-      this.producer.onSubscribe = function(consumer){
-        consumer.resolveSingleValue = true
-        consumer.error(err)
-        consumer.complete()
-      }
-    }
-  }
-
-  P.complete = complete
-  function complete(){
-    this.resolve()
-  }
-
-  P.resolve = resolve
-  function resolve(value){
-    if(this.unfulfilled){
-      if(!isUndefined(value)){
-        this.resolvedValue = value
-        this.producer.resolvedValue = value
-      }
-      eachConsumer(this, 'complete')
-      this.unfulfilled = false
-      this.fulfilled = true
-
-      this.producer.onSubscribe = function(consumer){
-        consumer.resolveSingleValue = true
-        if(isFunction(consumer.resolve)){
-          consumer.resolve(value)
-        } else {
-          if(!isUndefined(value)){
-            consumer.next(value)
-          }
-          consumer.complete()
-        }
-      }
-    }
-  }
-
-  P.dispose = dispose
-  function dispose(){
-    this.disposed = true
-    eachConsumer(this, 'dispose')
-  }
-
-  function eachConsumer(target, action, val){
-    var consumers = _slice.call(target.producer.consumers)
-    _forEach.call(consumers, function(consumer){
-      consumer[action](val)
-    })
-    Consumer.prototype[action].call(target, val)
-  }
-
-  Deferred.extend = function(wrapper, wrapped){
-    if(wrapped instanceof Deferred){
-      wrapper.promise = wrapped.promise
-      _forEach.call(
-          ['next', 'complete', 'error', 'resolve', 'dispose', 'onDispose']
-        , function(prop){
-            wrapper[prop] = function(){wrapped[prop].apply(wrapped, arguments)}
-          })
-    }
-  }
-
-  return Deferred
-})()
-
-function singleValueResolve(consumer, value){
-  consumer.resolveSingleValue = true
-  consumer.next(value)
-  consumer.complete()
-}
-
-function singleValueResolveValue(obj){
-  return function(consumer){
-    singleValueResolve(consumer, obj.value)
-  }
-}
-
-var singleValueResolveUndefined = singleValueResolveValue({})
-  , singleValueResolveFalse = singleValueResolveValue({value:false})
-  , singleValueResolveTrue = singleValueResolveValue({value:true})
-  , singleValueResolveNegativeOne = singleValueResolveValue({value:-1})
-
-function seqNext(consumer, value){
-  if(isArray(value)){
-    _forEach.call(value, function(val){
-      consumer.next(val)
-    })
-  } else if(isObject(value)){
-    _forIn.call(value, function(val, key){
-      consumer.next([key, val])
-    })
-  } else {
-    consumer.next(value)
-  }
-}
-
-function seqNextResolve(value){
-  return function(consumer){
-    seqNext(consumer, value)
-    consumer.complete()
-  }
-}
-
-function isConsumer(consumer){
-  return consumer instanceof Consumer
-    || (consumer instanceof Underarm
-        && consumer._wrapped instanceof Consumer)
-}
-
-function isProducer(producer){
+Deferred.makePromise = chain
+Producer.addProducerPredicate(function(producer){
   return producer instanceof Underarm
-      || producer instanceof Producer
-      || producer instanceof Deferred
-}
-
-function consumerWrap(next, complete, error){
-  return isConsumer(next)
-    ? next
-    : new Consumer(next, complete, error)
-}
-
-function producerWrap(delegate){
-  return isProducer(delegate)
-    ? delegate
-    : new Producer(
-        isArray(delegate)
-          ? seqNextResolve(delegate)
-          : singleValueResolveValue({value:delegate}))
-}
+})
+Consumer.addConsumerPredicate(function(consumer){
+  return consumer instanceof Underarm
+    && consumer._wrapped instanceof Consumer
+})
 
 function produce(deleg, context, next, complete, error){
   var producer = new Producer()
@@ -476,7 +220,7 @@ function reduce(producer, iterator, mem, context){
             memo.value = iterator.call(context, memo.value, value)
           }
         }
-      , singleValueResolveValue(memo))
+      , resolveValue(memo))
 }
 
 function reduceMemoType(MemoType){
@@ -509,7 +253,7 @@ function reduceRight(producer, iterator, memo, context){
               memo = iterator.call(context, memo, values[i])
             }
           }
-          singleValueResolve(consumer, memo)
+          consumer.resolve(memo)
         })
 }
 
@@ -520,9 +264,9 @@ function find(producer, iterator, context){
       , context
       , iterator
       , function(consumer, value, found){
-          if(found) singleValueResolve(consumer, value)
+          if(found) consumer.resolve(value)
         }
-      , singleValueResolveUndefined)
+      , resolveUndefined)
 }
 
 _r.filter = _r.select = filter
@@ -554,9 +298,9 @@ function every(producer, iterator, context){
     , context
     , iterator
     , function(consumer, value, passes){
-        if(!passes) singleValueResolveFalse(consumer)
+        if(!passes) resolveFalse(consumer)
       }
-    , singleValueResolveTrue)
+    , resolveTrue)
 }
 
 _r.any = _r.some = any
@@ -566,9 +310,9 @@ function any(producer, iterator, context){
     , context
     , iterator
     , function(consumer, value, passes){
-        if(passes) singleValueResolveTrue(consumer)
+        if(passes) resolveTrue(consumer)
       }
-    , singleValueResolveFalse)
+    , resolveFalse)
 }
 
 _r.include = _r.contains = include
@@ -602,7 +346,7 @@ function max(producer, iterator, context){
           mx.computed = computed
         }
       }
-    , singleValueResolveValue(mx))
+    , resolveValue(mx))
 }
 
 _r.min = min
@@ -618,7 +362,7 @@ function min(producer, iterator, context){
           mn.computed = computed
         }
       }
-    , singleValueResolveValue(mn))
+    , resolveValue(mn))
 }
 
 _r.sortBy = sortBy
@@ -674,7 +418,8 @@ function sliceWithSingleValueOption(producer, singleValueOption, begin, end){
 
   if(begin >= 0 && (!hasEnd || end >= 0)){
     if(singleValueOption && hasEnd && (end - begin === 1)){
-      return produce(producer, null, singleValueResolve)
+      return produce(producer, null
+        , function(consumer, value){consumer.resolve(value)})
     }
 
     return produce(
@@ -703,7 +448,7 @@ function sliceWithSingleValueOption(producer, singleValueOption, begin, end){
 
           if(singleValueOption && (!hasEnd && begin === len - 1)
               || (hasEnd && (end - begin === 1))){
-            singleValueResolve(consumer, results[begin])
+            consumer.resolve(results[begin])
           } else {
             for(i = _max(0, begin); i < _min(len, end); i++){
               consumer.next(results[i])
@@ -827,10 +572,10 @@ function indexOf(producer, value){
       , null
       , predicateEqual(value)
       , function(consumer, value, found){
-          if(found) singleValueResolve(consumer, idx)
+          if(found) consumer.resolve(idx)
           idx++
         }
-      , singleValueResolveNegativeOne)
+      , resolveNegativeOne)
 }
 
 _r.lastIndexOf = lastIndexOf
@@ -845,7 +590,7 @@ function lastIndexOf(producer, value){
           if(found) lastIdx.value = idx
           idx++
         }
-      , singleValueResolveValue(lastIdx))
+      , resolveValue(lastIdx))
 }
 
 _r.concat = concat
