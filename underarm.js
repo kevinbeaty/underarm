@@ -15,133 +15,37 @@ if(typeof window !== 'undefined'){
   window._r = _r
 }
 
-var ObjectProto = Object.prototype
-  , ArrayProto = Array.prototype
-  , toString = ObjectProto.toString
-  , hasOwnProp = ObjectProto.hasOwnProperty
-  , predicateEqual = function(obj){
-      return function(value){
-        return value === obj
-      }
-    }
-  , predicateToString = function(str){
-      return function(value){
-        return toString.call(value) == str
-      }
-    }
-  , isArray = Array.isArray || predicateToString('[object Array]')
-  , isUndefined = predicateEqual()
-  , isObject = function(obj){return obj === Object(obj)}
-  , isFunction = predicateToString('[object Function]')
-  , isRegExp = predicateToString('[object RegExp]')
+var funcs = require('./lib/funcs')
+  , arrays = require('./lib/arrays')
+  , objects = require('./lib/objects')
+  , isArray = funcs.isArray
+  , isUndefined = funcs.isUndefined
+  , isObject = funcs.isObject
+  , isFunction = funcs.isFunction
+  , isRegExp = funcs.isRegExp
   , _min = Math.min
   , _max = Math.max
-  , _has = function(obj, key){return obj && hasOwnProp.call(obj, key)}
-  , _pop = ArrayProto.pop
-  , _push = ArrayProto.push
-  , _slice = ArrayProto.slice
-  , _splice = ArrayProto.splice
-  , _shift = ArrayProto.shift
-  , _unshift = ArrayProto.unshift
-  , _concat = ArrayProto.concat
-  , __breaker = {}
-  , __each = function(iterator, context){
-      var i = 0
-        , len = this.length
-      for(; i < len; i++){
-        if(iterator.call(context || this, this[i], i, this) === __breaker){
-          break
-        }
-      }
-    }
-  , _forEach = ArrayProto.forEach || __each
-  , _forIn = function(iterator, context){
-      var key
-      for(key in this){
-        if(_has(this, key)){
-          if(iterator.call(context || this, this[key], key, this) === __breaker){
-            break
-          }
-        }
-      }
-    }
-  , _some = ArrayProto.some || function(iterator, context){
-      var any = false
-      __each.call(this, function(val, i, arr){
-        if(iterator.call(context, val, i, arr)){
-          any = true
-          return __breaker
-        }
-      }, context)
-      return any
-    }
-  , _every = ArrayProto.every || function(iterator, context){
-      var all = true
-      __each.call(this, function(val, i, arr){
-        if(!iterator.call(context, val, i, arr)){
-          all = false
-          return __breaker
-        }
-      }, context)
-      return all
-    }
-  , _indexOf = ArrayProto.indexOf || function(obj, context){
-      var idx = -1
-      __each.call(this, function(val, i){
-        if(val === obj){
-          idx = i
-          return __breaker
-        }
-      }, context)
-      return idx
-    }
-  , _inArray = function(array, value){
-       return _indexOf.call(array, value) >= 0
-    }
-  , _removeFrom = function(array, predicate){
-      if(!isFunction(predicate)){
-        predicate = predicateEqual(predicate)
-      }
-
-      var i = 0
-        , len = array.length
-      for(; i < len; i++){
-        if(predicate(array[i], i, array)){
-          _splice.call(array, i--, 1)
-          len--
-        }
-      }
-    }
-  , _sortedIndex = function(array, obj, iterator) {
-      iterator = iterator ? iterator : identity
-      var value = iterator(obj)
-        , low = 0
-        , high = array.length
-        , mid
-
-      while (low < high) {
-        mid = (low + high) >> 1
-        if(iterator(array[mid]) < value){
-          low = mid + 1
-        } else {
-          high = mid
-        }
-      }
-      return low
-    }
-  , lookupIterator = function(obj, val) {
-      return isFunction(val) ? val : function(obj){return obj[val]}
-    }
-  , errorHandler = function(err){
-      if(typeof console === 'object'){
-        if(isFunction(console.error)){
-          console.error(err)
-        } else if(isFunction(console.log)){
-          console.log(err)
-        }
-      }
-    }
+  , _has = funcs.has
+  , _pop = arrays.pop
+  , _push = arrays.push
+  , _slice = arrays.slice
+  , _splice = arrays.splice
+  , _shift = arrays.shift
+  , _unshift = arrays.unshift
+  , _concat = arrays.concat
+  , _forEach = arrays.forEach
+  , _forIn = objects.forIn
+  , _some = arrays.some
+  , _every = arrays.every
+  , _indexOf = arrays.indexOf
+  , _inArray = arrays.inArray
+  , _removeFrom = arrays.removeFrom
+  , _sortedIndex = arrays.sortedIndex
+  , lookupIterator = funcs.lookupIterator
+  , errorHandler = funcs.errorHandler
   , _nextTick = process.nextTick
+  , identity = funcs.identity
+  , predicateEqual = funcs.predicateEqual
 
 
 var Producer = (function(){
@@ -1365,9 +1269,6 @@ function noConflict(){
 }
 
 _r.identity = identity
-function identity(value){
-  return value
-}
 
 _r.deferred = deferred
 function deferred(){
