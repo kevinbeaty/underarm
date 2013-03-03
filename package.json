@@ -1,6 +1,6 @@
 {
   "name": "underarm",
-  "version": "0.0.1",
+  "version": "0.0.2pre",
   "description": "Underscore meets Reactive Programming",
   "main": "underarm.js",
   "homepage": "http://kevinbeaty.net/projects/underarm",
@@ -19,7 +19,8 @@
   "author": "Kevin Beaty",
   "license": "MIT",
   "dependencies": {
-    "through": "*"
+    "when": "1",
+    "through": "2"
   },
   "devDependencies": {
       "browserify": "*",
