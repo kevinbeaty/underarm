@@ -3,7 +3,7 @@
 describe('deferred tests', function(){
   describe('then', function(){
     it('should resolve value using deferred', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , result = 0
 
       deferred.then(function(val){result = val})
@@ -12,7 +12,7 @@ describe('deferred tests', function(){
       expect(result).to.be.eql(1)
     })
     it('should resolve value using promise', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , result = 0
 
       deferred.promise.then(function(val){result = val})
@@ -21,7 +21,7 @@ describe('deferred tests', function(){
       expect(result).to.be.eql(1)
     })
     it('should resolve after resolve', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , result = 0
 
       deferred.promise.then(function(val){result = val})
@@ -37,8 +37,8 @@ describe('deferred tests', function(){
 
     })
     it('should resolve promise with promise', function(done){
-      var deferred = _r.deferred()
-        , resolve = _r.deferred()
+      var deferred = _r.when.defer()
+        , resolve = _r.when.defer()
 
       deferred.promise
         .then(function(){
@@ -59,7 +59,7 @@ describe('deferred tests', function(){
       deferred.resolve()
     })
     it('should reject error using deferred', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , result = 0
         , error = 'expected error promise test'
 
@@ -69,7 +69,7 @@ describe('deferred tests', function(){
       expect(result).to.be.eql(error)
     })
     it('should reject error using promise', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , result = 0
         , error = 'expected error promise test'
 
@@ -79,7 +79,7 @@ describe('deferred tests', function(){
       expect(result).to.be.eql(error)
     })
     it('should reject error after error', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , result = 0
         , error
 
@@ -96,7 +96,7 @@ describe('deferred tests', function(){
       expect(error).to.be.eql('promise test error')
     })
     it('should call progback on next with deferred', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , result = []
 
       deferred.then(null, null, function(val){result.push(val)})
@@ -107,7 +107,7 @@ describe('deferred tests', function(){
       expect(result).to.be.eql([2, 3, 4])
     })
     it('should call progback on next with promise', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , result = []
 
       deferred.promise.then(null, null, function(val){result.push(val)})
@@ -118,7 +118,7 @@ describe('deferred tests', function(){
       expect(result).to.be.eql([2, 3, 4])
     })
     it('should chain deferred', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , result1 = 0
         , result2 = 0
         , result3 = 0
@@ -165,7 +165,7 @@ describe('deferred tests', function(){
       expect(result4).to.be.eql(1)
     })
     it('should chain promise', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , result1 = 0
         , result2 = 0
         , result3 = 0
@@ -212,7 +212,7 @@ describe('deferred tests', function(){
       expect(result4).to.be.eql(1)
     })
     it('should chain deferred and transform results', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , result1 = 0
         , result2 = 0
         , result3 = 0
@@ -259,7 +259,7 @@ describe('deferred tests', function(){
       expect(result4).to.be.eql(8)
     })
     it('should chain promise and transform results', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , result1 = 0
         , result2 = 0
         , result3 = 0
@@ -306,7 +306,7 @@ describe('deferred tests', function(){
       expect(result4).to.be.eql(8)
     })
     it('should chain promise and transform results with producers', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , result1 = 0
         , result2 = 0
         , result3 = 0
@@ -361,14 +361,14 @@ describe('deferred tests', function(){
       expect(result4).to.be.eql(24)
     })
     it('should chain promise and transform results with promises', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , result1 = 0
         , result2 = 0
         , result3 = 0
         , result4 = 0
-        , deferred1 = _r.deferred()
-        , deferred2 = _r.deferred()
-        , deferred3 = _r.deferred()
+        , deferred1 = _r.when.defer()
+        , deferred2 = _r.when.defer()
+        , deferred3 = _r.when.defer()
 
       deferred.promise
         .then(function(val){
@@ -430,7 +430,7 @@ describe('deferred tests', function(){
   })
   describe('deferred', function(){
     it('should subscribe next', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , values = []
         , next = function(value){
           values.push(value)
@@ -457,7 +457,7 @@ describe('deferred tests', function(){
       expect(values).to.eql([1, '2', {a:3, b:4}, [5, 6]])
     })
     it('should not send next after complete', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , values = []
         , next = function(value){
           values.push(value)
@@ -484,7 +484,7 @@ describe('deferred tests', function(){
       expect(values).to.eql([1, 2, 3, 4])
     })
     it('should not send next after error', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , values = []
         , next = function(value){
           values.push(value)
@@ -515,7 +515,7 @@ describe('deferred tests', function(){
       expect(values).to.eql([1, 2, 3, 4])
     })
     it('should subscribe complete', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , values = []
         , finished = false
         , next = function(value){
@@ -549,7 +549,7 @@ describe('deferred tests', function(){
       expect(values).to.eql([1, 2])
     })
     it('should not complete after error', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , values = []
         , finished = false
         , next = function(value){
@@ -583,7 +583,7 @@ describe('deferred tests', function(){
       expect(values).to.eql([1, 2])
     })
     it('should subscribe error', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , values = []
         , finished = false
         , errors = []
@@ -628,7 +628,7 @@ describe('deferred tests', function(){
       expect(errors).to.eql([err])
     })
     it('should not error after complete', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , values = []
         , finished = false
         , errors = []
@@ -678,7 +678,7 @@ describe('deferred tests', function(){
       expect(errors).to.be.empty()
     })
     it('should allow multiple subscriptions', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , values1 = []
         , values2 = []
         , finished1 = false

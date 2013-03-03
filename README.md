@@ -40,10 +40,10 @@ Any underarm chain is a promise, and deferreds can be
 created explicitly.
 
 ```javascript
-var deferred = _r.deferred()
-  , resolve = _r.deferred()
+var deferred = _r.when.defer()
+  , resolve = _r.when.defer()
 
-deferred.promise
+_r(deferred.promise)
   .then(resolve.promise)
   .then(function(result){
       expect(result).to.be.eql(43)
@@ -99,10 +99,10 @@ expect(values).to.be.eql([10 / 9 / 8 / 7])
 Detached chains can be iterators (remember all chains are promises)
 
 ```javascript
-var deferred = _r.deferred()
+var deferred = _r.when.defer()
   , result = 0
 
-deferred.promise
+_r(deferred.promise)
   .then(_r().map(function(x){return x*2}).first())
   .then(function(val){result = val})
 deferred.resolve(1)

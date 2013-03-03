@@ -1,3 +1,5 @@
+"use strict";
+/*globals describe, it, expect, _r */
 describe('basic tests', function(){
   describe('_r', function(){
     it('should have methods', function(){
@@ -7,7 +9,6 @@ describe('basic tests', function(){
       expect(_r.identity).to.be.a('function')
       expect(_r.defaultErrorHandler).to.be.a('function')
       expect(_r.when).to.be.a('function')
-      expect(_r.deferred).to.be.a('function')
       expect(_r.each).to.be.a('function')
       expect(_r.seq).to.be.a('function')
       expect(_r.map).to.be.a('function')

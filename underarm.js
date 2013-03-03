@@ -1090,11 +1090,6 @@ UnderProto.subscribe = function(next, complete, error){
 
 _r.when = when
 
-_r.deferred = deferred
-function deferred(){
-  return when.defer()
-}
-
 UnderProto.then = function(resolve, error, progress){
   return Producer.prototype.then.call(unwrap(this), resolve, error, progress)
 }

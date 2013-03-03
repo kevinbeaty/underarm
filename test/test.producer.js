@@ -226,7 +226,7 @@ describe('producer tests', function(){
     })
     it('should calculate on complete', function(){
       var values = []
-        , deferred = _r.deferred()
+        , deferred = _r.when.defer()
         , promise = deferred.promise
 
       _r(promise)
@@ -271,7 +271,7 @@ describe('producer tests', function(){
   })
   describe('find', function(){
     it('should find first value', function(){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , promise = deferred.promise
         , values = []
         , find = _r.find(promise, function(val){values.push(val); return (val%2 === 0)})
@@ -452,7 +452,7 @@ describe('producer tests', function(){
   describe('contains', function(){
     it('should short circuit on true', function(){
       var values = []
-        , deferred = _r.deferred()
+        , deferred = _r.when.defer()
         , promise = deferred.promise
 
       _r(promise)
@@ -634,7 +634,7 @@ describe('producer tests', function(){
     })
     it('should calculate on complete', function(){
       var values = []
-        , deferred = _r.deferred()
+        , deferred = _r.when.defer()
         , promise = deferred.promise
 
       _r(promise)
@@ -675,7 +675,7 @@ describe('producer tests', function(){
     })
     it('should calculate on complete', function(){
       var values = []
-        , deferred = _r.deferred()
+        , deferred = _r.when.defer()
 
       _r(deferred.promise)
         .sort()
@@ -739,7 +739,7 @@ describe('producer tests', function(){
     })
     it('should calculate on complete', function(){
       var values = []
-        , deferred = _r.deferred()
+        , deferred = _r.when.defer()
 
       _r(deferred)
         .groupBy(function(val){return val.charAt(0)})
@@ -1808,7 +1808,7 @@ describe('producer tests', function(){
     it('should shortcut on min depth', function(){
       var value = null
         , progress = []
-        , deferred = _r.deferred()
+        , deferred = _r.when.defer()
       _r([1, 2, 3])
         .zip(deferred.promise)
         .then(function(result){value = result}, null, function(val){progress.push(val)})
@@ -1838,8 +1838,8 @@ describe('producer tests', function(){
     it('should zip promises', function(){
       var value = null
         , progress = []
-        , promise1 = _r.deferred()
-        , promise2 = _r.deferred()
+        , promise1 = _r.when.defer()
+        , promise2 = _r.when.defer()
       _r(promise1)
         .zip(promise2)
         .then(function(result){value = result}, null, function(val){progress.push(val)})
@@ -2026,7 +2026,7 @@ describe('producer tests', function(){
       var values = []
         , tapped = []
         , expected = []
-        , deferred = _r.deferred()
+        , deferred = _r.when.defer()
         , completed = false
       _r(deferred.promise)
         .tap(function(val){tapped.push(val)}, function(){completed = true})
@@ -2070,7 +2070,7 @@ describe('producer tests', function(){
       var values = []
         , tapped = []
         , expected = []
-        , deferred = _r.deferred()
+        , deferred = _r.when.defer()
         , completed = false
         , error = null
         , errorToSend = 'expected error from tap test'
@@ -2123,7 +2123,7 @@ describe('producer tests', function(){
   describe('defer', function(){
     it('should defer next', function(done){
       var step = 0
-        , deferred = _r.deferred()
+        , deferred = _r.when.defer()
       _r(deferred.promise)
         .defer()
         .subscribe(function(val){
@@ -2145,7 +2145,7 @@ describe('producer tests', function(){
     })
     it('should defer error', function(done){
       var step = 0
-        , deferred = _r.deferred()
+        , deferred = _r.when.defer()
       _r(deferred.promise)
         .defer()
         .then(null, function(err){
@@ -2159,7 +2159,7 @@ describe('producer tests', function(){
   describe('delay', function(){
     it('should delay next', function(done){
       var step = 0
-        , deferred = _r.deferred()
+        , deferred = _r.when.defer()
       _r(deferred.promise)
         .delay(20)
         .subscribe(function(val){
@@ -2181,7 +2181,7 @@ describe('producer tests', function(){
     })
     it('should delay error', function(done){
       var step = 0
-        , deferred = _r.deferred()
+        , deferred = _r.when.defer()
       _r(deferred.promise)
         .delay(20)
         .then(null, function(err){
@@ -2194,7 +2194,7 @@ describe('producer tests', function(){
   })
   describe('debounce', function(){
     it('should debounce trailing next', function(done){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
       _r(deferred.promise)
         .delay(1)
         .debounce(10)
@@ -2208,7 +2208,7 @@ describe('producer tests', function(){
 
     })
     it('should debounce leading next', function(done){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
       _r(deferred.promise)
         .delay(1)
         .debounce(10, true)
@@ -2240,7 +2240,7 @@ describe('producer tests', function(){
           })
     })
     it('should debounce trailing error', function(done){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , values = []
       _r(deferred.promise)
         .delay(1)
@@ -2255,7 +2255,7 @@ describe('producer tests', function(){
       deferred.reject('expected error testing debounce')
     })
     it('should debounce leading error', function(done){
-      var deferred = _r.deferred()
+      var deferred = _r.when.defer()
         , values = []
       _r(deferred.promise)
         .delay(1)
