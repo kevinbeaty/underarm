@@ -801,12 +801,11 @@ function zip(){
           , values: []
           , depth: 0
           }
-       , dispose = delegate.producer.subscribe(
+      delegate.producer.subscribe(
           function(val){next(delegate, val)}
         , function(){complete(delegate)}
         , function(err){consumer.error(err)}
         )
-      consumer.onDispose(dispose)
     })
   }
   return producer

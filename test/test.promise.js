@@ -450,13 +450,6 @@ describe('deferred tests', function(){
       expect(deferred.promise.error).to.not.be.a('function')
       expect(deferred.promise.then).to.be.a('function')
     })
-    it('should subscribe with disposable', function(){
-      var deferred = _r.deferred()
-        , d = deferred.subscribe()
-      expect(d).to.be.ok()
-      expect(d.dispose).to.be.a('function')
-      d.dispose()
-    })
     it('should subscribe next', function(){
       var deferred = _r.deferred()
         , values = []
@@ -542,36 +535,6 @@ describe('deferred tests', function(){
       deferred.error('promise test error')
       expect(values).to.eql([1, 2, 3, 4])
     })
-    it('should not send next after dispose', function(){
-      var deferred = _r.deferred()
-        , values = []
-        , next = function(value){
-          values.push(value)
-        }
-        , d = deferred.subscribe(next)
-
-      expect(values).to.be.empty()
-
-      deferred.next(1)
-      expect(values).to.eql([1])
-
-      deferred.next(2)
-      expect(values).to.eql([1, 2])
-
-      deferred.next(3)
-      expect(values).to.eql([1, 2, 3])
-
-      deferred.next(4)
-      expect(values).to.eql([1, 2, 3, 4])
-
-      d.dispose()
-      expect(values).to.eql([1, 2, 3, 4])
-
-      deferred.next(5)
-      deferred.complete()
-      deferred.error(new Error)
-      expect(values).to.eql([1, 2, 3, 4])
-    })
     it('should subscribe complete', function(){
       var deferred = _r.deferred()
         , values = []
@@ -633,40 +596,6 @@ describe('deferred tests', function(){
       expect(finished).to.be(false)
 
       deferred.error(new Error)
-      expect(finished).to.be(false)
-
-      deferred.next(3)
-      deferred.complete()
-      deferred.error(new Error)
-      expect(values).to.eql([1, 2])
-    })
-    it('should not complete after dispose', function(){
-      var deferred = _r.deferred()
-        , values = []
-        , finished = false
-        , next = function(value){
-          values.push(value)
-        }
-        , complete = function(){
-          finished = true
-        }
-        , d = deferred.subscribe(next, complete)
-
-      expect(values).to.be.empty()
-      expect(finished).to.be(false)
-
-      expect(values).to.be.empty()
-      expect(finished).to.be(false)
-
-      deferred.next(1)
-      expect(values).to.eql([1])
-      expect(finished).to.be(false)
-
-      deferred.next(2)
-      expect(values).to.eql([1, 2])
-      expect(finished).to.be(false)
-
-      d.dispose()
       expect(finished).to.be(false)
 
       deferred.next(3)
@@ -769,52 +698,6 @@ describe('deferred tests', function(){
       expect(finished).to.be(true)
       expect(errors).to.be.empty()
     })
-    it('should not error after dispose', function(){
-      var deferred = _r.deferred()
-        , values = []
-        , finished = false
-        , errors = []
-        , next = function(value){
-          values.push(value)
-        }
-        , complete = function(){
-          finished = true
-        }
-        , error = function(err){
-          errors.push(err)
-        }
-        , d = deferred.subscribe(next, complete, error)
-
-      expect(values).to.be.empty()
-      expect(errors).to.be.empty()
-      expect(finished).to.be(false)
-
-      deferred.next(1)
-      expect(values).to.eql([1])
-      expect(errors).to.be.empty()
-      expect(finished).to.be(false)
-
-      deferred.next(2)
-      expect(values).to.eql([1, 2])
-      expect(errors).to.be.empty()
-      expect(finished).to.be(false)
-
-      d.dispose()
-      expect(values).to.eql([1, 2])
-      expect(errors).to.be.empty()
-      expect(finished).to.be(false)
-
-      deferred.error(new Error)
-      expect(finished).to.be(false)
-      expect(errors).to.be.empty()
-
-      deferred.next(3)
-      deferred.error(new Error)
-      deferred.complete()
-      expect(values).to.eql([1, 2])
-      expect(finished).to.be(false)
-      expect(errors).to.be.empty()
-    })
     it('should allow multiple subscriptions', function(){
       var deferred = _r.deferred()
         , values1 = []
@@ -860,24 +743,22 @@ describe('deferred tests', function(){
       expect(finished1).to.be(false)
       expect(finished2).to.be(false)
 
-      d2.dispose()
-
       deferred.next(3)
       expect(values1).to.eql([1, 2, 3])
-      expect(values2).to.eql([1, 2])
+      expect(values2).to.eql([1, 2, 3])
       expect(errors1).to.be.empty()
       expect(errors2).to.be.empty()
       expect(finished1).to.be(false)
       expect(finished2).to.be(false)
 
-      deferred.complete()
+      deferred.resolve()
       deferred.next(4)
       expect(values1).to.eql([1, 2, 3])
-      expect(values2).to.eql([1, 2])
+      expect(values2).to.eql([1, 2, 3])
       expect(errors1).to.be.empty()
       expect(errors2).to.be.empty()
       expect(finished1).to.be(true)
-      expect(finished2).to.be(false)
+      expect(finished2).to.be(true)
 
     })
   })
