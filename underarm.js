@@ -15,7 +15,8 @@ if(typeof window !== 'undefined'){
   window._r = _r
 }
 
-var through = require('through')
+var _when = require('when')
+  , through = require('through')
   , funcs = require('./lib/funcs')
   , arrays = require('./lib/arrays')
   , objects = require('./lib/objects')
@@ -1098,21 +1099,9 @@ function when(producer, resolve, error, progress, context){
   return chain(producer).then(resolve, error, progress, context)
 }
 
-function nextDeferredSend(deferred, action, callback, result, context){
-  var nextResult = iteratorCall(callback, result, context)
-
-  if(isProducer(nextResult)){
-    when(nextResult
-        , function(val){deferred[action](val)}
-        , function(error){deferred.error(error)})
-  } else {
-    if(isUndefined(nextResult)) nextResult = result
-    deferred[action](nextResult)
-  }
-}
-
-UnderProto.then = function(resolve, error, progress, context){
-  var nextDeferred = deferred()
+UnderProto.then = function(resolve, error, progress){
+  var deferred = _when.defer()
+    , resolver = deferred.resolver
     , self = unwrap(this)
     , results = []
     , consumer = new Consumer(
@@ -1122,7 +1111,7 @@ UnderProto.then = function(resolve, error, progress, context){
           } else {
             _push.call(results, result)
           }
-          nextDeferredSend(nextDeferred, 'next', progress, result, context)
+          resolver.notify(result)
         }
       , function(){
           var result =
@@ -1131,14 +1120,15 @@ UnderProto.then = function(resolve, error, progress, context){
                 : consumer.resolveSingleValue
                   ? results[results.length - 1]
                   : results
-          nextDeferredSend(nextDeferred, 'resolve', resolve, result, context)
+          resolver.resolve(result)
         }
       , function(err){
-          nextDeferredSend(nextDeferred, 'error', error, err, context)
+          resolver.reject(err)
         })
   self.subscribe(consumer)
 
-  return nextDeferred
+  return deferred.promise
+    .then(resolve, error, progress)
 }
 
 UnderProto.callback = function(){

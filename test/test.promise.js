@@ -1,3 +1,5 @@
+"use strict";
+/*global describe, it, _r, expect */
 describe('deferred tests', function(){
   describe('then', function(){
     it('should resolve value using deferred', function(){
@@ -34,23 +36,14 @@ describe('deferred tests', function(){
       expect(result).to.be.eql(1)
 
     })
-    it('should resolve promise with detached iterator', function(){
-      var deferred = _r.deferred()
-        , result = 0
-
-      deferred.promise
-        .then(_r().map(function(x){return x*2}).first())
-        .then(function(val){result = val})
-      deferred.resolve(1)
-
-      expect(result).to.be.eql(2)
-    })
     it('should resolve promise with promise', function(done){
       var deferred = _r.deferred()
         , resolve = _r.deferred()
 
       deferred.promise
-        .then(resolve.promise)
+        .then(function(){
+          return resolve.promise
+        })
         .then(function(result){
             expect(result).to.be.eql(43)
             done()
@@ -138,6 +131,7 @@ describe('deferred tests', function(){
             expect(result3).to.be.eql(0)
             expect(result4).to.be.eql(0)
             result1 = val
+            return val
           })
         .then(function(val){
             expect(result1).to.be.eql(1)
@@ -145,6 +139,7 @@ describe('deferred tests', function(){
             expect(result3).to.be.eql(0)
             expect(result4).to.be.eql(0)
             result2 = val
+            return val
           })
         .then(function(val){
             expect(result1).to.be.eql(1)
@@ -152,6 +147,7 @@ describe('deferred tests', function(){
             expect(result3).to.be.eql(0)
             expect(result4).to.be.eql(0)
             result3 = val
+            return val
           })
         .then(function(val){
             expect(result1).to.be.eql(1)
@@ -159,6 +155,7 @@ describe('deferred tests', function(){
             expect(result3).to.be.eql(1)
             expect(result4).to.be.eql(0)
             result4 = val
+            return val
           })
       deferred.resolve(1)
 
@@ -181,6 +178,7 @@ describe('deferred tests', function(){
             expect(result3).to.be.eql(0)
             expect(result4).to.be.eql(0)
             result1 = val
+            return val
           })
         .then(function(val){
             expect(result1).to.be.eql(1)
@@ -188,6 +186,7 @@ describe('deferred tests', function(){
             expect(result3).to.be.eql(0)
             expect(result4).to.be.eql(0)
             result2 = val
+            return val
           })
         .then(function(val){
             expect(result1).to.be.eql(1)
@@ -195,6 +194,7 @@ describe('deferred tests', function(){
             expect(result3).to.be.eql(0)
             expect(result4).to.be.eql(0)
             result3 = val
+            return val
           })
         .then(function(val){
             expect(result1).to.be.eql(1)
@@ -202,6 +202,7 @@ describe('deferred tests', function(){
             expect(result3).to.be.eql(1)
             expect(result4).to.be.eql(0)
             result4 = val
+            return val
           })
       deferred.resolve(1)
 
@@ -566,7 +567,7 @@ describe('deferred tests', function(){
 
       deferred.next(3)
       deferred.complete()
-      deferred.error(new Error)
+      deferred.error(new Error())
       expect(values).to.eql([1, 2])
     })
     it('should not complete after error', function(){
@@ -595,12 +596,12 @@ describe('deferred tests', function(){
       expect(values).to.eql([1, 2])
       expect(finished).to.be(false)
 
-      deferred.error(new Error)
+      deferred.error(new Error())
       expect(finished).to.be(false)
 
       deferred.next(3)
       deferred.complete()
-      deferred.error(new Error)
+      deferred.error(new Error())
       expect(values).to.eql([1, 2])
     })
     it('should subscribe error', function(){
@@ -637,7 +638,7 @@ describe('deferred tests', function(){
       expect(errors).to.be.empty()
       expect(finished).to.be(false)
 
-      var err = new Error
+      var err = new Error()
       deferred.error(err)
       expect(finished).to.be(false)
       expect(errors).to.eql([err])
@@ -687,12 +688,12 @@ describe('deferred tests', function(){
       expect(errors).to.be.empty()
       expect(finished).to.be(true)
 
-      deferred.error(new Error)
+      deferred.error(new Error())
       expect(finished).to.be(true)
       expect(errors).to.be.empty()
 
       deferred.next(3)
-      deferred.error(new Error)
+      deferred.error(new Error())
       deferred.complete()
       expect(values).to.eql([1, 2])
       expect(finished).to.be(true)
