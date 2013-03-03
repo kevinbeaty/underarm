@@ -15,7 +15,8 @@ if(typeof window !== 'undefined'){
   window._r = _r
 }
 
-var funcs = require('./lib/funcs')
+var throughStream = require('through')
+  , funcs = require('./lib/funcs')
   , arrays = require('./lib/arrays')
   , objects = require('./lib/objects')
   , Consumer = require('./lib/consumer')
@@ -1186,34 +1187,32 @@ UnderProto.each = UnderProto.forEach = function(iterator, context){
   return unwrap(this).subscribe(consumer)
 }
 
-_r.streamRead = streamRead
-function streamRead(s){
-  var defer = new Deferred()
-  s.on('data', function(data){
-    defer.next(data)
-  })
-
-  s.on('error', function(err){
-    defer.error(err)
-  })
-
-  s.on('close', function(){
-    defer.complete()
-  })
-
-  s.on('end', function(){
-    defer.complete()
-  })
-
-  return chain(defer)
-}
-
-UnderProto.pipe = pipe
-function pipe(out, options){
+UnderProto.through = through
+function through(read, write){
   /*jshint validthis:true*/
-  var write = function(data){out.write(data)}
-    , end = (options && options.end === false)
-      ? null
-      : function(){out.end()}
-  this.subscribe(write, end, end)
+  var defer = new Deferred()
+    , stream = throughStream(
+          function(data){defer.next(data)}
+        , function(){defer.complete()})
+
+  this.attach(defer)
+  this.defer().subscribe(
+      function(data){
+        stream.queue(data)
+      }
+    , function(){
+        stream.queue(null)
+      }
+    , function(err){
+        stream.emit('error', err)
+      });
+
+  if(!isUndefined(read)){
+    read.pipe(stream)
+  }
+
+  if(!isUndefined(write)){
+    stream.pipe(write)
+  }
+  return stream
 }

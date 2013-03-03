@@ -18,7 +18,9 @@
   ],
   "author": "Kevin Beaty",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "through": "*"
+  },
   "devDependencies": {
       "browserify": "*",
       "uglify-js": "*",
