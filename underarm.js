@@ -22,7 +22,7 @@ var when = require('when')
   , objects = require('./lib/objects')
   , Consumer = require('./lib/consumer')
   , Producer = require('./lib/producer')
-  , Deferred = require('./lib/deferred')
+  , Underarm = require('./lib/underarm')
   , isArray = funcs.isArray
   , isUndefined = funcs.isUndefined
   , isObject = funcs.isObject
@@ -61,15 +61,6 @@ var when = require('when')
   , producerWrap = Producer.wrap
   , isProducer = Producer.isProducer
   , isConsumer = Consumer.isConsumer
-
-Deferred.makePromise = chain
-Producer.addProducerPredicate(function(producer){
-  return producer instanceof Underarm
-})
-Consumer.addConsumerPredicate(function(consumer){
-  return consumer instanceof Underarm
-    && consumer._wrapped instanceof Consumer
-})
 
 function produce(deleg, context, next, complete, error){
   var producer = new Producer()
@@ -939,7 +930,6 @@ function produceDelayConsumer(producer, delayFun, arg){
     , delayConsumer('error', delayFun, arg))
 }
 
-
 _r.delay = delay
 function delay(producer, wait){
   return produceDelayConsumer(producer, setTimeout, wait)
@@ -976,21 +966,6 @@ function debounce(producer, wait, immediate){
         clearTimeout(timeout)
         consumer.error(error)
       })
-}
-
-function Underarm(obj, func, args) {
-  if(isUndefined(obj)){
-    this._detached = true
-  } else if(obj instanceof Underarm){
-    this._parent = obj
-    this._func = func
-    this._args = args
-  } else {
-    var wrapped = producerWrap(obj)
-    this._wrapped = wrapped
-
-    Deferred.extend(this, wrapped)
-  }
 }
 
 var UnderProto = Underarm.prototype
