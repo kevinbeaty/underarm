@@ -15,7 +15,7 @@ if(typeof window !== 'undefined'){
   window._r = _r
 }
 
-var _when = require('when')
+var when = require('when')
   , through = require('through')
   , funcs = require('./lib/funcs')
   , arrays = require('./lib/arrays')
@@ -125,7 +125,7 @@ function iteratorCall(iterator, value, context){
   }
 
   if(isArray(iterator)){
-    var defer = deferred()
+    var defer = when.defer()
       , results = []
       , count = iterator.length
     _forEach.call(iterator, function(it, i){
@@ -134,7 +134,7 @@ function iteratorCall(iterator, value, context){
         if(!--count) defer.resolve(results)
       })
     })
-    return defer
+    return defer.promise
   }
 
   return iterator
@@ -172,16 +172,15 @@ function produceWithIterator(producer, context, iterator, iterate, iterComplete,
           try {
             result = iteratorCall(iterator, value, context)
 
-            if(!isProducer(result)){
-              iterate(consumer, value, result)
-            } else {
+            if(when.isPromise(result)){
               promisesCount++
-              when(result
-                , function(resolved){
+              when(result, function(resolved){
                     iterate(consumer, value, resolved)
                     promiseCountdown()
                   }
                 , function(err){consumer.error(err)})
+            } else {
+              iterate(consumer, value, result)
             }
           } catch(e){
             consumer.error(e)
@@ -1037,11 +1036,6 @@ function noConflict(){
 
 _r.identity = identity
 
-_r.deferred = deferred
-function deferred(){
-  return chain(new Deferred())
-}
-
 _r.defaultErrorHandler = defaultErrorHandler
 function defaultErrorHandler(handler){
   errorHandler = handler
@@ -1095,70 +1089,37 @@ UnderProto.subscribe = function(next, complete, error){
 }
 
 _r.when = when
-function when(producer, resolve, error, progress, context){
-  return chain(producer).then(resolve, error, progress, context)
+
+_r.deferred = deferred
+function deferred(){
+  return when.defer()
 }
 
 UnderProto.then = function(resolve, error, progress){
-  var deferred = _when.defer()
-    , resolver = deferred.resolver
-    , self = unwrap(this)
-    , results = []
-    , consumer = new Consumer(
-        function(result){
-          if(consumer.resolveSingleValue){
-            results = [result]
-          } else {
-            _push.call(results, result)
-          }
-          resolver.notify(result)
-        }
-      , function(){
-          var result =
-                  _has(self, 'resolvedValue')
-                ? self.resolvedValue
-                : consumer.resolveSingleValue
-                  ? results[results.length - 1]
-                  : results
-          resolver.resolve(result)
-        }
-      , function(err){
-          resolver.reject(err)
-        })
-  self.subscribe(consumer)
-
-  return deferred.promise
-    .then(resolve, error, progress)
+  return Producer.prototype.then.call(unwrap(this), resolve, error, progress)
 }
 
 UnderProto.callback = function(){
-  return this.callbackWithBoundDeferred(function(val){this.next(val)})
+  return this.callbackWithBoundDeferred(function(val){this.notify(val)})
 }
 
 UnderProto.ncallback = function(){
   return this.callbackWithBoundDeferred(
     function(err, val){
       if(err){
-        this.error(err)
+        this.reject(err)
       } else {
-        this.next(val)
+        this.notify(val)
       }
     })
 }
 
 UnderProto.callbackWithBoundDeferred = function(callback){
-  var d = deferred()
+  var d = when.defer()
     , cb = function(){callback.apply(d, arguments)}
 
-  cb.next = function(next){d.next(next)}
-  cb.resolve = function(val){d.resolve(val)}
-  cb.complete = function(){d.complete()}
-  cb.error = function(err){d.error(err)}
-
-  var nextD = this.attach(d).then()
-  cb.then = function(resolve, error, progress){
-    return nextD.then(resolve, error, progress)
-  }
+  cb.resolver = d.resolver
+  cb.promise = when(this.attach(d))
 
   return cb
 }
