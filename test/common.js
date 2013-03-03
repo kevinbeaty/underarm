@@ -1,2 +1,2 @@
 expect = require('expect.js')
-_r = require('../underarm')
+_r = require('..')

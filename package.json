@@ -2,7 +2,7 @@
   "name": "underarm",
   "version": "0.0.2pre",
   "description": "Underscore meets Reactive Programming",
-  "main": "underarm.js",
+  "main": "index.js",
   "homepage": "http://kevinbeaty.net/projects/underarm",
   "scripts": {
     "test": "mocha"
