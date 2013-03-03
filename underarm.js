@@ -190,6 +190,27 @@ function produceWithIterator(producer, context, iterator, iterate, iterComplete,
   return produce(producer, context, next, complete, error)
 }
 
+_r.pipe = pipe
+function pipe(producer, write, options){
+  var stream = throughStream()
+  stream.pipe(write, options)
+  return produce(
+        producer
+      , null
+      , function(consumer, value){
+          stream.queue(value)
+          consumer.next(value)
+        }
+      , function(consumer){
+          stream.queue(null)
+          consumer.complete()
+        }
+      , function(consumer, err){
+          stream.emit('error', err)
+          consumer.error(err)
+        });
+}
+
 _r.seq = _r.entries = seq
 function seq(producer, context){
   return produce(producer, context, seqNext)
