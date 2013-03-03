@@ -15,7 +15,7 @@ if(typeof window !== 'undefined'){
   window._r = _r
 }
 
-var throughStream = require('through')
+var through = require('through')
   , funcs = require('./lib/funcs')
   , arrays = require('./lib/arrays')
   , objects = require('./lib/objects')
@@ -192,7 +192,7 @@ function produceWithIterator(producer, context, iterator, iterate, iterComplete,
 
 _r.pipe = pipe
 function pipe(producer, write, options){
-  var stream = throughStream()
+  var stream = through()
   stream.pipe(write, options)
   return produce(
         producer
@@ -1206,34 +1206,4 @@ UnderProto.each = UnderProto.forEach = function(iterator, context){
         }
       })
   return unwrap(this).subscribe(consumer)
-}
-
-UnderProto.through = through
-function through(read, write){
-  /*jshint validthis:true*/
-  var defer = new Deferred()
-    , stream = throughStream(
-          function(data){defer.next(data)}
-        , function(){defer.complete()})
-
-  this.attach(defer)
-  this.defer().subscribe(
-      function(data){
-        stream.queue(data)
-      }
-    , function(){
-        stream.queue(null)
-      }
-    , function(err){
-        stream.emit('error', err)
-      });
-
-  if(!isUndefined(read)){
-    read.pipe(stream)
-  }
-
-  if(!isUndefined(write)){
-    stream.pipe(write)
-  }
-  return stream
 }
