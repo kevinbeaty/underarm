@@ -2,7 +2,7 @@
 "use strict";
 
 var _r = function(obj) {
-  return chain(obj)
+  return Underarm.chain(obj)
 }
 module.exports = _r
 
@@ -108,7 +108,7 @@ function iteratorCall(iterator, value, context){
   }
 
   if(isProducer(iterator)){
-    return chain(iterator).attach(value)
+    return Underarm.chain(iterator).attach(value)
   }
 
   if(isRegExp(iterator)){
@@ -120,7 +120,7 @@ function iteratorCall(iterator, value, context){
       , results = []
       , count = iterator.length
     _forEach.call(iterator, function(it, i){
-      chain(it).attach(value).then(function(res){
+      Underarm.chain(it).attach(value).then(function(res){
         results[i] = res
         if(!--count) defer.resolve(results)
       })
@@ -968,38 +968,14 @@ function debounce(producer, wait, immediate){
       })
 }
 
-var UnderProto = Underarm.prototype
+Underarm._r = _r
+Underarm.mixin(_r)
 
-_r.chain = chain
-function chain(obj){
-  return (obj instanceof Underarm) ? obj : new Underarm(obj)
-}
-
-function unwrap(obj){
-  return (obj instanceof Underarm) ? obj.value() : obj
-}
-
-function mixin(obj) {
-  var name
-    , func
-    , addToWrapper = function(name, func){
-        UnderProto[name] = function() {
-          var args = _slice.call(arguments)
-          return new Underarm(this, func, args)
-        }
-      }
-
-  for(name in obj){
-    if(isFunction(obj[name])){
-      func = obj[name]
-      _r[name] = func
-      addToWrapper(name, func)
-    }
-  }
-}
-
-mixin(_r)
-_r.mixin = mixin
+_r.mixin = Underarm.mixin
+_r.chain = Underarm.chain
+_r.when = when
+_r.identity = identity
+_r.each = _r.forEach = Underarm.each
 
 _r.noConflict = noConflict
 function noConflict(){
@@ -1009,121 +985,7 @@ function noConflict(){
   }
 }
 
-_r.identity = identity
-
 _r.defaultErrorHandler = defaultErrorHandler
 function defaultErrorHandler(handler){
   errorHandler = handler
-}
-
-UnderProto.attach = function(producer){
-  /*jshint boss:true */
-  var node = this
-  do {
-    if(node._detached){
-      node._wrapped = producerWrap(producer)
-      break
-    }
-  } while(node = node._parent)
-  return this
-}
-
-UnderProto.value = function(){
-  /*jshint boss:true */
-  var result = this._wrapped
-  if(isUndefined(result)){
-    var stack = []
-      , node = this
-      , args
-      , attached = true
-
-    while(node._parent){
-      _push.call(stack, node)
-      node = node._parent
-      if(!isUndefined(node._wrapped)){
-        result = node._wrapped
-        attached = !node._detached
-        break
-      }
-    }
-
-    while(node = _pop.call(stack)){
-      args = _slice.call(node._args)
-      _unshift.call(args, result)
-      result = node._func.apply(_r, args)
-      if(attached){
-        node._wrapped = producerWrap(result)
-      }
-    }
-  }
-  return result
-}
-
-UnderProto.subscribe = function(next, complete, error){
-  return unwrap(this).subscribe(next, complete, error)
-}
-
-_r.when = when
-
-UnderProto.then = function(resolve, error, progress){
-  return Producer.prototype.then.call(unwrap(this), resolve, error, progress)
-}
-
-UnderProto.callback = function(){
-  return this.callbackWithBoundDeferred(function(val){this.notify(val)})
-}
-
-UnderProto.ncallback = function(){
-  return this.callbackWithBoundDeferred(
-    function(err, val){
-      if(err){
-        this.reject(err)
-      } else {
-        this.notify(val)
-      }
-    })
-}
-
-UnderProto.callbackWithBoundDeferred = function(callback){
-  var d = when.defer()
-    , cb = function(){callback.apply(d, arguments)}
-
-  cb.resolver = d.resolver
-  cb.promise = when(this.attach(d))
-
-  return cb
-}
-
-_r.each = _r.forEach = each
-function each(producer, iterator, context){
-  return chain(producer).each(iterator, context)
-}
-
-UnderProto.each = UnderProto.forEach = function(iterator, context){
-  var result = []
-    , consumer = new Consumer(
-      function(next){
-        _push.call(result, next)
-      }
-    , function(){
-        var key = 0
-          , len = result.length
-          , resolveSingleValue = consumer.resolveSingleValue
-        if(len){
-          if(!resolveSingleValue){
-            _forEach.call(result, iterator, context)
-          } else {
-            var singleValue = result[0]
-            if(singleValue && singleValue.length === +singleValue.length){
-              len = singleValue.length
-              _forEach.call(result, iterator, context)
-            } else if(isObject(singleValue)){
-              _forIn.call(singleValue, iterator, context)
-            } else {
-              iterator.call(context, singleValue, 0, result)
-            }
-          }
-        }
-      })
-  return unwrap(this).subscribe(consumer)
 }
