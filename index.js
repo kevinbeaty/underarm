@@ -58,13 +58,11 @@ var when = require('when')
   , resolveNegativeOne = Consumer.resolveNegativeOne
   , seqNext = Consumer.seqNext
   , seqNextResolve = Consumer.seqNextResolve
-  , producerWrap = Producer.wrap
   , isProducer = Producer.isProducer
-  , isConsumer = Consumer.isConsumer
 
 function produce(deleg, context, next, complete, error){
   var producer = new Producer()
-    , delegate = producerWrap(deleg)
+    , delegate = Producer.wrap(deleg)
 
   producer.onSubscribe = function(consumer){
     var wrap = function(wrapped){
@@ -788,7 +786,7 @@ function zip(){
 
     _forEach.call(toZips, function(toZip, i){
       var delegate = delegates[i] = {
-            producer: producerWrap(toZip)
+            producer: Producer.wrap(toZip)
           , values: []
           , depth: 0
           }
