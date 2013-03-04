@@ -51,6 +51,7 @@ var when = require('when')
   , _nextTick = process.nextTick
   , identity = funcs.identity
   , predicateEqual = funcs.predicateEqual
+  , resolveSingleValue = Consumer.resolveSingleValue
   , resolveValue = Consumer.resolveValue
   , resolveUndefined = Consumer.resolveUndefined
   , resolveFalse = Consumer.resolveFalse
@@ -264,7 +265,7 @@ function reduceRight(producer, iterator, memo, context){
               memo = iterator.call(context, memo, values[i])
             }
           }
-          consumer.resolve(memo)
+          resolveSingleValue(consumer, memo)
         })
 }
 
@@ -275,7 +276,7 @@ function find(producer, iterator, context){
       , context
       , iterator
       , function(consumer, value, found){
-          if(found) consumer.resolve(value)
+          if(found) resolveSingleValue(consumer, value)
         }
       , resolveUndefined)
 }
@@ -430,7 +431,7 @@ function sliceWithSingleValueOption(producer, singleValueOption, begin, end){
   if(begin >= 0 && (!hasEnd || end >= 0)){
     if(singleValueOption && hasEnd && (end - begin === 1)){
       return produce(producer, null
-        , function(consumer, value){consumer.resolve(value)})
+        , function(consumer, value){resolveSingleValue(consumer, value)})
     }
 
     return produce(
@@ -459,7 +460,7 @@ function sliceWithSingleValueOption(producer, singleValueOption, begin, end){
 
           if(singleValueOption && (!hasEnd && begin === len - 1)
               || (hasEnd && (end - begin === 1))){
-            consumer.resolve(results[begin])
+            resolveSingleValue(consumer, results[begin])
           } else {
             for(i = _max(0, begin); i < _min(len, end); i++){
               consumer.next(results[i])
@@ -583,7 +584,7 @@ function indexOf(producer, value){
       , null
       , predicateEqual(value)
       , function(consumer, value, found){
-          if(found) consumer.resolve(idx)
+          if(found) resolveSingleValue(consumer, idx)
           idx++
         }
       , resolveNegativeOne)
