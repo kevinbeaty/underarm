@@ -1,20 +1,6 @@
 /* underarm v0.0.1 | http://kevinbeaty.net/projects/underarm | License: MIT */
 "use strict";
 
-var _r = function(obj) {
-  return Underarm.chain(obj)
-}
-module.exports = _r
-
-_r.VERSION = '0.0.1'
-
-var old_r
-if(typeof window !== 'undefined'){
-  /*global window*/
-  old_r = window._r
-  window._r = _r
-}
-
 var when = require('when')
   , through = require('through')
   , funcs = require('./lib/funcs')
@@ -60,125 +46,13 @@ var when = require('when')
   , seqNext = Consumer.seqNext
   , seqNextResolve = Consumer.seqNextResolve
   , isProducer = Producer.isProducer
+  , produce = Underarm.produce
+  , produceWithIterator = Underarm.produceWithIterator
+  , produceOnComplete = Underarm.produceOnComplete
 
-function produce(deleg, context, next, complete, error){
-  var producer = new Producer()
-    , delegate = Producer.wrap(deleg)
+var _r = Underarm._r;
+module.exports = _r
 
-  producer.onSubscribe = function(consumer){
-    var wrap = function(wrapped){
-        return function(value){
-          wrapped.call(context, consumer, value)
-        }
-      }
-    , defaults = produce.defaults
-    , nextW = wrap(isFunction(next) ? next : defaults.next)
-    , completeW = wrap(isFunction(complete) ? complete : defaults.complete)
-    , errorW = wrap(isFunction(error) ? error : defaults.error)
-
-    return delegate.subscribe(nextW, completeW, errorW)
-  }
-
-  return producer
-}
-produce.defaults = {
-    next: function(consumer, value){consumer.next(value)}
-  , complete: function(consumer){consumer.complete()}
-  , error: function(consumer, err){consumer.error(err)}
-}
-
-function produceOnComplete(producer, context, complete, error){
-  var values = []
-  return produce(
-        producer
-      , context
-      , function(consumer, value){
-          _push.call(values, value)
-        }
-      , function(consumer){
-          complete(consumer, values)
-        }
-      , error)
-}
-
-function iteratorCall(iterator, value, context){
-  if(isFunction(iterator)){
-    return iterator.call(context, value)
-  }
-
-  if(isProducer(iterator)){
-    return Underarm.chain(iterator).attach(value)
-  }
-
-  if(isRegExp(iterator)){
-    return iterator.exec(value)
-  }
-
-  if(isArray(iterator)){
-    var defer = when.defer()
-      , results = []
-      , count = iterator.length
-    _forEach.call(iterator, function(it, i){
-      Underarm.chain(it).attach(value).then(function(res){
-        results[i] = res
-        if(!--count) defer.resolve(results)
-      })
-    })
-    return defer.promise
-  }
-
-  return iterator
-}
-
-function produceWithIterator(producer, context, iterator, iterate, iterComplete, error){
-  if(isUndefined(iterator)){
-    iterator = identity
-  }
-
-  if(!isFunction(iterComplete)){
-    iterComplete = produce.defaults.complete
-  }
-
-  var promisesCount = 0
-    , completeConsumer
-    , completeContext
-    , complete = function(consumer){
-        completeContext = this
-        completeConsumer = consumer
-        if(!promisesCount){
-          iterComplete.call(completeContext, consumer)
-        }
-      }
-    , promiseCountdown = function(){
-        promisesCount--
-        if(!promisesCount && !isUndefined(completeConsumer)){
-          complete.call(completeContext, completeConsumer)
-        }
-      }
-    , next = function(consumer, value){
-        var result
-
-        if(!consumer.disposed){
-          try {
-            result = iteratorCall(iterator, value, context)
-
-            if(when.isPromise(result)){
-              promisesCount++
-              when(result, function(resolved){
-                    iterate(consumer, value, resolved)
-                    promiseCountdown()
-                  }
-                , function(err){consumer.error(err)})
-            } else {
-              iterate(consumer, value, result)
-            }
-          } catch(e){
-            consumer.error(e)
-          }
-        }
-      }
-  return produce(producer, context, next, complete, error)
-}
 
 _r.pipe = pipe
 function pipe(producer, write, options){
@@ -967,7 +841,6 @@ function debounce(producer, wait, immediate){
       })
 }
 
-Underarm._r = _r
 Underarm.mixin(_r)
 
 _r.mixin = Underarm.mixin
@@ -976,15 +849,22 @@ _r.when = when
 _r.identity = identity
 _r.each = _r.forEach = Underarm.each
 
-_r.noConflict = noConflict
-function noConflict(){
-  if(typeof window !== 'undefined'){
-    window._r = old_r
-    return _r
-  }
-}
-
 _r.defaultErrorHandler = defaultErrorHandler
 function defaultErrorHandler(handler){
   errorHandler = handler
+}
+
+if(typeof window !== 'undefined'){
+  (function(){
+    var old_r
+    /*global window*/
+    old_r = window._r
+    window._r = _r
+
+    _r.noConflict = noConflict
+    function noConflict(){
+      window._r = old_r
+      return _r
+    }
+  })()
 }

@@ -5,7 +5,9 @@ describe('basic tests', function(){
     it('should have methods', function(){
       expect(_r).to.be.ok()
       expect(_r.VERSION).to.be.a('string')
-      expect(_r.noConflict).to.be.a('function')
+      if(process.browser){
+        expect(_r.noConflict).to.be.a('function')
+      }
       expect(_r.identity).to.be.a('function')
       expect(_r.defaultErrorHandler).to.be.a('function')
       expect(_r.when).to.be.a('function')
