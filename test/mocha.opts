@@ -5,5 +5,8 @@
 --reporter spec
 ./test/test.basic
 ./test/test.promise
-./test/test.producer
+./test/test.collections
+./test/test.arrays
+./test/test.objects
+./test/test.functions
 

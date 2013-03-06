@@ -24,10 +24,8 @@ _r.mixin(objects)
 _r.mixin(functions)
 _r.mixin(streams)
 
-_r.chain = Underarm.chain
 _r.when = when
 _r.identity = identity
-_r.each = _r.forEach = Underarm.each
 
 _r.defaultErrorHandler = defaultErrorHandler
 function defaultErrorHandler(handler){
