@@ -3,6 +3,7 @@
 
 var collections = require('./lib/collections')
   , arrays = require('./lib/arrays')
+  , objects = require('./lib/objects')
   , when = require('when')
   , through = require('through')
   , u = require('./lib/util')
@@ -81,97 +82,6 @@ function pipe(producer, write, options){
           stream.emit('error', err)
           consumer.error(err)
         });
-}
-
-
-_r.zipObjectBy = zipObjectBy
-function zipObjectBy(producer, val, context){
-  return reduceObject(producer, function(value){
-      var iterator = lookupIterator(value, val)
-        , entry = iterator.call(context, value)
-      if(isArray(entry)){
-        if(entry.length === 2){
-          this[entry[0]] = entry[1]
-        } else {
-          this[entry[0]] = _slice.call(entry, 1)
-        }
-      } else {
-        this[entry] = value
-      }
-  })
-}
-
-_r.zipObject = zipObject
-function zipObject(producer, context){
-  return zipObjectBy(producer, identity, context)
-}
-
-_r.keys = keys
-function keys(producer){
-  return pluck(seq(producer), 0)
-}
-
-_r.values = values
-function values(producer){
-  return pluck(seq(producer), 1)
-}
-
-_r.extend = extend
-function extend(producer){
-  var sources = _slice.call(arguments, 1)
-  return produce(
-      producer
-    , null
-    , function(consumer, obj){
-        _forEach.call(sources, function(source){
-          var key
-          for(key in source){
-            obj[key] = source[key]
-          }
-        })
-        consumer.next(obj)
-      })
-}
-
-_r.pick = pick
-function pick(producer){
-  var args = _slice.call(arguments, 1)
-    , keys = []
-
-   _forEach.call(args, function(arg){
-     _forEach.call(isArray(arg) ? arg : [arg], function(key){
-       _push.call(keys, key)
-     })
-   })
-
-  return produce(
-      producer
-    , null
-    , function(consumer, obj){
-        var result = {}
-        _forEach.call(keys, function(key){
-          if(key in obj) result[key] = obj[key]
-        })
-        consumer.next(result)
-      })
-}
-
-_r.defaults = defaults
-function defaults(producer){
-  var sources = _slice.call(arguments, 1)
-  return produce(
-      producer
-    , null
-    , function(consumer, obj){
-        _forEach.call(sources, function(source){
-          var key
-          for(key in source){
-            /*jshint eqnull:true */
-            if(obj[key] == null) obj[key] = source[key]
-          }
-        })
-        consumer.next(obj)
-      })
 }
 
 _r.tap = tap
@@ -254,6 +164,7 @@ _r.mixin = Underarm.mixin
 _r.mixin(_r)
 _r.mixin(collections)
 _r.mixin(arrays)
+_r.mixin(objects)
 
 _r.chain = Underarm.chain
 _r.when = when
