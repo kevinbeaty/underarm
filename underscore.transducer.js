@@ -36,70 +36,6 @@
     _ = require('underscore')._;
   }
 
-  // Transducer Functions
-  // --------------------
-  
-  // Takes a reducing step function of 2 args and returns a function suitable for
-  // transduce by adding an arity-1 signature that calls complete 
-  // (default - identity) on the result argument.
-  _r.completing = function(step, complete){
-    complete = complete || _.identity;
-    return function(result, input){
-      return (result === void 0)  ? step
-        :    (input === void 0)   ? complete(result)
-        :    step(result, input);
-    }
-  }
-
-  // Reduce with a transformation of step (transform). If memo is not
-  // supplied, step() will be called to produce it. step should be a reducing
-  // step function that accepts both 1 and 2 arguments, if it accepts
-  // only 2 you can add the arity-1 with _r.completing. Returns the result
-  // of applying (the transformed) transform to memo and the first item in collection,
-  // then applying transform to that result and the 2nd item, etc. If collection
-  // contains no items, returns memo and step is not called. Note that
-  // certain transforms may inject or skip items.
-  _r.transduce = function(obj, transform, step, memo){
-    if(memo === void 0){
-      memo = step();
-    }
-
-    if(transform instanceof _r){
-      transform = transform._wrapped;
-    }
-
-    step = transform(step);
-    return step(_r.reduce(obj, step, memo));
-  }
-
-  // Conjoins the item to the collection, and returns collection 
-  _r.conj = function(obj, item){
-    if(item === void 0){
-      return obj;
-    }
-
-    if(obj === void 0){
-      return [];
-    }
-
-    // TODO objects
-    obj.push(item);
-    return obj;
-  }
-
-  // Returns a new coll consisting of to-coll with all of the items of
-  // from-coll conjoined. A transducer (step function) may be supplied.
-  _r.into = function(to, transform, from){
-    var step = _r.conj;
-
-    if(from === void 0){
-      from = transform
-      return _r.reduce(from, step, to)
-    }
-
-    return _r.transduce(from, transform, step, to)
-  }
-
   // Collection Functions
   // --------------------
 
@@ -108,7 +44,7 @@
     iteratee = _.iteratee(iteratee);
     return function(step){
       return function(result, input){
-        return (result === void 0)  ? step
+        return (result === void 0)  ? step()
           :    (input === void 0)   ? step(result)
           :    step(result, iteratee(input))
       }
@@ -162,7 +98,7 @@
     predicate = _.iteratee(predicate);
     return function(step){
       return function(result, input){
-        return (result === void 0)  ? step
+        return (result === void 0)  ? step()
           :    (input === void 0)   ? step(result)
           :    (predicate(input))   ? step(result, input)
           :    result;
@@ -182,7 +118,7 @@
     return function(step){
       var found = false;
       return function(result, input){
-        if(result === void 0) return step;
+        if(result === void 0) return step();
 
         if(input === void 0){
           if(!found){
@@ -207,7 +143,7 @@
     return function(step){
       var found = false;
       return function(result, input){
-        if(result === void 0) return step;
+        if(result === void 0) return step();
 
         if(input === void 0){
           if(!found){
@@ -264,7 +200,7 @@
     return function(step){
       var computedResult = -Infinity, lastComputed = -Infinity, computed;
       return function(result, input){
-        if(result === void 0) return step;
+        if(result === void 0) return step();
 
         if(input === void 0){
           result = step(result, computedResult);
@@ -288,7 +224,7 @@
     return function(step){
       var computedResult = Infinity, lastComputed = Infinity, computed;
       return function(result, input){
-        if(result === void 0) return step;
+        if(result === void 0) return step();
 
         if(input === void 0){
           result = step(result, computedResult);
@@ -315,7 +251,7 @@
     return function(step){
       var count = n;
       return function(result, input){
-        if(result === void 0) return step;
+        if(result === void 0) return step();
         if(input === void 0) return step(result);
 
         step(result, input);
@@ -390,7 +326,7 @@
   _r.tap = function(interceptor) {
     return function(step){
       return function(result, input){
-        if(result === void 0) return step;
+        if(result === void 0) return step();
         if(input === void 0) return step(result);
         interceptor(result, input);
         return step(result, input);
@@ -443,6 +379,78 @@
     root._r = previous_r;
     return this;
   };
+
+  // Transducer Functions
+  // --------------------
+  
+  // Takes a reducing step function of 2 args and returns a function suitable for
+  // transduce by adding an arity-1 signature that calls complete 
+  // (default - identity) on the result argument.
+  _r.completing = function(step, complete){
+    complete = complete || _.identity;
+    return function(result, input){
+      return (result === void 0)  ? step()
+        :    (input === void 0)   ? complete(result)
+        :    step(result, input);
+    }
+  }
+
+  // Appends (conjoins) the item to the collection, and returns collection 
+  _r.append = _r.conj = _r.conjoin = function(obj, item){
+    if(obj === void 0){
+      return [];
+    }
+
+    if(item === void 0){
+      return obj;
+    }
+
+    // TODO objects
+    obj.push(item);
+    return obj;
+  }
+
+  // Reduce with a transformation of step (transform). If memo is not
+  // supplied, step() will be called to produce it. step should be a reducing
+  // step function that accepts both 1 and 2 arguments, if it accepts
+  // only 2 you can add the arity-1 with _r.completing. Returns the result
+  // of applying (the transformed) transform to memo and the first item in collection,
+  // then applying transform to that result and the 2nd item, etc. If collection
+  // contains no items, returns memo and step is not called. Note that
+  // certain transforms may inject or skip items.
+  _r.transduce = function(transform, obj, step, memo){
+    if(step === void 0){
+      step = _r.append;
+    }
+
+    if(memo === void 0){
+      memo = step();
+    }
+
+    step = transform(step);
+    return step(_r.reduce(obj, step, memo));
+  }
+
+  _r.prototype.transduce = function(obj, step, memo){
+    return _r.transduce(this._wrapped, obj, step, memo);
+  }
+
+  // Returns a new coll consisting of to-coll with all of the items of
+  // from-coll conjoined. A transducer (step function) may be supplied.
+  _r.into = function(to, transform, from){
+    var step = _r.append;
+
+    if(from === void 0){
+      from = transform
+      return _r.reduce(from, step, to)
+    }
+
+    return _r.transduce(transform, from, step, to)
+  }
+
+  _r.prototype.into = function(to, from){
+    return _r.into(to, this._wrapped, from);
+  }
 
   // AMD registration happens at the end for compatibility with AMD loaders
   // that may not enforce next-turn semantics on modules. Even though general
