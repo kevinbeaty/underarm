@@ -1,0 +1,28 @@
+{
+  "name": "underscore-transducer",
+  "version": "0.0.1",
+  "description": "Transducers for Underscore",
+  "main": "underscore.transducer.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kevinbeaty/underscore-transducer"
+  },
+  "keywords": [
+    "Underscore",
+    "Transducer",
+    "Reducer",
+    "Reactive"
+  ],
+  "author": "Kevin Beaty",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kevinbeaty/underscore-transducer/issues"
+  },
+  "homepage": "https://github.com/kevinbeaty/underscore-transducer",
+  "dependencies": {
+    "underscore": "~1.7.0"
+  }
+}
