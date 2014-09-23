@@ -249,7 +249,7 @@
   };
 
   // Returns everything but the first entry. Aliased as `tail` and `drop`.
-  // Passing an **n** will return the rest N values. 
+  // Passing an **n** will return the rest N values.
   _.rest = _.tail = _.drop = function(array, n, guard) {
     return slice.call(array, n == null || guard ? 1 : n);
   };
@@ -356,7 +356,7 @@
   // Transducer Functions
   // --------------------
 
-  // Wrapper to return from iteratee of reduce to terminate 
+  // Wrapper to return from iteratee of reduce to terminate
   // _r.reduce early with the provided value
   function Reduced(value){this.value = value};
   _r.reduced = function(value){
@@ -366,13 +366,15 @@
       Symbol_iterator = (typeof Symbol !== 'undefined' && Symbol.iterator || '@@iterator');
 
   // **Reduce** builds up a single result from a list of values, aka `inject`,
-  // or `foldl`.
+  // or `foldl`.  This implementation extends underscores implementation by
+  // allowing early termination using _r.reduced and accepts iterators (ES6 or any object
+  // that defines a next method)
   _r.reduce = _r.foldl = _r.inject = function(obj, iteratee, memo) {
     if (obj == null) obj = [];
     var keys = obj.length !== +obj.length && _.keys(obj),
         length = (keys || obj).length,
         index = 0, currentKey,
-        iterator = (keys && (obj[Symbol_iterator] || obj));
+        iterator = (keys && (obj[Symbol_iterator] && obj[Symbol_iterator]() || obj));
 
     if(_.isFunction(iterator.next)){
       // Detected an iterator
@@ -403,9 +405,9 @@
     return memo;
   };
 
-  
+
   // Takes a reducing step function of 2 args and returns a function suitable for
-  // transduce by adding an arity-1 signature that calls complete 
+  // transduce by adding an arity-1 signature that calls complete
   // (default - identity) on the result argument.
   _r.completing = function(step, complete){
     complete = complete || _.identity;
@@ -416,7 +418,7 @@
     }
   }
 
-  // Appends (conjoins) the item to the collection, and returns collection 
+  // Appends (conjoins) the item to the collection, and returns collection
   _r.append = _r.conj = _r.conjoin = function(obj, item){
     if(obj === void 0){
       return [];
@@ -452,6 +454,7 @@
     return step(_r.reduce(obj, step, memo));
   }
 
+  // Calls transduce using the chained transformation
   _r.prototype.transduce = function(obj, step, memo){
     return _r.transduce(this._wrapped, obj, step, memo);
   }
@@ -469,8 +472,28 @@
     return _r.transduce(transform, from, step, to)
   }
 
+  // Calls into using the chained transformation
   _r.prototype.into = function(to, from){
     return _r.into(to, this._wrapped, from);
+  }
+
+  // Creates an (duck typed) iterator that calls the provided next callback repeatedly
+  // and uses the return value as the next value of the iterator.
+  // Marks iterator as done if the next callback returns undefined (returns nothing)
+  // Can be used to as a source obj to reduce, transduce etc
+  _r.generate = function(next){
+    return {
+      next: function(){
+        var value = next();
+        return (value === void 0) ? {done: true} : {done: false, value: value};
+      }
+    }
+  }
+
+  // Transduces the current chained object by using the chained trasnformation
+  // and an iterator created with the callback
+  _r.prototype.generate = function(callback){
+    return this.transduce(_r.generate(callback));
   }
 
   // AMD registration happens at the end for compatibility with AMD loaders
