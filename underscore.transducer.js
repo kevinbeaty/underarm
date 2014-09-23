@@ -463,8 +463,24 @@
     }
 
     // TODO objects
-    obj.push(item);
-    return obj;
+    if(_.isArray(obj)){
+      obj.push(item);
+      return obj;
+    }
+    return item;
+  }
+
+  // Step function that maintains the last value as the memo (default null)
+  _r.lastValue = function(obj, item){
+    if(obj === void 0){
+      return null;
+    }
+
+    if(item === void 0){
+      return obj;
+    }
+
+    return item;
   }
 
   // Reduce with a transformation of step (transform). If memo is not
@@ -492,6 +508,54 @@
   // Calls transduce using the chained transformation
   _r.prototype.transduce = function(obj, step, memo){
     return _r.transduce(this._wrapped, obj, step, memo);
+  }
+
+  // Creates a callback that starts a transducer process and accepts
+  // parameter as a new item in the process. Each item advances the state
+  // of the transducer. If the transducer exhausts due to early termination,
+  // all subsequent calls to the callback will return the last value.
+  // If the callback is called with no argument, the transducer terminates,
+  // and all subsequent calls will return the last computed result.
+  // The default step function is _r.lastValue (with default memo of null)
+  _r.asCallback = function(transform, step, memo){
+    var reduced;
+    if(step === void 0){
+      step = _r.lastValue;
+    }
+
+    if(memo === void 0){
+      memo = step();
+    }
+
+    step = transform(step);
+    return function(item){
+      if(item === void 0){
+        // complete
+        reduced = memo;
+        step(reduced);
+      }
+
+      // we have exhausted process return result
+      if(reduced) return reduced;
+
+      // step to next result.
+      memo = step(memo, item);
+
+      // check if exhausted
+      if(memo instanceof Reduced){
+        reduced = memo.value;
+        step(reduced); // notify completion
+        return reduced;
+      }
+
+      // return current value
+      return memo;
+    }
+  }
+
+  // Calls asCallback with the chained transformation
+  _r.prototype.asCallback = function(step, memo){
+    return _r.asCallback(this._wrapped, step, memo);
   }
 
   // Returns a new coll consisting of to-coll with all of the items of
