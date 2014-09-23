@@ -39,7 +39,24 @@
   // Collection Functions
   // --------------------
 
+  // Executes the iteratee with iteratee(input, idx, result) for each item
+  // passed through transducer without changing the result. The input is the current
+  // input, idx is a running index, and the result is current result. This is a
+  // stateful transducer (the idx)
+  _r.each = _.forEach = function(iteratee) {
+    return function(step){
+      var i = 0;
+      return function(result, input){
+        if(result === void 0) return step();
+        if(input === void 0) return step(result);
+        iteratee(input, i++, result);
+        return step(result, input);
+      }
+    }
+  };
+
   // Return the results of applying the iteratee to each element.
+  // Stateless transducer
   _r.map = _r.collect = function(iteratee) {
     iteratee = _.iteratee(iteratee);
     return function(step){
@@ -53,6 +70,7 @@
 
 
   // Return the first value which passes a truth test. Aliased as `detect`.
+  // Stateless transducer
   _r.find = _r.detect = function(predicate) {
     predicate = _.iteratee(predicate);
     return function(step){
@@ -67,6 +85,7 @@
 
   // Return all the elements that pass a truth test.
   // Aliased as `select`.
+  // Stateless transducer
   _r.filter = _r.select = function(predicate) {
     predicate = _.iteratee(predicate);
     return function(step){
@@ -80,12 +99,15 @@
   };
 
   // Return all the elements for which a truth test fails.
+  // Stateless transducer
   _r.reject = function(predicate) {
     return _r.filter(_.negate(_.iteratee(predicate)));
   };
 
   // Determine whether all of the elements match a truth test.
   // Aliased as `all`.
+  // Stateful transducer (found).  Early termination if item
+  // does not match predicate.
   _r.every = _r.all = function(predicate) {
     predicate = _.iteratee(predicate);
     return function(step){
@@ -111,6 +133,7 @@
 
   // Determine if at least one element in the object matches a truth test.
   // Aliased as `any`.
+  // Stateful transducer (found).  Early termination if item matches predicate.
   _r.some = _r.any = function(predicate) {
     predicate = _.iteratee(predicate);
     return function(step){
@@ -136,11 +159,13 @@
 
   // Determine if contains a given value (using `===`).
   // Aliased as `include`.
+  // Stateful transducer (found). Early termination when item found.
   _r.contains = _r.include = function(target) {
     return _r.some(function(x){return x === target});
   };
 
   // Invoke a method (with arguments) on every item in a collection.
+  // Stateless transducer
   _r.invoke = function(method) {
     var args = slice.call(arguments, 2);
     var isFunc = _.isFunction(method);
@@ -150,23 +175,27 @@
   };
 
   // Convenience version of a common use case of `map`: fetching a property.
+  // Stateless transducer.
   _r.pluck = function(key) {
     return _r.map(_.property(key));
   };
 
   // Convenience version of a common use case of `filter`: selecting only objects
   // containing specific `key:value` pairs.
+  // Stateless transducer
   _r.where = function(attrs) {
     return _r.filter(_.matches(attrs));
   };
 
   // Convenience version of a common use case of `find`: getting the first object
   // containing specific `key:value` pairs.
+  // Stateful transducer (found). Early termination when found.
   _r.findWhere = function(attrs) {
     return _r.find(_.matches(attrs));
   };
 
   // Return the maximum element (or element-based computation).
+  // Stateful transducer (current max value and computed result)
   _r.max = function(iteratee) {
     iteratee = _.iteratee(iteratee);
 
@@ -191,6 +220,7 @@
   };
 
   // Return the minimum element (or element-based computation).
+  // Stateful transducer (current min value and computed result)
   _r.min = function(obj, iteratee) {
     iteratee = _.iteratee(iteratee);
 
@@ -219,6 +249,7 @@
 
   // Get the first element of an array. Passing **n** will return the first N
   // values in the array. Aliased as `head` and `take`.
+  // Stateful transducer (running count)
   _r.first = _r.head = _r.take = function(n) {
     n = (n > 0) ? n : 1;
     return function(step){
@@ -256,6 +287,7 @@
   */
 
   // Trim out all falsy values from an array.
+  // Stateless transducer
   _r.compact = function() {
     return _r.filter(_.identity);
   };
@@ -296,6 +328,8 @@
   // Invokes interceptor with each result and input, and then passes through input.
   // The primary purpose of this method is to "tap into" a method chain, in
   // order to perform operations on intermediate results within the chain.
+  // Executes interceptor with current result and input
+  // Stateless transducer
   _r.tap = function(interceptor) {
     return function(step){
       return function(result, input){
@@ -441,6 +475,7 @@
   // then applying transform to that result and the 2nd item, etc. If collection
   // contains no items, returns memo and step is not called. Note that
   // certain transforms may inject or skip items.
+  // The default step function is _r.append (with default value [])
   _r.transduce = function(transform, obj, step, memo){
     if(step === void 0){
       step = _r.append;
