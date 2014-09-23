@@ -52,39 +52,12 @@
   };
 
 
-  function Reduced(value){this.value = value};
-  _r.reduced = function(value){
-    return new Reduced(value);
-  }
-
-  var reduceError = 'Reduce of empty array with no initial value';
-  // **Reduce** builds up a single result from a list of values, aka `inject`,
-  // or `foldl`.
-  _r.reduce = _r.foldl = _r.inject = function(obj, iteratee, memo) {
-    if (obj == null) obj = [];
-    var keys = obj.length !== +obj.length && _.keys(obj),
-        length = (keys || obj).length,
-        index = 0, currentKey;
-    if (arguments.length < 3) {
-      if (!length) throw new TypeError(reduceError);
-      memo = obj[keys ? keys[index++] : index++];
-    }
-    for (; index < length; index++) {
-      currentKey = keys ? keys[index] : index;
-      memo = iteratee(memo, obj[currentKey], currentKey, obj);
-      if(memo instanceof Reduced){
-        return memo.value;
-      }
-    }
-    return memo;
-  };
-
   // Return the first value which passes a truth test. Aliased as `detect`.
   _r.find = _r.detect = function(predicate) {
     predicate = _.iteratee(predicate);
     return function(step){
       return function(result, input){
-        return (result === void 0)  ? step
+        return (result === void 0)  ? step()
           :    (input === void 0)   ? step(result)
           :    (predicate(input))   ? _r.reduced(step(result, input))
           :    result;
@@ -382,6 +355,54 @@
 
   // Transducer Functions
   // --------------------
+
+  // Wrapper to return from iteratee of reduce to terminate 
+  // _r.reduce early with the provided value
+  function Reduced(value){this.value = value};
+  _r.reduced = function(value){
+    return new Reduced(value);
+  }
+  var reduceError = 'Reduce of empty array with no initial value',
+      Symbol_iterator = (typeof Symbol !== 'undefined' && Symbol.iterator || '@@iterator');
+
+  // **Reduce** builds up a single result from a list of values, aka `inject`,
+  // or `foldl`.
+  _r.reduce = _r.foldl = _r.inject = function(obj, iteratee, memo) {
+    if (obj == null) obj = [];
+    var keys = obj.length !== +obj.length && _.keys(obj),
+        length = (keys || obj).length,
+        index = 0, currentKey,
+        iterator = (keys && (obj[Symbol_iterator] || obj));
+
+    if(_.isFunction(iterator.next)){
+      // Detected an iterator
+      for(;;){
+        currentKey = iterator.next();
+        if(currentKey.done){
+          return memo;
+        }
+        memo = iteratee(memo, currentKey.value, index++, obj);
+        if(memo instanceof Reduced){
+          return memo.value;
+        }
+      }
+    }  else {
+      // underscore behavior + Reduced if not iterator
+      if (arguments.length < 3) {
+        if (!length) throw new TypeError(reduceError);
+        memo = obj[keys ? keys[index++] : index++];
+      }
+      for (; index < length; index++) {
+        currentKey = keys ? keys[index] : index;
+        memo = iteratee(memo, obj[currentKey], currentKey, obj);
+        if(memo instanceof Reduced){
+          return memo.value;
+        }
+      }
+    }
+    return memo;
+  };
+
   
   // Takes a reducing step function of 2 args and returns a function suitable for
   // transduce by adding an arity-1 signature that calls complete 
