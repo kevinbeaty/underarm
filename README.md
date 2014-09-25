@@ -2,6 +2,7 @@
 
 Transducers using the familiar API from  [Underscore.js][1] that closely follow the Clojure implementation with extra goodies like lazy generators and callback processes.
 
+[Documentation][4]
 
 ```javascript
   var $demo = $('#demo3'),
@@ -12,22 +13,15 @@ Transducers using the familiar API from  [Underscore.js][1] that closely follow 
         .each(updateText)
         .asCallback(),
 
-      coords = _r.chain()
-        .where({type:'mousemove'})
-        .map(function(e){return {x: e.clientX, y: e.clientY}})
-        .map(function(p){return '('+p.x+', '+p.y+')'})
-        .each(updateText)
-        .asCallback(),
-
       click = _r.chain()
         .where({type:'click'})
         .each(updateCount)
-        .asCallback();
+        .asCallback(),
 
       events = _r.chain()
         .each(coords)
         .each(click)
-        .asCallback()
+        .asCallback();
 
   $demo.on('mousemove click', events);
 

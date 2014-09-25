@@ -21,7 +21,7 @@
   "bugs": {
     "url": "https://github.com/kevinbeaty/underscore-transducer/issues"
   },
-  "homepage": "https://github.com/kevinbeaty/underscore-transducer",
+  "homepage": "http://simplectic.com/projects/underscore-transducer/",
   "dependencies": {
     "underscore": "~1.7.0"
   }
