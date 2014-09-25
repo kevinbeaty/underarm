@@ -1,118 +1,51 @@
-Transducers for Underscore.js that closely follow the Clojure implementation.
+# [Underscore Transducer][4]
 
-The transducers match the underscore signatures with two exceptions:
+Transducers using the familiar API from  [Underscore.js][1] that closely follow the Clojure implementation with extra goodies like lazy generators and callback processes.
 
-1. The first parameter (object, array) is removed.
-2. There is no context param
-
-All transducer functions return reducers.
-
-Example
 
 ```javascript
-var _r = require('./underscore.transducer')._r;
-var _ = require('underscore');
-_.mixin({r: _r});
+  var $demo = $('#demo3'),
+      coords = _r.chain()
+        .where({type:'mousemove'})
+        .map(function(e){return {x: e.clientX, y: e.clientY}})
+        .map(function(p){return '('+p.x+', '+p.y+')'})
+        .each(updateText)
+        .asCallback(),
 
-function isEven(x){
-  return x % 2 !== 1;
-}
+      coords = _r.chain()
+        .where({type:'mousemove'})
+        .map(function(e){return {x: e.clientX, y: e.clientY}})
+        .map(function(p){return '('+p.x+', '+p.y+')'})
+        .each(updateText)
+        .asCallback(),
 
-function inc(x){
-  return x+1;
-}
+      click = _r.chain()
+        .where({type:'click'})
+        .each(updateCount)
+        .asCallback();
 
-function printIt(result, input){
-  console.log(input+' ['+result+']');
-}
+      events = _r.chain()
+        .each(coords)
+        .each(click)
+        .asCallback()
 
-var trans, result;
+  $demo.on('mousemove click', events);
 
-result = _.r.into([3], [1,2,3,4]);
-// [ 3, 1, 2, 3, 4 ]
+  function updateText(p){
+     $demo.html(p);
+  }
 
-result = _.r.into([], _.r.filter(isEven), [1,2,3,4]);
-// [ 2, 4 ]
+  function updateCount(e, idx){
+     $demo.html('Click '+idx);
+  }
 
-result = _.r.transduce(_.r.filter(isEven), [1,2,3,4], _r.append, [3]);
-// [ 3, 2, 4]
-
-result = _.r.transduce(_.r.filter(isEven), [1,2,3,4], _r.append, []);
-result = _.r.transduce(_.r.filter(isEven), [1,2,3,4], _r.append);
-result = _.r.transduce(_.r.filter(isEven), [1,2,3,4]);
-result = _.r.chain(_r.filter(isEven)).transduce([1,2,3,4]);
-result = _.r.chain().filter(isEven).transduce([1,2,3,4]);
-// [ 2, 4]
-
-result = _.r.into([], _.compose(_.r.filter(isEven), _.r.map(inc)), [1,2,3,4]);
-// [ 3, 5 ]
-
-trans = _.r.chain().filter(isEven).map(inc).value();
-result = _.r.into([], trans, [1,2,3,4, 5]);
-result = _.r.chain().filter(isEven).map(inc).transduce([1,2,3,4,5]);
-// [ 3, 5 ]
-
-result = _.r.chain()
-  .filter(function(num) { return num % 2 == 0; })
-  .tap(printIt)
-  .map(function(num) { return num * num })
-  .transduce([1,2,3,200]);
-// 2 []
-// 200 [4]
-// [4, 40000 ]
-
-result = _.r.chain().invoke('sort').transduce([[5, 1, 7], [3, 2, 1]]);
-// [ [ 1, 5, 7 ], [ 1, 2, 3 ] ]
-
-var stooges = [{name: 'moe', age: 40}, {name: 'larry', age: 50}, {name: 'curly', age: 40}];
-result = _.r.into([], _.r.pluck('name'), stooges);
-//  ['moe', 'larry', 'curly' ] 
-
-
-result = _.r.into([], _.r.where({age: 40}), stooges);
-// [ { name: 'moe', age: 40 }, { name: 'curly', age: 40 } ]
-result = _.r.into([], _.r.findWhere({age: 40}), stooges);
-// [ { name: 'moe', age: 40 } ]
-
-
-result = _.r.into([], _.r.every(isEven), [0, 2, 8, 4, 8]);
-// [true]
-result = _.r.into([], _.r.every(isEven), [0, 2, 7, 8, 9]);
-// [false]
-
-result = _.r.into([], _.r.some(isEven), [1, 3, 7, 8, 9]);
-// [true]
-result = _.r.into([], _.r.some(isEven), [1, 3, 7, 11, 9]);
-// [false]
-
-result = _.r.into([], _.r.contains(3), [1, 3, 7, 11, 9]);
-// [true]
-result = _.r.into([], _.r.contains(3), [1, 10, 7, 11, 9]);
-// [false]
-
-result = _.r.into([], _.r.find(isEven), [7, 8, 7, 11, 12]);
-// [8]
-result = _.r.into([], _.r.find(isEven), [1, 9, 13, 11, 9]);
-// []
-
-result = _.r.into([], _.r.first(3), [1, 9, 13, 11, 9]);
-//  [1, 9, 13 ]
-
-result = _.r.into([], _.r.max(), [1, 9, 13, 11, 9]);
-// [13]
-
-result = _.r.into([], _.r.min(), [11, 9, 13, 11, 9]);
-// [9]
 ```
 
-Supporting functions
-
-- completing
-- transduce
-- into
-- conj
-- reduce (with early termination with reduced) 
-- reduced
+We are simply composing transducers. If you would like to know how these work, check
+out [this video][2] or [this article][3].  The previous examples are all using transducers
+behind the scenes. Method chaining is simple composition, `_r.generate` uses an iterator and
+passes on to `transduce`. Even `asCallback` uses transducers but steps through the results using
+the argument of a callback, instead of reducing over the results.
 
 Transducers implemented:
 
@@ -137,7 +70,26 @@ Transducers implemented:
 - value
 
 To be implemented
+
 - initial
 - last
 - rest
 - uniq
+
+May also add object functions and "function functions" for delayed execution. Perhaps
+even experiment with stepping through promises.
+
+Supporting functions
+
+- transduce
+- into
+- append/conj
+- reduce (with early termination with reduced)
+- reduced
+- asCallback
+- generate
+
+[1]: http://underscorejs.org/
+[2]: https://www.youtube.com/watch?v=6mTbuzafcII
+[3]: http://phuu.net/2014/08/31/csp-and-transducers.html
+[4]: http://simplectic.com/projects/underscore-transducer/

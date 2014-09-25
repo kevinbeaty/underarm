@@ -28,7 +28,7 @@
   }
 
   // Current version.
-  _r.VERSION = '0.0.1';
+  _r.VERSION = '0.0.2';
 
   // Reference to Underscore from browser
   var _ = root._;
