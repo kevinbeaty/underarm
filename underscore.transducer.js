@@ -68,7 +68,6 @@
     }
   };
 
-
   // Return the first value which passes a truth test. Aliased as `detect`.
   // Stateless transducer
   _r.find = _r.detect = function(predicate) {
@@ -265,26 +264,73 @@
     }
   };
 
-  /* TODO
   // Returns everything but the last entry. Passing **n** will return all the values
   // excluding the last N.
-  _.initial = function(array, n, guard) {
-    return slice.call(array, 0, Math.max(0, array.length - (n == null || guard ? 1 : n)));
+  // Stateful transducer (count and buffer).
+  // Note that no items will be sent and all items will be buffered until completion.
+  _r.initial = function(n) {
+    n = (n > 0) ? n : 1;
+    return function(step){
+      var count = 0, buffer = [], idx = 0;
+      return function(result, input){
+        if(result === void 0) return step();
+        if(input === void 0){
+          count = idx - n;
+          for(idx = 0; idx < count; idx++){
+            result = step(result, buffer[idx]);
+          }
+          return step(result);
+        }
+
+        buffer[idx++] = input;
+        return result;
+      }
+    }
+
   };
 
   // Get the last element. Passing **n** will return the last N  values.
-  _.last = function(array, n, guard) {
-    if (array == null) return void 0;
-    if (n == null || guard) return array[array.length - 1];
-    return _.rest(array, Math.max(0, array.length - n));
+  // Stateful transducer (count and buffer).
+  // Note that no items will be sent until completion.
+  _r.last = function(n) {
+    n = (n > 0) ? n : 1;
+    return function(step){
+      var count = n, buffer = [], idx = 0;
+      return function(result, input){
+        if(result === void 0) return step();
+        if(input === void 0){
+          while(count--){
+            result = step(result, buffer[idx++ % n]);
+          }
+          return step(result);
+        }
+
+        buffer[idx++ % n] = input;
+        return result;
+      }
+    }
   };
 
   // Returns everything but the first entry. Aliased as `tail` and `drop`.
   // Passing an **n** will return the rest N values.
-  _.rest = _.tail = _.drop = function(array, n, guard) {
-    return slice.call(array, n == null || guard ? 1 : n);
+  // Stateful transducer (count of items)
+  _r.rest = _r.tail = _r.drop = function(n) {
+    n = (n > 0) ? n : 1;
+    return function(step){
+      var count = n;
+      return function(result, input){
+        if(result === void 0) return step();
+        if(input === void 0) return step(result);
+
+        if(count > 0){
+          count--;
+          return result;
+        } else {
+          return step(result, input);
+        }
+      }
+    }
   };
-  */
 
   // Trim out all falsy values from an array.
   // Stateless transducer
@@ -292,38 +338,44 @@
     return _r.filter(_.identity);
   };
 
-  /* TODO
   // Produce a duplicate-free version of the array. If the array has already
   // been sorted, you have the option of using a faster algorithm.
   // Aliased as `unique`.
-  _.uniq = _.unique = function(array, isSorted, iteratee) {
-    if (array == null) return [];
+  // Steteful transducer (index and all seen items if not sorted, last seen item if sorted).
+  _r.uniq = _r.unique = function(isSorted, iteratee) {
     if (!_.isBoolean(isSorted)) {
       iteratee = isSorted;
       isSorted = false;
     }
     if (iteratee != null) iteratee = _.iteratee(iteratee);
-    var result = [];
-    var seen = [];
-    for (var i = 0, length = array.length; i < length; i++) {
-      var value = array[i];
-      if (isSorted) {
-        if (!i || seen !== value) result.push(value);
-        seen = value;
-      } else if (iteratee) {
-        var computed = iteratee(value, i, array);
-        if (_.indexOf(seen, computed) < 0) {
-          seen.push(computed);
-          result.push(value);
+
+    return function(step){
+      var seen = [],
+          i = 0;
+      return function(result, input){
+        if(result === void 0) return step();
+        if(input === void 0) return step(result);
+
+        if (isSorted) {
+          if (!i || seen !== input){
+            result = step(result, input);
+          }
+          seen = input;
+        } else if (iteratee) {
+          var computed = iteratee(input, i, result);
+          if (_.indexOf(seen, computed) < 0) {
+            seen.push(computed);
+            result = step(result, input);
+          }
+        } else if (_.indexOf(seen, input) < 0) {
+          seen.push(input);
+          result = step(result, input);
         }
-      } else if (_.indexOf(result, value) < 0) {
-        result.push(value);
+        ++i;
+        return result;
       }
     }
-    return result;
   };
-  */
-
 
   // Invokes interceptor with each result and input, and then passes through input.
   // The primary purpose of this method is to "tap into" a method chain, in
@@ -531,8 +583,7 @@
     return function(item){
       if(item === void 0){
         // complete
-        reduced = memo;
-        step(reduced);
+        reduced = step(reduced);
       }
 
       // we have exhausted process return result
