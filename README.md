@@ -1,5 +1,7 @@
 # [Underscore Transducer][4]
 
+[![Build Status](https://secure.travis-ci.org/kevinbeaty/underscore-transducer.svg)](http://travis-ci.org/kevinbeaty/underscore-transducer)
+
 Transducers using the familiar API from  [Underscore.js][1] that closely follow the Clojure implementation with extra goodies like lazy generators and callback processes.
 
 [Documentation][4]

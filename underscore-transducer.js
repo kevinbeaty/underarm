@@ -43,7 +43,7 @@
   // passed through transducer without changing the result. The input is the current
   // input, idx is a running index, and the result is current result. This is a
   // stateful transducer (the idx)
-  _r.each = _.forEach = function(iteratee) {
+  _r.each = _r.forEach = function(iteratee) {
     return function(step){
       var i = 0;
       return function(result, input){
