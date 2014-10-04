@@ -9,10 +9,25 @@
   var slice = Array.prototype.slice;
 
   // Create a safe reference to the Underscore object for use below.
-  var _r = function(obj) {
-    if (obj instanceof _r) return obj;
-    if (!(this instanceof _r)) return new _r(obj);
+  var _r = function(obj, transform) {
+    if (obj instanceof _r){
+      if(transform === void 0){
+        return obj;
+      }
+      return new _r(obj._wrapped, _r.append(obj._wrappedFns, transform));
+    }
+
+    if (!(this instanceof _r)) return new _r(obj, transform);
+
     this._wrapped = obj;
+    if(_.isFunction(transform)){
+      this._wrappedFns = [transform];
+    } else if(_.isArray(transform)){
+      this._wrappedFns = _.filter(transform, _.isFunction);
+    } else {
+      this._wrappedFns = [];
+    }
+
   };
 
   // Export the Underscore object for **Node.js**, with
@@ -28,7 +43,7 @@
   }
 
   // Current version.
-  _r.VERSION = '0.0.2';
+  _r.VERSION = '0.0.3';
 
   // Reference to Underscore from browser
   var _ = root._;
@@ -220,7 +235,7 @@
 
   // Return the minimum element (or element-based computation).
   // Stateful transducer (current min value and computed result)
-  _r.min = function(obj, iteratee) {
+  _r.min = function(iteratee) {
     iteratee = _.iteratee(iteratee);
 
     return function(step){
@@ -250,14 +265,16 @@
   // values in the array. Aliased as `head` and `take`.
   // Stateful transducer (running count)
   _r.first = _r.head = _r.take = function(n) {
-    n = (n > 0) ? n : 1;
+    n = (n == void 0) ? 1 : (n > 0) ? n : 0;
     return function(step){
       var count = n;
       return function(result, input){
         if(result === void 0) return step();
         if(input === void 0) return step(result);
 
-        step(result, input);
+        if(count > 0){
+          result = step(result, input);
+        }
 
         return (!--count) ?  _r.reduced(result) : result;
       }
@@ -269,7 +286,7 @@
   // Stateful transducer (count and buffer).
   // Note that no items will be sent and all items will be buffered until completion.
   _r.initial = function(n) {
-    n = (n > 0) ? n : 1;
+    n = (n == void 0) ? 1 : (n > 0) ? n : 0;
     return function(step){
       var count = 0, buffer = [], idx = 0;
       return function(result, input){
@@ -293,7 +310,7 @@
   // Stateful transducer (count and buffer).
   // Note that no items will be sent until completion.
   _r.last = function(n) {
-    n = (n > 0) ? n : 1;
+    n = (n == void 0) ? 1 : (n > 0) ? n : 0;
     return function(step){
       var count = n, buffer = [], idx = 0;
       return function(result, input){
@@ -315,7 +332,7 @@
   // Passing an **n** will return the rest N values.
   // Stateful transducer (count of items)
   _r.rest = _r.tail = _r.drop = function(n) {
-    n = (n > 0) ? n : 1;
+    n = (n == void 0) ? 1 : (n > 0) ? n : 0;
     return function(step){
       var count = n;
       return function(result, input){
@@ -399,38 +416,19 @@
   // can be used OO-style. This wrapper holds altered versions of all the
   // underscore functions. Wrapped objects may be chained.
 
-  // Helper function to continue chaining intermediate results.
-  var result = function(instance, obj) {
-    return instance._chain ? _r.chain(obj) : obj;
-  };
-
   // Add your own custom transducers to the Underscore.transducer object.
   _r.mixin = function(obj) {
     _.each(_.functions(obj), function(name) {
       var func = _r[name] = obj[name];
       _r.prototype[name] = function() {
         var method = func.apply(_r, arguments);
-        if(_.isFunction(this._wrapped)){
-          method = _.compose(this._wrapped, method);
-        }
-        return result(this, method);
+        return _r(this, method);
       };
     });
   };
 
   // Add all of the Underscore functions to the wrapper object.
   _r.mixin(_r);
-
-  _r.chain = function(obj) {
-    var instance = _r(obj);
-    instance._chain = true;
-    return instance;
-  };
-
-  // Extracts the result from a wrapped and chained object.
-  _r.prototype.value = function() {
-    return this._wrapped;
-  };
 
   // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
   // previous owner. Returns a reference to the Underscore object.
@@ -441,6 +439,10 @@
 
   // Transducer Functions
   // --------------------
+
+  _r.prototype.transducer = _r.prototype.compose = function() {
+    return _.compose.apply(null, this._wrappedFns);
+  }
 
   // Wrapper to return from iteratee of reduce to terminate
   // _r.reduce early with the provided value
@@ -491,7 +493,6 @@
     return memo;
   };
 
-
   // Takes a reducing step function of 2 args and returns a function suitable for
   // transduce by adding an arity-1 signature that calls complete
   // (default - identity) on the result argument.
@@ -522,6 +523,10 @@
     return item;
   }
 
+  _r.prototype.toArray = function() {
+    return this.transduce();
+  }
+
   // Step function that maintains the last value as the memo (default null)
   _r.lastValue = function(obj, item){
     if(obj === void 0){
@@ -534,6 +539,14 @@
 
     return item;
   }
+
+  // Extracts the last result from a wrapped and chained object.
+  // or undefined if no value was passed
+  _r.prototype.lastValue = function(defaultValue) {
+    var init = {},
+        ret =  this.transduce(_r.lastValue, init);
+    return ret === init ? defaultValue : ret;
+  };
 
   // Reduce with a transformation of step (transform). If memo is not
   // supplied, step() will be called to produce it. step should be a reducing
@@ -553,14 +566,24 @@
       memo = step();
     }
 
-    step = transform(step);
+    if(transform instanceof _r){
+      transform = transform.transducer();
+    }
+
+    if(transform !== void 0){
+      step = transform(step);
+    }
     return step(_r.reduce(obj, step, memo));
   }
 
   // Calls transduce using the chained transformation
   _r.prototype.transduce = function(obj, step, memo){
-    return _r.transduce(this._wrapped, obj, step, memo);
+    if(this._wrapped === void 0){
+      return _r.transduce(this.transducer(), obj, step, memo);
+    }
+    return _r.transduce(this.transducer(), this._wrapped, obj, step);
   }
+
 
   // Creates a callback that starts a transducer process and accepts
   // parameter as a new item in the process. Each item advances the state
@@ -579,7 +602,10 @@
       memo = step();
     }
 
-    step = transform(step);
+    if(transform !== void 0){
+      step = transform(step);
+    }
+
     return function(item){
       if(item === void 0){
         // complete
@@ -606,7 +632,7 @@
 
   // Calls asCallback with the chained transformation
   _r.prototype.asCallback = function(step, memo){
-    return _r.asCallback(this._wrapped, step, memo);
+    return _r.asCallback(this.transducer(), step, memo);
   }
 
   // Returns a new coll consisting of to-coll with all of the items of
@@ -624,7 +650,7 @@
 
   // Calls into using the chained transformation
   _r.prototype.into = function(to, from){
-    return _r.into(to, this._wrapped, from);
+    return _r.into(to, this.transducer(), from);
   }
 
   // Creates an (duck typed) iterator that calls the provided next callback repeatedly

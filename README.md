@@ -8,19 +8,19 @@ Transducers using the familiar API from  [Underscore.js][1] that closely follow 
 
 ```javascript
   var $demo = $('#demo3'),
-      coords = _r.chain()
+      coords = _r()
         .where({type:'mousemove'})
         .map(function(e){return {x: e.clientX, y: e.clientY}})
         .map(function(p){return '('+p.x+', '+p.y+')'})
         .each(updateText)
         .asCallback(),
 
-      click = _r.chain()
+      click = _r()
         .where({type:'click'})
         .each(updateCount)
         .asCallback(),
 
-      events = _r.chain()
+      events = _r()
         .each(coords)
         .each(click)
         .asCallback();
@@ -39,8 +39,7 @@ Transducers using the familiar API from  [Underscore.js][1] that closely follow 
 
 We are simply composing transducers. If you would like to know how these work, check
 out [this video][2] or [this article][3].  The previous examples are all using transducers
-behind the scenes. Method chaining is simple composition, `_r.generate` uses an iterator and
-passes on to `transduce`. Even `asCallback` uses transducers but steps through the results using
+behind the scenes. Method chaining is implicit and is simple composition, `_r.generate` uses an iterator and passes on to `transduce`. Even `asCallback` uses transducers but steps through the results using
 the argument of a callback, instead of reducing over the results.
 
 Transducers implemented:
@@ -61,12 +60,6 @@ Transducers implemented:
 - first
 - compact
 - tap
-- mixin
-- chain
-- value
-
-To be implemented
-
 - initial
 - last
 - rest
@@ -84,6 +77,10 @@ Supporting functions
 - reduced
 - asCallback
 - generate
+- mixin
+- lastValue
+- toArray
+- (chain is implicit)
 
 [1]: http://underscorejs.org/
 [2]: https://www.youtube.com/watch?v=6mTbuzafcII
