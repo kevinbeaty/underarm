@@ -156,7 +156,7 @@ test('asCallback', function(t){
 });
 
 test('generate', function(t){
-  t.plan(4);
+  t.plan(12);
 
   result = _r.into([], _r.first(7), _r.generate(fib()));
   t.deepEqual(result, [1,1,2,3,5,8,13], 'generate into');
@@ -164,11 +164,31 @@ test('generate', function(t){
   result = _r().first(7).transduce(_r.generate(fib()));
   t.deepEqual(result, [1,1,2,3,5,8,13], 'generate transduce chain');
 
-  result = _r().first(7).generate(fib());
-  t.deepEqual(result, [1,1,2,3,5,8,13], 'generate chain');
+  result = _r().first(7).generate(fib()).toArray();
+  t.deepEqual(result, [1,1,2,3,5,8,13], 'generate chain after');
+
+  result = _r().generate(fib()).first(7).toArray();
+  t.deepEqual(result, [1,1,2,3,5,8,13], 'generate chain before');
 
   result = _r.transduce(_r.first(7), _r.generate(fib()));
   t.deepEqual(result, [1,1,2,3,5,8,13], 'generate transduce');
+
+  result = _r(_r.generate(fib())).first(7).toArray();
+  t.deepEqual(result, [1,1,2,3,5,8,13], 'generate with wrapper');
+
+  result = _r(_r.generate(fib, true)).first(7).toArray();
+  t.deepEqual(result, [1,1,2,3,5,8,13], 'generate with wrapper, callToInit');
+
+  trans = _r(_r.generate(fib, true)).first(7);
+  t.deepEqual(trans.toArray(), [1,1,2,3,5,8,13], 'generate with wrapper call twice');
+  t.deepEqual(trans.toArray(), [1,1,2,3,5,8,13], 'generate with wrapper call twice');
+
+  result = _r().generate(fib, true).first(7).toArray();
+  t.deepEqual(result, [1,1,2,3,5,8,13], 'generate with chain');
+
+  trans = _r().generate(fib, true).first(7);
+  t.deepEqual(trans.toArray(), [1,1,2,3,5,8,13], 'generate with chain call twice');
+  t.deepEqual(trans.toArray(), [1,1,2,3,5,8,13], 'generate with chain call twice');
 
   function fib(){
     var x=1, y=1;

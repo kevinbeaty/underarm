@@ -20,6 +20,11 @@
     if (!(this instanceof _r)) return new _r(obj, transform);
 
     this._wrapped = obj;
+
+    if(transform instanceof _r){
+      transform = transform._wrappedFns;
+    }
+
     if(_.isFunction(transform)){
       this._wrappedFns = [transform];
     } else if(_.isArray(transform)){
@@ -27,7 +32,6 @@
     } else {
       this._wrappedFns = [];
     }
-
   };
 
   // Export the Underscore object for **Node.js**, with
@@ -43,7 +47,7 @@
   }
 
   // Current version.
-  _r.VERSION = '0.0.3';
+  _r.VERSION = '0.0.4';
 
   // Reference to Underscore from browser
   var _ = root._;
@@ -430,6 +434,12 @@
   // Add all of the Underscore functions to the wrapper object.
   _r.mixin(_r);
 
+  // Returns a new chained instance using current transformation, but
+  // wrapping the given object
+  _r.prototype.wrap = function(obj){
+    return _r(obj, this);
+  }
+
   // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
   // previous owner. Returns a reference to the Underscore object.
   _r.noConflict = function() {
@@ -657,19 +667,24 @@
   // and uses the return value as the next value of the iterator.
   // Marks iterator as done if the next callback returns undefined (returns nothing)
   // Can be used to as a source obj to reduce, transduce etc
-  _r.generate = function(next){
-    return {
-      next: function(){
-        var value = next();
-        return (value === void 0) ? {done: true} : {done: false, value: value};
+  _r.generate = function(callback, callToInit){
+    var gen = {};
+    gen[Symbol_iterator] = function(){
+      var next = callToInit ? callback() : callback;
+      return {
+        next: function(){
+          var value = next();
+          return (value === void 0) ? {done: true} : {done: false, value: value};
+        }
       }
     }
+    return gen;
   }
 
   // Transduces the current chained object by using the chained trasnformation
   // and an iterator created with the callback
-  _r.prototype.generate = function(callback){
-    return this.transduce(_r.generate(callback));
+  _r.prototype.generate = function(callback, callToInit){
+    return this.wrap(_r.generate(callback, callToInit));
   }
 
   // AMD registration happens at the end for compatibility with AMD loaders
