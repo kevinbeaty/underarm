@@ -14,7 +14,9 @@
       if(transform === void 0){
         return obj;
       }
-      return new _r(obj._wrapped, _r.append(obj._wrappedFns, transform));
+      var copy = new _r(obj._wrapped, _r.append(obj._wrappedFns, transform));
+      copy._resolveSingleValue = obj._resolveSingleValue;
+      return copy;
     }
 
     if (!(this instanceof _r)) return new _r(obj, transform);
@@ -23,6 +25,7 @@
 
     if(transform instanceof _r){
       transform = transform._wrappedFns;
+      this._resolveSingleValue = transform._resolveSingleValue;
     }
 
     if(_.isFunction(transform)){
@@ -91,6 +94,7 @@
   // Stateless transducer
   _r.find = _r.detect = function(predicate) {
     predicate = _.iteratee(predicate);
+    _r.resolveSingleValue(this);
     return function(step){
       return function(result, input){
         return (result === void 0)  ? step()
@@ -128,6 +132,7 @@
   // does not match predicate.
   _r.every = _r.all = function(predicate) {
     predicate = _.iteratee(predicate);
+    _r.resolveSingleValue(this);
     return function(step){
       var found = false;
       return function(result, input){
@@ -154,6 +159,7 @@
   // Stateful transducer (found).  Early termination if item matches predicate.
   _r.some = _r.any = function(predicate) {
     predicate = _.iteratee(predicate);
+    _r.resolveSingleValue(this);
     return function(step){
       var found = false;
       return function(result, input){
@@ -179,7 +185,7 @@
   // Aliased as `include`.
   // Stateful transducer (found). Early termination when item found.
   _r.contains = _r.include = function(target) {
-    return _r.some(function(x){return x === target});
+    return _r.some.call(this, function(x){return x === target});
   };
 
   // Invoke a method (with arguments) on every item in a collection.
@@ -209,13 +215,14 @@
   // containing specific `key:value` pairs.
   // Stateful transducer (found). Early termination when found.
   _r.findWhere = function(attrs) {
-    return _r.find(_.matches(attrs));
+    return _r.find.call(this, _.matches(attrs));
   };
 
   // Return the maximum element (or element-based computation).
   // Stateful transducer (current max value and computed result)
   _r.max = function(iteratee) {
     iteratee = _.iteratee(iteratee);
+    _r.resolveSingleValue(this);
 
     return function(step){
       var computedResult = -Infinity, lastComputed = -Infinity, computed;
@@ -241,6 +248,7 @@
   // Stateful transducer (current min value and computed result)
   _r.min = function(iteratee) {
     iteratee = _.iteratee(iteratee);
+    _r.resolveSingleValue(this);
 
     return function(step){
       var computedResult = Infinity, lastComputed = Infinity, computed;
@@ -269,7 +277,12 @@
   // values in the array. Aliased as `head` and `take`.
   // Stateful transducer (running count)
   _r.first = _r.head = _r.take = function(n) {
-    n = (n == void 0) ? 1 : (n > 0) ? n : 0;
+    if(n === void 0){
+      _r.resolveSingleValue(this);
+      n = 1;
+    } else {
+      n = (n > 0) ? n : 0;
+    }
     return function(step){
       var count = n;
       return function(result, input){
@@ -290,7 +303,7 @@
   // Stateful transducer (count and buffer).
   // Note that no items will be sent and all items will be buffered until completion.
   _r.initial = function(n) {
-    n = (n == void 0) ? 1 : (n > 0) ? n : 0;
+    n = (n === void 0) ? 1 : (n > 0) ? n : 0;
     return function(step){
       var count = 0, buffer = [], idx = 0;
       return function(result, input){
@@ -314,7 +327,12 @@
   // Stateful transducer (count and buffer).
   // Note that no items will be sent until completion.
   _r.last = function(n) {
-    n = (n == void 0) ? 1 : (n > 0) ? n : 0;
+    if(n === void 0){
+      _r.resolveSingleValue(this);
+      n = 1;
+    } else {
+      n = (n > 0) ? n : 0;
+    }
     return function(step){
       var count = n, buffer = [], idx = 0;
       return function(result, input){
@@ -336,7 +354,7 @@
   // Passing an **n** will return the rest N values.
   // Stateful transducer (count of items)
   _r.rest = _r.tail = _r.drop = function(n) {
-    n = (n == void 0) ? 1 : (n > 0) ? n : 0;
+    n = (n === void 0) ? 1 : (n > 0) ? n : 0;
     return function(step){
       var count = n;
       return function(result, input){
@@ -425,7 +443,7 @@
     _.each(_.functions(obj), function(name) {
       var func = _r[name] = obj[name];
       _r.prototype[name] = function() {
-        var method = func.apply(_r, arguments);
+        var method = func.apply(this, arguments);
         return _r(this, method);
       };
     });
@@ -438,6 +456,28 @@
   // wrapping the given object
   _r.prototype.wrap = function(obj){
     return _r(obj, this);
+  }
+
+  // Helper to mark transducer to expect single value when
+  // resolving. Only valid when chaining, but this should be passed
+  // when called as a function
+  _r.resolveSingleValue = function(self){
+    if(self instanceof _r){
+      self._resolveSingleValue = true;
+    }
+  }
+
+  // Resolves the value of the wrapped object, similar to underscore.
+  // Returns an array, or single value (to match underscore API)
+  // depending on whether the chained transformation resolves to single value.
+  _r.prototype.value = function(){
+    if(!this._resolveSingleValue){
+      return this.transduce();
+    }
+
+    var init = {},
+        ret =  this.transduce(_r.lastValue, init);
+    return ret === init ? void 0 : ret;
   }
 
   // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
@@ -533,10 +573,6 @@
     return item;
   }
 
-  _r.prototype.toArray = function() {
-    return this.transduce();
-  }
-
   // Step function that maintains the last value as the memo (default null)
   _r.lastValue = function(obj, item){
     if(obj === void 0){
@@ -549,14 +585,6 @@
 
     return item;
   }
-
-  // Extracts the last result from a wrapped and chained object.
-  // or undefined if no value was passed
-  _r.prototype.lastValue = function(defaultValue) {
-    var init = {},
-        ret =  this.transduce(_r.lastValue, init);
-    return ret === init ? defaultValue : ret;
-  };
 
   // Reduce with a transformation of step (transform). If memo is not
   // supplied, step() will be called to produce it. step should be a reducing
