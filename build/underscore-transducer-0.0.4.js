@@ -6,20 +6,28 @@
   var previous_r = root._r;
 
   // Create quick reference variables for speed access to core prototypes.
-  var slice = Array.prototype.slice;
+  var slice = Array.prototype.slice, undef;
 
   // Create a safe reference to the Underscore object for use below.
   var _r = function(obj, transform) {
     if (obj instanceof _r){
-      if(transform === void 0){
+      if(transform === undef){
         return obj;
       }
-      return new _r(obj._wrapped, _r.append(obj._wrappedFns, transform));
+      var copy = new _r(obj._wrapped, _r.append(obj._wrappedFns, transform));
+      copy._resolveSingleValue = obj._resolveSingleValue;
+      return copy;
     }
 
     if (!(this instanceof _r)) return new _r(obj, transform);
 
     this._wrapped = obj;
+
+    if(transform instanceof _r){
+      transform = transform._wrappedFns;
+      this._resolveSingleValue = transform._resolveSingleValue;
+    }
+
     if(_.isFunction(transform)){
       this._wrappedFns = [transform];
     } else if(_.isArray(transform)){
@@ -27,7 +35,6 @@
     } else {
       this._wrappedFns = [];
     }
-
   };
 
   // Export the Underscore object for **Node.js**, with
@@ -43,7 +50,7 @@
   }
 
   // Current version.
-  _r.VERSION = '0.0.3';
+  _r.VERSION = '0.0.4';
 
   // Reference to Underscore from browser
   var _ = root._;
@@ -62,8 +69,8 @@
     return function(step){
       var i = 0;
       return function(result, input){
-        if(result === void 0) return step();
-        if(input === void 0) return step(result);
+        if(result === undef) return step();
+        if(input === undef) return step(result);
         iteratee(input, i++, result);
         return step(result, input);
       }
@@ -76,8 +83,8 @@
     iteratee = _.iteratee(iteratee);
     return function(step){
       return function(result, input){
-        return (result === void 0)  ? step()
-          :    (input === void 0)   ? step(result)
+        return (result === undef)  ? step()
+          :    (input === undef)   ? step(result)
           :    step(result, iteratee(input))
       }
     }
@@ -87,10 +94,11 @@
   // Stateless transducer
   _r.find = _r.detect = function(predicate) {
     predicate = _.iteratee(predicate);
+    _r.resolveSingleValue(this);
     return function(step){
       return function(result, input){
-        return (result === void 0)  ? step()
-          :    (input === void 0)   ? step(result)
+        return (result === undef)  ? step()
+          :    (input === undef)   ? step(result)
           :    (predicate(input))   ? _r.reduced(step(result, input))
           :    result;
       }
@@ -104,8 +112,8 @@
     predicate = _.iteratee(predicate);
     return function(step){
       return function(result, input){
-        return (result === void 0)  ? step()
-          :    (input === void 0)   ? step(result)
+        return (result === undef)  ? step()
+          :    (input === undef)   ? step(result)
           :    (predicate(input))   ? step(result, input)
           :    result;
       }
@@ -124,12 +132,13 @@
   // does not match predicate.
   _r.every = _r.all = function(predicate) {
     predicate = _.iteratee(predicate);
+    _r.resolveSingleValue(this);
     return function(step){
       var found = false;
       return function(result, input){
-        if(result === void 0) return step();
+        if(result === undef) return step();
 
-        if(input === void 0){
+        if(input === undef){
           if(!found){
             result = step(result, true);
           }
@@ -150,12 +159,13 @@
   // Stateful transducer (found).  Early termination if item matches predicate.
   _r.some = _r.any = function(predicate) {
     predicate = _.iteratee(predicate);
+    _r.resolveSingleValue(this);
     return function(step){
       var found = false;
       return function(result, input){
-        if(result === void 0) return step();
+        if(result === undef) return step();
 
-        if(input === void 0){
+        if(input === undef){
           if(!found){
             result = step(result, found);
           }
@@ -175,7 +185,7 @@
   // Aliased as `include`.
   // Stateful transducer (found). Early termination when item found.
   _r.contains = _r.include = function(target) {
-    return _r.some(function(x){return x === target});
+    return _r.some.call(this, function(x){return x === target});
   };
 
   // Invoke a method (with arguments) on every item in a collection.
@@ -205,20 +215,21 @@
   // containing specific `key:value` pairs.
   // Stateful transducer (found). Early termination when found.
   _r.findWhere = function(attrs) {
-    return _r.find(_.matches(attrs));
+    return _r.find.call(this, _.matches(attrs));
   };
 
   // Return the maximum element (or element-based computation).
   // Stateful transducer (current max value and computed result)
   _r.max = function(iteratee) {
     iteratee = _.iteratee(iteratee);
+    _r.resolveSingleValue(this);
 
     return function(step){
       var computedResult = -Infinity, lastComputed = -Infinity, computed;
       return function(result, input){
-        if(result === void 0) return step();
+        if(result === undef) return step();
 
-        if(input === void 0){
+        if(input === undef){
           result = step(result, computedResult);
           return step(result);
         }
@@ -237,13 +248,14 @@
   // Stateful transducer (current min value and computed result)
   _r.min = function(iteratee) {
     iteratee = _.iteratee(iteratee);
+    _r.resolveSingleValue(this);
 
     return function(step){
       var computedResult = Infinity, lastComputed = Infinity, computed;
       return function(result, input){
-        if(result === void 0) return step();
+        if(result === undef) return step();
 
-        if(input === void 0){
+        if(input === undef){
           result = step(result, computedResult);
           return step(result);
         }
@@ -265,12 +277,17 @@
   // values in the array. Aliased as `head` and `take`.
   // Stateful transducer (running count)
   _r.first = _r.head = _r.take = function(n) {
-    n = (n == void 0) ? 1 : (n > 0) ? n : 0;
+    if(n === undef){
+      _r.resolveSingleValue(this);
+      n = 1;
+    } else {
+      n = (n > 0) ? n : 0;
+    }
     return function(step){
       var count = n;
       return function(result, input){
-        if(result === void 0) return step();
-        if(input === void 0) return step(result);
+        if(result === undef) return step();
+        if(input === undef) return step(result);
 
         if(count > 0){
           result = step(result, input);
@@ -286,12 +303,12 @@
   // Stateful transducer (count and buffer).
   // Note that no items will be sent and all items will be buffered until completion.
   _r.initial = function(n) {
-    n = (n == void 0) ? 1 : (n > 0) ? n : 0;
+    n = (n === undef) ? 1 : (n > 0) ? n : 0;
     return function(step){
       var count = 0, buffer = [], idx = 0;
       return function(result, input){
-        if(result === void 0) return step();
-        if(input === void 0){
+        if(result === undef) return step();
+        if(input === undef){
           count = idx - n;
           for(idx = 0; idx < count; idx++){
             result = step(result, buffer[idx]);
@@ -310,12 +327,17 @@
   // Stateful transducer (count and buffer).
   // Note that no items will be sent until completion.
   _r.last = function(n) {
-    n = (n == void 0) ? 1 : (n > 0) ? n : 0;
+    if(n === undef){
+      _r.resolveSingleValue(this);
+      n = 1;
+    } else {
+      n = (n > 0) ? n : 0;
+    }
     return function(step){
       var count = n, buffer = [], idx = 0;
       return function(result, input){
-        if(result === void 0) return step();
-        if(input === void 0){
+        if(result === undef) return step();
+        if(input === undef){
           while(count--){
             result = step(result, buffer[idx++ % n]);
           }
@@ -332,12 +354,12 @@
   // Passing an **n** will return the rest N values.
   // Stateful transducer (count of items)
   _r.rest = _r.tail = _r.drop = function(n) {
-    n = (n == void 0) ? 1 : (n > 0) ? n : 0;
+    n = (n === undef) ? 1 : (n > 0) ? n : 0;
     return function(step){
       var count = n;
       return function(result, input){
-        if(result === void 0) return step();
-        if(input === void 0) return step(result);
+        if(result === undef) return step();
+        if(input === undef) return step(result);
 
         if(count > 0){
           count--;
@@ -370,8 +392,8 @@
       var seen = [],
           i = 0;
       return function(result, input){
-        if(result === void 0) return step();
-        if(input === void 0) return step(result);
+        if(result === undef) return step();
+        if(input === undef) return step(result);
 
         if (isSorted) {
           if (!i || seen !== input){
@@ -402,8 +424,8 @@
   _r.tap = function(interceptor) {
     return function(step){
       return function(result, input){
-        if(result === void 0) return step();
-        if(input === void 0) return step(result);
+        if(result === undef) return step();
+        if(input === undef) return step(result);
         interceptor(result, input);
         return step(result, input);
       }
@@ -421,7 +443,7 @@
     _.each(_.functions(obj), function(name) {
       var func = _r[name] = obj[name];
       _r.prototype[name] = function() {
-        var method = func.apply(_r, arguments);
+        var method = func.apply(this, arguments);
         return _r(this, method);
       };
     });
@@ -429,6 +451,34 @@
 
   // Add all of the Underscore functions to the wrapper object.
   _r.mixin(_r);
+
+  // Returns a new chained instance using current transformation, but
+  // wrapping the given object
+  _r.prototype.wrap = function(obj){
+    return _r(obj, this);
+  }
+
+  // Helper to mark transducer to expect single value when
+  // resolving. Only valid when chaining, but this should be passed
+  // when called as a function
+  _r.resolveSingleValue = function(self){
+    if(self instanceof _r){
+      self._resolveSingleValue = true;
+    }
+  }
+
+  // Resolves the value of the wrapped object, similar to underscore.
+  // Returns an array, or single value (to match underscore API)
+  // depending on whether the chained transformation resolves to single value.
+  _r.prototype.value = function(){
+    if(!this._resolveSingleValue){
+      return this.transduce();
+    }
+
+    var init = {},
+        ret =  this.transduce(_r.lastValue, init);
+    return ret === init ? undef : ret;
+  }
 
   // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
   // previous owner. Returns a reference to the Underscore object.
@@ -499,19 +549,19 @@
   _r.completing = function(step, complete){
     complete = complete || _.identity;
     return function(result, input){
-      return (result === void 0)  ? step()
-        :    (input === void 0)   ? complete(result)
+      return (result === undef)  ? step()
+        :    (input === undef)   ? complete(result)
         :    step(result, input);
     }
   }
 
   // Appends (conjoins) the item to the collection, and returns collection
   _r.append = _r.conj = _r.conjoin = function(obj, item){
-    if(obj === void 0){
+    if(obj === undef){
       return [];
     }
 
-    if(item === void 0){
+    if(item === undef){
       return obj;
     }
 
@@ -523,30 +573,18 @@
     return item;
   }
 
-  _r.prototype.toArray = function() {
-    return this.transduce();
-  }
-
   // Step function that maintains the last value as the memo (default null)
   _r.lastValue = function(obj, item){
-    if(obj === void 0){
+    if(obj === undef){
       return null;
     }
 
-    if(item === void 0){
+    if(item === undef){
       return obj;
     }
 
     return item;
   }
-
-  // Extracts the last result from a wrapped and chained object.
-  // or undefined if no value was passed
-  _r.prototype.lastValue = function(defaultValue) {
-    var init = {},
-        ret =  this.transduce(_r.lastValue, init);
-    return ret === init ? defaultValue : ret;
-  };
 
   // Reduce with a transformation of step (transform). If memo is not
   // supplied, step() will be called to produce it. step should be a reducing
@@ -558,11 +596,11 @@
   // certain transforms may inject or skip items.
   // The default step function is _r.append (with default value [])
   _r.transduce = function(transform, obj, step, memo){
-    if(step === void 0){
+    if(step === undef){
       step = _r.append;
     }
 
-    if(memo === void 0){
+    if(memo === undef){
       memo = step();
     }
 
@@ -570,7 +608,7 @@
       transform = transform.transducer();
     }
 
-    if(transform !== void 0){
+    if(transform !== undef){
       step = transform(step);
     }
     return step(_r.reduce(obj, step, memo));
@@ -578,7 +616,7 @@
 
   // Calls transduce using the chained transformation
   _r.prototype.transduce = function(obj, step, memo){
-    if(this._wrapped === void 0){
+    if(this._wrapped === undef){
       return _r.transduce(this.transducer(), obj, step, memo);
     }
     return _r.transduce(this.transducer(), this._wrapped, obj, step);
@@ -594,20 +632,20 @@
   // The default step function is _r.lastValue (with default memo of null)
   _r.asCallback = function(transform, step, memo){
     var reduced;
-    if(step === void 0){
+    if(step === undef){
       step = _r.lastValue;
     }
 
-    if(memo === void 0){
+    if(memo === undef){
       memo = step();
     }
 
-    if(transform !== void 0){
+    if(transform !== undef){
       step = transform(step);
     }
 
     return function(item){
-      if(item === void 0){
+      if(item === undef){
         // complete
         reduced = step(reduced);
       }
@@ -640,7 +678,7 @@
   _r.into = function(to, transform, from){
     var step = _r.append;
 
-    if(from === void 0){
+    if(from === undef){
       from = transform
       return _r.reduce(from, step, to)
     }
@@ -657,19 +695,24 @@
   // and uses the return value as the next value of the iterator.
   // Marks iterator as done if the next callback returns undefined (returns nothing)
   // Can be used to as a source obj to reduce, transduce etc
-  _r.generate = function(next){
-    return {
-      next: function(){
-        var value = next();
-        return (value === void 0) ? {done: true} : {done: false, value: value};
+  _r.generate = function(callback, callToInit){
+    var gen = {};
+    gen[Symbol_iterator] = function(){
+      var next = callToInit ? callback() : callback;
+      return {
+        next: function(){
+          var value = next();
+          return (value === undef) ? {done: true} : {done: false, value: value};
+        }
       }
     }
+    return gen;
   }
 
   // Transduces the current chained object by using the chained trasnformation
   // and an iterator created with the callback
-  _r.prototype.generate = function(callback){
-    return this.transduce(_r.generate(callback));
+  _r.prototype.generate = function(callback, callToInit){
+    return this.wrap(_r.generate(callback, callToInit));
   }
 
   // AMD registration happens at the end for compatibility with AMD loaders
