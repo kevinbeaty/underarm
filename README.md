@@ -78,8 +78,7 @@ Supporting functions
 - asCallback
 - generate
 - mixin
-- lastValue
-- toArray
+- value
 - (chain is implicit)
 
 [1]: http://underscorejs.org/

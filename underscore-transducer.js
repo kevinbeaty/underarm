@@ -50,7 +50,7 @@
   }
 
   // Current version.
-  _r.VERSION = '0.0.4';
+  _r.VERSION = '0.0.5';
 
   // Reference to Underscore from browser
   var _ = root._;
@@ -555,23 +555,87 @@
     }
   }
 
+  // Dispatchers
+  // -----------
+  var dispatch = _.reduce(['empty', 'append'], function(memo, item){
+    var d = function(){
+      var args = arguments, fns = d._fns, i = fns.length, result;
+      for(; i-- ;){
+        result = fns[i].apply(null, args);
+        if(result !== undef){
+          return result;
+        }
+      }
+      throw new TypeError('cannot find match for '+item+' '+_.toArray(args));
+    };
+
+    d._fns = [];
+
+    d.register = function(fn){
+      d._fns.push(fn);
+    };
+
+    memo[item] = d;
+    return memo;
+  }, {});
+
+  _r.empty = function(obj){
+    if(obj === undef){
+      return []; // arrays by default
+    }
+    return dispatch.empty(obj);
+  }
+
+  _r.empty.register = function(fn){
+    return dispatch.empty.register(fn);
+  }
+
+  _r.empty.register(function(obj){
+    if(_.isObject(obj)){
+      return {};
+    }
+  });
+
+  _r.empty.register(function(obj){
+    if(_.isArray(obj)){
+      return [];
+    }
+  });
+
   // Appends (conjoins) the item to the collection, and returns collection
   _r.append = _r.conj = _r.conjoin = function(obj, item){
     if(obj === undef){
-      return [];
+      return _r.empty();
     }
 
     if(item === undef){
       return obj;
     }
 
-    // TODO objects
+    return dispatch.append(obj, item);
+  }
+
+  _r.append.register = function(fn){
+    return dispatch.append.register(fn);
+  }
+
+  _r.append.register(function(obj, item){
+    if(_.isObject(obj)){
+      if(item.length === 2){
+        obj[item[0]] = item[1];
+      } else {
+        _.extend(obj, item);
+      }
+      return obj;
+    }
+  });
+
+  _r.append.register(function(obj, item){
     if(_.isArray(obj)){
       obj.push(item);
       return obj;
     }
-    return item;
-  }
+  });
 
   // Step function that maintains the last value as the memo (default null)
   _r.lastValue = function(obj, item){
@@ -688,7 +752,17 @@
 
   // Calls into using the chained transformation
   _r.prototype.into = function(to, from){
-    return _r.into(to, this.transducer(), from);
+    return _r.into(to, this.transducer(), from !== undef ? from : this._wrapped);
+  }
+
+  // Returns a new collection of the empty value of the from collection
+  _r.sequence = function(transform, from){
+    return _r.into(_r.empty(from), transform, from);
+  }
+
+  // calls sequence with chained transformation and optional wrapped object
+  _r.prototype.sequence = function(from){
+    return this.into(_r.empty(from !== undef ? from : this._wrapped), from);
   }
 
   // Creates an (duck typed) iterator that calls the provided next callback repeatedly
