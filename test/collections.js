@@ -5,21 +5,17 @@ var _r = require('../'),
 test('each', function(t){
   var trans, result;
   t.test('iteration count', function(t){
-    t.plan(4);
+    t.plan(5);
     trans = _r.each(function(num, i){
       t.equal(num, i+1, 'index passed with item');
     });
     result = _r.transduce(trans, [1, 2, 3]);
     t.deepEqual(result, [1, 2, 3], 'result passed through');
-  });
 
-  t.test('iteration result', function(t){
-    t.plan(6);
-    trans = _r.each(function(num, i, result){
-      t.deepEqual(_.range(i), result, 'result appended with each iteration');
-    });
-    result = _r.transduce(trans, _.range(5));
-    t.deepEqual(_.range(5), result, 'range passed through');
+    var answers = [];
+    var obj = {one : 1, two : 2, three : 3};
+    _r(obj).each(function(value, key){ answers.push([key, value]); }).value();
+    t.deepEqual(obj, _.object(answers), 'iterating over objects works');
   });
 
   t.test('alias', function(t){
