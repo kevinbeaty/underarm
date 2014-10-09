@@ -90,10 +90,10 @@ test('find', function(t) {
 
     // Matching an object like _.findWhere.
     var list = [{a: 1, b: 2}, {a: 2, b: 2}, {a: 1, b: 3}, {a: 1, b: 4}, {a: 2, b: 4}];
-    t.deepEqual(_r().find({a: 1}).transduce(list, _r.lastValue), {a: 1, b: 2}, 'can be used as findWhere');
+    t.deepEqual(_r(list).find({a: 1}).value(), {a: 1, b: 2}, 'can be used as findWhere');
     t.deepEqual(_r(list).find({b: 4}).value(), {a: 1, b: 4});
-    t.ok(!_r(list).find({c: 1}).transduce(_r.lastValue), 'undefined when not found');
-    t.ok(!_r().find({c: 1}).transduce([], _r.lastValue), 'undefined when searching empty list');
+    t.ok(!_r(list).find({c: 1}).value(), 'undefined when not found');
+    t.ok(!_r([]).find({c: 1}).value(), 'undefined when searching empty list');
 
     result = _r([1,2,3]).find(function(num){ return num * 2 === 4; }).value();
     t.equal(result, 2, 'found the first "2" and broke the loop');

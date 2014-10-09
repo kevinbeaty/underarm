@@ -72,7 +72,9 @@ Supporting functions
 
 - transduce
 - into
+- sequence
 - append/conj
+- empty
 - reduce (with early termination with reduced)
 - reduced
 - asCallback

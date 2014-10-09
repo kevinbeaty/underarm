@@ -37,6 +37,9 @@
     }
   };
 
+  // sentinel to ignore wrapped objects (maintain only last item)
+  var IGNORE = {};
+
   // Export the Underscore object for **Node.js**, with
   // backwards-compatibility for the old `require()` API. If we're in
   // the browser, add `_r` as a global object.
@@ -469,12 +472,11 @@
   // depending on whether the chained transformation resolves to single value.
   _r.prototype.value = function(){
     if(!this._resolveSingleValue){
-      return this.transduce();
+      return this.into([]);
     }
 
-    var init = {},
-        ret =  this.transduce(_r.lastValue, init);
-    return ret === init ? undef : ret;
+    var ret =  this.into(IGNORE);
+    return ret === IGNORE ? undef : ret;
   }
 
   // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
@@ -578,7 +580,7 @@
 
   // Returns empty object of the same type as argument.
   //
-  // Single dispatch function. To support different types
+  // Dispatch function. To support different types
   // call _r.empty.register and supply function that returns
   // an empty object after checking the input using appropriate
   // predicates. Return undefined if not supported, so other
@@ -595,27 +597,29 @@
   }
 
   _r.empty.register(function(obj){
-    if(_.isObject(obj)){
-      return {};
+    if(obj !== IGNORE && obj !== undef){
+      if(_.isArray(obj)){
+        return [];
+      } else if(_.isObject(obj)){
+        return {};
+      }
     }
-  });
 
-  _r.empty.register(function(obj){
-    if(_.isArray(obj)){
-      return [];
-    }
+    // ignore by default. Default append just maintains last item
+    return IGNORE;
   });
 
   // Appends (conjoins) the item to the collection, and returns collection
   //
-  // Single dispatch function. To support different types
-  // call _r.append.register and supply function that returns
-  // an empty object after checking the input using appropriate
-  // predicates. Return undefined if not supported, so other
-  // dispatched functions can be checked
+  // Dispatch function. To support different types
+  // call _r.append.register and supply function that append to the object
+  // (first param) with the item and optional key after checking the input
+  // using appropriate predicates.
+  //
+  // Return undefined if not supported, so other dispatched functions can be checked
   _r.append = _r.conj = _r.conjoin = function(obj, item, key){
     if(obj === undef){
-      return _r.empty();
+      return []; // arrays by default
     }
 
     if(item === undef){
@@ -630,31 +634,19 @@
   }
 
   _r.append.register(function(obj, item, key){
-    if(_.isObject(obj)){
-      obj[key] = item;
-      return obj;
-    }
-  });
-
-  _r.append.register(function(obj, item){
-    if(_.isArray(obj)){
-      obj.push(item);
-      return obj;
-    }
-  });
-
-  // Step function that maintains the last value as the memo (default null)
-  _r.lastValue = function(obj, item){
-    if(obj === undef){
-      return null;
+    if(obj !== IGNORE){
+      if(_.isArray(obj)){
+        obj.push(item);
+        return obj;
+      } else if(key !== undef && _.isObject(obj)){
+        obj[key] = item;
+        return obj;
+      }
     }
 
-    if(item === undef){
-      return obj;
-    }
-
+    // just maintain last item
     return item;
-  }
+  });
 
   // Reduce with a transformation of step (transform). If memo is not
   // supplied, step() will be called to produce it. step should be a reducing
@@ -692,22 +684,22 @@
     return _r.transduce(this.transducer(), this._wrapped, obj, step);
   }
 
-
   // Creates a callback that starts a transducer process and accepts
   // parameter as a new item in the process. Each item advances the state
   // of the transducer. If the transducer exhausts due to early termination,
   // all subsequent calls to the callback will return the last value.
   // If the callback is called with no argument, the transducer terminates,
   // and all subsequent calls will return the last computed result.
-  // The default step function is _r.lastValue (with default memo of null)
+  // The default step function is _r.append with default memo of null.
+  // (This will maintain only last value and not buffer results)
   _r.asCallback = function(transform, step, memo){
     var reduced;
     if(step === undef){
-      step = _r.lastValue;
+      step = _r.append;
     }
 
     if(memo === undef){
-      memo = step();
+      memo = null;
     }
 
     if(transform !== undef){
