@@ -238,8 +238,8 @@ result = trans.value();
 ### Callback Processes
 
 Transducers are normally consumed by reduce, but since they are designed to be independent, we can use
-them in a variety of processes that consume an input and produce a result, such as [CSP][1]. We can
-also create a process using a simple callback where each call advances a step in the process.  These canbe used as event handlers (from the [demo][4]).
+them in a variety of processes that consume an input and produce a result, such as [CSP][3]. We can
+also create a process using a simple callback where each call advances a step in the process.  These can be used as event handlers (from the [demo][4]).
 
 ```javascript
   var $demo = $('#demo3'),
@@ -280,7 +280,7 @@ Since input and output are separated the transducer transformation, transducers 
 
 
 #### Iterator
-Returns an iterator that has next function and returns {value, done}.  Default looks for object with iterator Symbol (or '@@iterator')
+Returns an iterator that has next function and returns {value, done}.  Default looks for object with iterator Symbol (or `'@@iterator'`)
 
 #### Empty
 Returns empty object of the same type as argument.  Default returns `[]` if `_.isArray` or `undefined`, `{}` if `_.isObject` and an internal sentinel to ignore otherwise (used when not buffering in `asCallback` or chained `value` expects single value.
