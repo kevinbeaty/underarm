@@ -37,9 +37,6 @@
     }
   };
 
-  // sentinel to ignore wrapped objects (maintain only last item)
-  var IGNORE = {};
-
   // Export the Underscore object for **Node.js**, with
   // backwards-compatibility for the old `require()` API. If we're in
   // the browser, add `_r` as a global object.
@@ -452,10 +449,23 @@
   // Add all of the Underscore functions to the wrapper object.
   _r.mixin(_r);
 
+  // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
+  // previous owner. Returns a reference to the Underscore object.
+  _r.noConflict = function() {
+    root._r = previous_r;
+    return this;
+  };
+
   // Returns a new chained instance using current transformation, but
   // wrapping the given object
   _r.prototype.wrap = function(obj){
     return _r(obj, this);
+  }
+
+  // Composes and returns the underlying wrapped functions
+  _r.prototype.transducer = _r.prototype.compose = function() {
+    var fns = this._wrappedFns;
+    return fns.length ? _.compose.apply(null, fns) : undef;
   }
 
   // Helper to mark transducer to expect single value when
@@ -467,31 +477,151 @@
     }
   }
 
+  // sentinel to ignore wrapped objects (maintain only last item)
+  var IGNORE = {};
+
   // Resolves the value of the wrapped object, similar to underscore.
   // Returns an array, or single value (to match underscore API)
   // depending on whether the chained transformation resolves to single value.
   _r.prototype.value = function(){
     if(!this._resolveSingleValue){
-      return this.into([]);
+      return this.into(_r.empty());
     }
 
     var ret =  this.into(IGNORE);
     return ret === IGNORE ? undef : ret;
   }
 
-  // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
-  // previous owner. Returns a reference to the Underscore object.
-  _r.noConflict = function() {
-    root._r = previous_r;
-    return this;
-  };
+  // Dispatchers
+  // -----------
+  var dispatch = _.reduce(['iterator', 'empty', 'append'], function(memo, item){
+    var d = function(){
+      var args = arguments, fns = d._fns, i = fns.length, result;
+      for(; i-- ;){
+        result = fns[i].apply(null, args);
+        if(result !== undef){
+          return result;
+        }
+      }
+      throw new TypeError('cannot find match for '+item+' '+_.toArray(args));
+    };
+
+    d._fns = [];
+
+    d.register = function(fn){
+      d._fns.push(fn);
+    };
+
+    memo[item] = d;
+    return memo;
+  }, {});
+
+  // Returns an iterator that has next function
+  // and returns {value, done}. Default looks for
+  // object with iterator Symbol (or '@@iterator').
+  // This is available with _r.iterator.Symbol
+  //
+  // Dispatch function. To support different types
+  // call _r.iterator.register and supply function that returns
+  // an iterator after checking the input using appropriate
+  // predicates. Return undefined if not supported, so other
+  // dispatched functions can be checked
+  _r.iterator = function(obj){
+    return dispatch.iterator(obj);
+  }
+
+  _r.iterator.register = function(fn){
+    return dispatch.iterator.register(fn);
+  }
+
+  var Symbol_iterator = (typeof Symbol !== 'undefined' && Symbol.iterator || '@@iterator');
+  _r.iterator.Symbol = Symbol_iterator;
+
+  _r.iterator.register(function(obj){
+    if (_.isObject(obj)){
+      var iterator = ((obj[Symbol_iterator] && obj[Symbol_iterator]() || obj));
+      if(_.isFunction(iterator.next)){
+        return iterator;
+      }
+    }
+    return null;
+  });
+
+  // Returns empty object of the same type as argument.
+  // Default returns [] if _.isArray or undefined, {} if _.isObject
+  // and an internal sentinel to ignore otherwise
+  //
+  // Dispatch function. To support different types
+  // call _r.empty.register and supply function that returns
+  // an empty object after checking the input using appropriate
+  // predicates. Return undefined if not supported, so other
+  // dispatched functions can be checked
+  _r.empty = function(obj){
+    return obj === IGNORE ? IGNORE : dispatch.empty(obj);
+  }
+
+  _r.empty.register = function(fn){
+    return dispatch.empty.register(fn);
+  }
+
+  _r.empty.register(function(obj){
+    if(obj === undef || _.isArray(obj)){
+      return []; // array if not specified or from array
+    } else if(_.isObject(obj)){
+      return {}; // object if from object
+    }
+
+    // ignore by default. Default append just maintains last item.
+    return IGNORE;
+  });
+
+  // Appends (conjoins) the item to the collection, and returns collection
+  //
+  // Dispatch function. To support different types
+  // call _r.append.register and supply function that append to the object
+  // (first param) with the item and optional key after checking the input
+  // using appropriate predicates.
+  //
+  // Return undefined if not supported, so other dispatched functions can be checked
+  _r.append = _r.conj = _r.conjoin = function(obj, item, key){
+    if(obj === undef){
+      // arrays by default
+      return [];
+    }
+
+    if(item === undef || item === IGNORE){
+      // completion function or ignore item
+      return obj;
+    }
+
+    if(obj === IGNORE){
+      // Maintain last item if requested to ignore object
+      return item;
+    }
+
+    // valid object and item, dispatch
+    return dispatch.append(obj, item, key);
+  }
+
+  _r.append.register = function(fn){
+    return dispatch.append.register(fn);
+  }
+
+  _r.append.register(function(obj, item, key){
+    if(_.isArray(obj)){
+      obj.push(item);
+      return obj;
+    } else if(key !== undef && _.isObject(obj)){
+      obj[key] = item;
+      return obj;
+    }
+
+    // just maintain last item
+    return item;
+  });
 
   // Transducer Functions
   // --------------------
-
-  _r.prototype.transducer = _r.prototype.compose = function() {
-    return _.compose.apply(null, this._wrappedFns);
-  }
 
   // Wrapper to return from iteratee of reduce to terminate
   // _r.reduce early with the provided value
@@ -499,21 +629,20 @@
   _r.reduced = function(value){
     return new Reduced(value);
   }
-  var reduceError = 'Reduce of empty array with no initial value',
-      Symbol_iterator = (typeof Symbol !== 'undefined' && Symbol.iterator || '@@iterator');
+  var reduceError = 'Reduce of empty array with no initial value';
 
   // **Reduce** builds up a single result from a list of values, aka `inject`,
   // or `foldl`.  This implementation extends underscores implementation by
   // allowing early termination using _r.reduced and accepts iterators (ES6 or any object
   // that defines a next method)
   _r.reduce = _r.foldl = _r.inject = function(obj, iteratee, memo) {
-    if (obj == null) obj = [];
+    if (obj == null) obj = _r.empty();
     var keys = obj.length !== +obj.length && _.keys(obj),
         length = (keys || obj).length,
         index = 0, currentKey,
-        iterator = (keys && (obj[Symbol_iterator] && obj[Symbol_iterator]() || obj));
+        iterator = _r.iterator(obj);
 
-    if(_.isFunction(iterator.next)){
+    if(iterator && _.isFunction(iterator.next)){
       // Detected an iterator
       for(;;){
         currentKey = iterator.next();
@@ -541,112 +670,6 @@
     }
     return memo;
   };
-
-  // Takes a reducing step function of 2 args and returns a function suitable for
-  // transduce by adding an arity-1 signature that calls complete
-  // (default - identity) on the result argument.
-  _r.completing = function(step, complete){
-    complete = complete || _.identity;
-    return function(result, input){
-      return (result === undef)  ? step()
-        :    (input === undef)   ? complete(result)
-        :    step(result, input);
-    }
-  }
-
-  // Dispatchers
-  // -----------
-  var dispatch = _.reduce(['empty', 'append'], function(memo, item){
-    var d = function(){
-      var args = arguments, fns = d._fns, i = fns.length, result;
-      for(; i-- ;){
-        result = fns[i].apply(null, args);
-        if(result !== undef){
-          return result;
-        }
-      }
-      throw new TypeError('cannot find match for '+item+' '+_.toArray(args));
-    };
-
-    d._fns = [];
-
-    d.register = function(fn){
-      d._fns.push(fn);
-    };
-
-    memo[item] = d;
-    return memo;
-  }, {});
-
-  // Returns empty object of the same type as argument.
-  //
-  // Dispatch function. To support different types
-  // call _r.empty.register and supply function that returns
-  // an empty object after checking the input using appropriate
-  // predicates. Return undefined if not supported, so other
-  // dispatched functions can be checked
-  _r.empty = function(obj){
-    if(obj === undef){
-      return []; // arrays by default
-    }
-    return dispatch.empty(obj);
-  }
-
-  _r.empty.register = function(fn){
-    return dispatch.empty.register(fn);
-  }
-
-  _r.empty.register(function(obj){
-    if(obj !== IGNORE && obj !== undef){
-      if(_.isArray(obj)){
-        return [];
-      } else if(_.isObject(obj)){
-        return {};
-      }
-    }
-
-    // ignore by default. Default append just maintains last item
-    return IGNORE;
-  });
-
-  // Appends (conjoins) the item to the collection, and returns collection
-  //
-  // Dispatch function. To support different types
-  // call _r.append.register and supply function that append to the object
-  // (first param) with the item and optional key after checking the input
-  // using appropriate predicates.
-  //
-  // Return undefined if not supported, so other dispatched functions can be checked
-  _r.append = _r.conj = _r.conjoin = function(obj, item, key){
-    if(obj === undef){
-      return []; // arrays by default
-    }
-
-    if(item === undef){
-      return obj;
-    }
-
-    return dispatch.append(obj, item, key);
-  }
-
-  _r.append.register = function(fn){
-    return dispatch.append.register(fn);
-  }
-
-  _r.append.register(function(obj, item, key){
-    if(obj !== IGNORE){
-      if(_.isArray(obj)){
-        obj.push(item);
-        return obj;
-      } else if(key !== undef && _.isObject(obj)){
-        obj[key] = item;
-        return obj;
-      }
-    }
-
-    // just maintain last item
-    return item;
-  });
 
   // Reduce with a transformation of step (transform). If memo is not
   // supplied, step() will be called to produce it. step should be a reducing
@@ -741,7 +764,11 @@
     var step = _r.append;
 
     if(from === undef){
-      from = transform
+      from = transform;
+      transform = undef;
+    }
+
+    if(transform === undef){
       return _r.reduce(from, step, to)
     }
 
@@ -767,6 +794,7 @@
     if(from == undef){
       from = this._wrapped;
     }
+
     return this.into(_r.empty(from), from);
   }
 
