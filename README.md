@@ -273,6 +273,22 @@ also create a process using a simple callback where each call advances a step in
 ```
 We are simply composing transducers.  The previous examples are all using transducers behind the scenes. Method chaining is implicit and is simple composition, `_r.generate` uses an iterator and passes on to `transduce`. Even `asCallback` uses transducers but steps through the results using the argument of a callback, instead of reducing over the results.
 
+### Streams
+
+You can transduce over Streams using the [transduce-stream][7] extension.
+
+```javascript
+var _r = require('transduce-stream');
+
+var stream = _r()
+  .invoke('toString')
+  .map(function(x){return (+x * +x)+'\n'})
+  .take(4)
+  .stream();
+
+process.stdin.resume();
+process.stdin.pipe(stream).pipe(process.stdout);
+```
 
 ### Generic dispatch
 
@@ -367,3 +383,4 @@ MIT
 [4]: http://simplectic.com/projects/underscore-transducer/
 [5]: http://clojure.org/transducers
 [6]: https://github.com/facebook/immutable-js
+[7]: https://github.com/kevinbeaty/transduce-stream
