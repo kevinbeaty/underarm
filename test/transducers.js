@@ -205,19 +205,21 @@ test('sequence into chained', function(t){
 });
 
 test('asCallback', function(t){
-  t.plan(8);
+  t.plan(9);
 
   var results = [];
-  var cb = _r().filter(isEven).map(inc).each(appendEach).asCallback();
-  t.equal(1, cb(0));
-  t.equal(1, cb(1));
-  t.equal(3, cb(2));
-  t.equal(3, cb(3));
-  t.equal(5, cb(4));
-  t.equal(5, cb(5));
+  var cb = _r().filter(isEven).map(inc).each(appendEach).take(2).asCallback();
+  t.equal(false, cb(1).done);
+  t.equal(false, cb(1).done);
+  t.equal(false, cb(2).done);
+  t.equal(false, cb(3).done);
+  t.equal(true, cb(4).done);
+  t.equal(true, cb(4).done);
+  t.equal(true, cb(5).done);
 
-  t.deepEqual(results, [1,3,5]);
+  t.deepEqual(results, [3,5]);
 
+  cb = _r().filter(isEven).map(inc).each(appendEach).asCallback();
   results = [];
   _.each(_.range(1, 10), cb);
   t.deepEqual(results, [3,5,7,9]);

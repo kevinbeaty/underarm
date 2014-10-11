@@ -1,6 +1,6 @@
 {
   "name": "underscore-transducer",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Transducers for Underscore",
   "main": "underscore-transducer.js",
   "scripts": {

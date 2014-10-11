@@ -1,5 +1,5 @@
 PROJECT:=underscore-transducer
-VERSION:=0.0.5
+VERSION:=0.0.6
 
 JS_TARGET ?= build/$(PROJECT)-$(VERSION).js
 

@@ -355,7 +355,7 @@ _r.empty.register(function(obj){
 });
 
 // Vector [ 1, 2, 3, 4 ]
-console.log(_r(vector).value());
+_r(vector).value();
 ```
 
 #### License

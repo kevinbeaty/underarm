@@ -50,7 +50,7 @@
   }
 
   // Current version.
-  _r.VERSION = '0.0.5';
+  _r.VERSION = '0.0.6';
 
   // Reference to Underscore from browser
   var _ = root._;
@@ -710,13 +710,13 @@
   // Creates a callback that starts a transducer process and accepts
   // parameter as a new item in the process. Each item advances the state
   // of the transducer. If the transducer exhausts due to early termination,
-  // all subsequent calls to the callback will return the last value.
+  // that and all subsequent calls to the callback will return true.
   // If the callback is called with no argument, the transducer terminates,
-  // and all subsequent calls will return the last computed result.
+  // that and all subsequent calls will return true.
   // The default step function is _r.append with default memo of null.
   // (This will maintain only last value and not buffer results)
   _r.asCallback = function(transform, step, memo){
-    var reduced;
+    var result = {done: false};
     if(step === undef){
       step = _r.append;
     }
@@ -730,26 +730,27 @@
     }
 
     return function(item){
+      if(result.done) return result;
+
       if(item === undef){
         // complete
-        reduced = step(reduced);
+        memo = step(memo);
+        result = {done: true};
+        return result;
       }
-
-      // we have exhausted process return result
-      if(reduced) return reduced;
 
       // step to next result.
       memo = step(memo, item);
 
       // check if exhausted
       if(memo instanceof Reduced){
-        reduced = memo.value;
-        step(reduced); // notify completion
-        return reduced;
+        memo = step(memo.value);
+        result = {done: true};
+        return result;
       }
 
-      // return current value
-      return memo;
+      result.value = memo;
+      return result;
     }
   }
 
