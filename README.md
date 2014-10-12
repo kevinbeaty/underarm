@@ -286,33 +286,44 @@ We are simply composing transducers.  The previous examples are all using transd
 
 ### Node Async
 
-If you are using Node.js, `asyncCallback` returns a callback that follows the standard convention of `fh(err, item)` and accepts a continuation with same arguments that is called on completion or error.
+If you are using Node.js, `asyncCallback` returns a callback that follows the standard convention of `fn(err, item)` and accepts a continuation that is called on completion or error.
 
 ### Strings
-Strings can also be considered as a sequence of characters, so you can transduce over those as well. See [transduce-string][8] to lazily process strings using an [underscore.string][9] API.
+Strings are a sequence of characters, so you can transduce over those as well. See [transduce-string][8] to lazily process strings using an [underscore.string][9] API.
 
 ### Streams
 You can transduce over Node.js Streams using the [transduce-stream][7] extension which also mixes in [transduce-string][8].
 
 ```javascript
+// test.js
 var _r = require('transduce-stream');
 
 var stream = _r()
-  .invoke('toString')
-  .map(function(x){return (+x * +x)+'\n'})
-  .take(4)
+  .words()
+  .map(function(x){return (+x * +x)})
+  .numberFormat(2)
+  .surround(' ')
   .stream();
 
 process.stdin.resume();
 process.stdin.pipe(stream).pipe(process.stdout);
 ```
 
+Run this from the terminal to calculate a formatted sequence of squared values.
+
+```bash
+$ echo '33 27 33 444' | node test.js
+ 1,089.00  729.00  1,089.00  197,136.00
+```
+
+Functions that `split` over the String are processed lazily and as soon as possible: `lines`, `words` and `chars` will process a line/word/char as they are received, and buffer any intermediate chunks appropriately.
+
 ### Generic dispatch
 
 Since input and output are separated the transducer transformation, transducers can be reduced, and sequences can be created over any object that supports the following methods.
 
 #### Iterator
-Returns an iterator that has next function and returns {value, done}.  Default looks for object with iterator Symbol (or `'@@iterator'`)
+Returns an iterator that has next function and returns `{value, done}`.  Default looks for object with iterator Symbol (or `'@@iterator'`)
 
 #### Empty
 Returns empty object of the same type as argument.  Default returns `[]` if `_.isArray` or `undefined`, `{}` if `_.isObject` and an internal sentinel to ignore otherwise (used when not buffering in `asCallback` or chained `value` expects single value.
@@ -377,14 +388,14 @@ _r(vector).map(mult(7)).filter(isEven).sequence();
 
 // Vector [ 1, 2, 3, 4 ]
 _r(vector).sequence();
-
-// [ 1, 2, 3, 4 ]
-_r(vector).value();
 ```
 
 By default, `value` transduces into an empty array if multiple values are expected, and a single value if single value is expected to match the Underscore API. To override the behavior of multiple values, simply register a dispatch an empty for an undefined object (`value` calls `_r.empty()` which by default returns an array).
 
 ```javascript
+// [ 1, 2, 3, 4 ]
+_r(vector).value();
+
 _r.empty.register(function(obj){
   if(_.isUndefined(obj)){
     return Vector.empty();
