@@ -301,19 +301,30 @@ var _r = require('transduce-stream');
 var stream = _r()
   .words()
   .map(function(x){return (+x * +x)})
+  .uniq()
   .numberFormat(2)
   .surround(' ')
+  .take(4)
+  .push('\n')
   .stream();
 
 process.stdin.resume();
 process.stdin.pipe(stream).pipe(process.stdout);
 ```
 
-Run this from the terminal to calculate a formatted sequence of squared values.
+Run this from the terminal to calculate a formatted sequence of the first 4 unique squared values.
 
 ```bash
 $ echo '33 27 33 444' | node test.js
- 1,089.00  729.00  1,089.00  197,136.00
+ 1,089.00  729.00  197,136.00
+
+$ node test.js << EOT
+12 32
+33 33
+33 43
+12 33 12
+EOT
+ 144.00  1,024.00  1,089.00  1,849.00
 ```
 
 Functions that `split` over the String are processed lazily and as soon as possible: `lines`, `words` and `chars` will process a line/word/char as they are received, and buffer any intermediate chunks appropriately.
@@ -331,7 +342,7 @@ Returns empty object of the same type as argument.  Default returns `[]` if `_.i
 #### Append
 Accepts an item and optional key and appends the item to the object.  By default, appends to arrays and objects by key and returns last item when used in `asCallback` or chained transducer with single `value`.
 
-### Wrap/Unwrap
+#### Wrap/Unwrap
 When chaining transducers, the object passed to `_r(obj)` is dispatched to `_r.wrap`.  By default, the object is not wrapped if it is defined, and wrapped with `_r.empty()` if not defined. When transducing over the sequence (with `value`, `into`, etc.) the object is then unwrapped with `_r.unwrap`.  By default, unwrap calls `_r().value()` on chained transformations, extracts value from `_r.reduced` or simply returns the value.  You can provide custom dispatchers for custom wrapped values (see [transduce-string][8] for an example).
 
 #### Example
