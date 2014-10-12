@@ -12,6 +12,12 @@ Straight from the [source][5].
 
 > Transducers are composable algorithmic transformations. They are independent from the context of their input and output sources and specify only the essence of the transformation in terms of an individual element. Because transducers are decoupled from input or output sources, they can be used in many different processes - collections, streams, channels, observables, etc. Transducers compose directly, without awareness of input or creation of intermediate aggregates.
 
+Transducers allow the abstraction of algorithmic transformations independent from the input and output, and even the process of iteration.
+
+Whereas underscore or lodash operates on arrays and objects calculating intermediate results, transducers simply define the transformation in terms of functions similar to what you pass reduce: start with a memo, execute a function with a memo and an item, return the possibly transformed memo for the next iteration. Once you abstract the transformation away from the data, you can apply the same transformations to different processes that start with an initial value and step through a result. One benefit is that you can compute the result in one pass (without intermediate results). Another is you can use the same transformation in different contexts (lazy lists, indefinite sequence generation, CSP, event streams, etc.).
+
+The source could be anything that produces a sequences of values: streams, iterators, callbacks, immutable-js, etc. You simply have to define (external to the transducer) how you append each item to the supplied result. The "step function" that knows how to append results to values is passed to the transducer, and the transducer executes the step function when reducing over results.
+
 This library creates transducers using the familiar underscore API.
 
 ### Transducers

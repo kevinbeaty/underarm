@@ -205,18 +205,12 @@ test('sequence into chained', function(t){
 });
 
 test('asCallback', function(t){
-  t.plan(9);
+  t.plan(2);
 
-  var results = [];
-  var cb = _r().filter(isEven).map(inc).each(appendEach).take(2).asCallback();
-  t.equal(false, cb(1).done);
-  t.equal(false, cb(1).done);
-  t.equal(false, cb(2).done);
-  t.equal(false, cb(3).done);
-  t.equal(true, cb(4).done);
-  t.equal(true, cb(4).done);
-  t.equal(true, cb(5).done);
+  var results = [],
+      cb = _r().filter(isEven).map(inc).each(appendEach).take(2).asCallback();
 
+  _.each([1,1,2,3,4,4,5], cb);
   t.deepEqual(results, [3,5]);
 
   cb = _r().filter(isEven).map(inc).each(appendEach).asCallback();
@@ -227,6 +221,60 @@ test('asCallback', function(t){
   function appendEach(item){
     results.push(item);
   }
+});
+
+test('asyncCallback', function(t){
+  t.plan(9);
+
+  var results, result, cb, abort = new Error('abort');
+
+  cb = _r().filter(isEven).map(inc).each(appendEach).take(2).asyncCallback(continuation);
+
+  results = [];
+  result = {done: false, error: false};
+
+  _.each([1,1,2,3,4,4,5], function(item){cb(null, item)});
+  t.deepEqual(results, [3,5]);
+  t.deepEqual(result, {done:true, error:null});
+
+  cb = _r().filter(isEven).map(inc).each(appendEach).take(2).asyncCallback(continuation);
+
+  results = [];
+  result = {done: false, error: false};
+
+  _.each([1,1,2,3,4,4,5], function(item){cb(item === 3 ? abort : null, item)});
+  t.deepEqual(results, [3]);
+  t.deepEqual(result, {done:true, error:abort});
+
+  results = [];
+  result = {done: false, error: false};
+
+  cb = _r().filter(isEven).map(inc).each(appendEach).asyncCallback(continuation);
+  _.each(_.range(1, 10), function(item){cb(null, item)});
+  t.deepEqual(results, [3,5,7,9]);
+  t.deepEqual(result, {done:false, error:false});
+  cb();
+  t.deepEqual(result, {done:true, error:null});
+
+  results = [];
+  result = {done: false, error: false};
+
+  cb = _r()
+    .filter(isEven).map(inc).each(appendEach)
+    .each(function(i){if(i===7){throw abort}}).asyncCallback(continuation);
+  _.each(_.range(1, 10), function(item){cb(null, item)});
+  t.deepEqual(results, [3,5,7]);
+  t.deepEqual(result, {done:true, error:abort});
+
+  function appendEach(item){
+    results.push(item);
+  }
+
+  function continuation(err){
+    result.done = true;
+    result.error = err;
+  }
+
 });
 
 test('generate', function(t){

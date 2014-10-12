@@ -1,5 +1,5 @@
 PROJECT:=underscore-transducer
-VERSION:=0.0.6
+VERSION:=0.0.7
 
 JS_TARGET ?= build/$(PROJECT)-$(VERSION).js
 
@@ -21,9 +21,9 @@ node_modules:
 %.gz: %
 	gzip -c9 $^ > $@
 
-js: $(JS_TARGET) $(JS_TARGET:.js=.min.js) $(JS_TARGET:.js=.min.js.gz)
+js: $(JS_TARGET) $(JS_TARGET:.js=.min.js)
 
-$(JS_TARGET): underscore-transducer.js | build
+$(JS_TARGET): $(PROJECT).js | build
 	cp $< $@
 
 build: 

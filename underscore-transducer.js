@@ -50,7 +50,7 @@
   }
 
   // Current version.
-  _r.VERSION = '0.0.6';
+  _r.VERSION = '0.0.7';
 
   // Reference to Underscore from browser
   var _ = root._;
@@ -629,6 +629,15 @@
   _r.reduced = function(value){
     return new Reduced(value);
   }
+  _r.isReduced = function(value){
+    return value instanceof Reduced;
+  }
+  _r.reducedValue = function(value){
+    if(_r.isReduced(value)){
+      return value.value;
+    }
+  }
+
   var reduceError = 'Reduce of empty array with no initial value';
 
   // **Reduce** builds up a single result from a list of values, aka `inject`,
@@ -650,8 +659,8 @@
           return memo;
         }
         memo = iteratee(memo, currentKey.value, index++, obj);
-        if(memo instanceof Reduced){
-          return memo.value;
+        if(_r.isReduced(memo)){
+          return _r.reducedValue(memo);
         }
       }
     }  else {
@@ -663,8 +672,8 @@
       for (; index < length; index++) {
         currentKey = keys ? keys[index] : index;
         memo = iteratee(memo, obj[currentKey], currentKey, obj);
-        if(memo instanceof Reduced){
-          return memo.value;
+        if(_r.isReduced(memo)){
+          return _r.reducedValue(memo);
         }
       }
     }
@@ -710,53 +719,119 @@
   // Creates a callback that starts a transducer process and accepts
   // parameter as a new item in the process. Each item advances the state
   // of the transducer. If the transducer exhausts due to early termination,
-  // that and all subsequent calls to the callback will return true.
+  // all subsequent calls to the callback will no-op.
+  //
   // If the callback is called with no argument, the transducer terminates,
-  // that and all subsequent calls will return true.
-  // The default step function is _r.append with default memo of null.
+  // and all subsequent calls will no-op.
+  //
+  // The step function is _r.append with default memo of null.
   // (This will maintain only last value and not buffer results)
-  _r.asCallback = function(transform, step, memo){
-    var result = {done: false};
-    if(step === undef){
+  _r.asCallback = function(transform, memo){
+    var done = false,
       step = _r.append;
-    }
 
     if(memo === undef){
       memo = null;
     }
 
-    if(transform !== undef){
-      step = transform(step);
-    }
+    step = transform(step);
 
     return function(item){
-      if(result.done) return result;
+      if(done) return;
 
       if(item === undef){
         // complete
         memo = step(memo);
-        result = {done: true};
-        return result;
+        done = true;
+      } else {
+        // step to next result.
+        memo = step(memo, item);
+
+        // check if exhausted
+        if(_r.isReduced(memo)){
+          memo = step(_r.reducedValue(memo));
+          done = true;
+        }
       }
-
-      // step to next result.
-      memo = step(memo, item);
-
-      // check if exhausted
-      if(memo instanceof Reduced){
-        memo = step(memo.value);
-        result = {done: true};
-        return result;
-      }
-
-      result.value = memo;
-      return result;
     }
   }
 
   // Calls asCallback with the chained transformation
-  _r.prototype.asCallback = function(step, memo){
-    return _r.asCallback(this.transducer(), step, memo);
+  _r.prototype.asCallback = function(memo){
+    return _r.asCallback(this.transducer(),  memo);
+  }
+
+  // Creates an async callback that starts a transducer process and accepts
+  // parameter cb(err, item) as a new item in the process. The returned callback
+  // and the optional continuation follow node conventions with  fn(err, item).
+  //
+  // Each item advances the state  of the transducer, if the continuation
+  // is provided, it will be called on completion or error. An error will terminate
+  // the transducer and be propagated to the continuation.  If the transducer
+  // exhausts due to early termination, any further call will be a no-op.
+  //
+  // If the callback is called with no item, it will terminate the transducer process.
+  //
+  // The step function is _r.append with default memo of null.
+  // (This will maintain only last value and not buffer results)
+  _r.asyncCallback = function(transform, continuation, memo){
+    var done = false,
+        step = _r.append;
+
+    if(memo === undef){
+      memo = null;
+    }
+
+    step = transform(step);
+
+    function checkDone(err, item){
+      if(done){
+        return true;
+      }
+
+      err = err || null;
+
+      // check if exhausted
+      if(_r.isReduced(memo)){
+        memo = _r.reducedValue(memo);
+        done = true;
+      }
+
+      if(err || done || item === undef){
+        memo = step(memo);
+        done = true;
+      }
+
+      // notify if done
+      if(done){
+        if(continuation){
+          continuation(err, memo);
+          continuation = null;
+        } else if(err){
+          throw err;
+        }
+        memo = null;
+      }
+
+      return done;
+    }
+
+    return function(err, item){
+      if(!checkDone(err, item)){
+        try {
+          // step to next result.
+          memo = step(memo, item);
+          checkDone(err, item);
+        } catch(err2){
+          checkDone(err2, item);
+        }
+      }
+    }
+  }
+
+  // Calls asyncCallback with the chained transformation
+  _r.prototype.asyncCallback = function(continuation, memo){
+    return _r.asyncCallback(this.transducer(), continuation, memo);
   }
 
   // Returns a new coll consisting of to-coll with all of the items of
