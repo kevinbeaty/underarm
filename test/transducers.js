@@ -185,19 +185,19 @@ test('sequence into chained', function(t){
   t.deepEqual(items, [2, 200], 'wrap chained sequence object filter and map chained with tap items');
 
   results = [], items = [];
-  result = trans.wrap([1,2,3,200]).into([]);
+  result = trans.withSource([1,2,3,200]).into([]);
   t.deepEqual(result, [4, 40000], 'wrap chained into filter and map chained with tap');
   t.deepEqual(results, [[], [4]], 'wrap chained into filter and map chained with tap results');
   t.deepEqual(items, [2, 200], 'wrap chained into filter and map chained with tap items');
 
   results = [], items = [];
-  result = trans.wrap([1,2,3,200]).sequence();
+  result = trans.withSource([1,2,3,200]).sequence();
   t.deepEqual(result, [4, 40000], 'wrap chained sequence filter and map chained with tap');
   t.deepEqual(results, [[], [4]], 'wrap chained seqeuence filter and map chained with tap results');
   t.deepEqual(items, [2, 200], 'wrap chained seqeuence filter and map chained with tap items');
 
   results = [], items = [];
-  result = trans.wrap({one: 1, two: 2, three: 3, twohundred: 200}).sequence();
+  result = trans.withSource({one: 1, two: 2, three: 3, twohundred: 200}).sequence();
   t.deepEqual(result, {two: 4, twohundred: 40000}, 'wrap chained sequence object filter and map chained with tap');
   t.deepEqual(results, [{}, {two: 4}], 'wrap chained sequence object filter and map chained with tap results');
   t.deepEqual(items, [2, 200], 'wrap chained sequence object filter and map chained with tap items');
@@ -275,6 +275,84 @@ test('asyncCallback', function(t){
     result.error = err;
   }
 
+});
+
+test('dispatch', function(t){
+  t.plan(8);
+  function StringBuilder(str){
+    if(!(this instanceof StringBuilder)) return new StringBuilder(str);
+
+    if(_.isString(str)){
+      this.strings = [str];
+    } else if(_.isArray(str)){
+      this.strings = str;
+    } else if(str instanceof StringBuilder){
+      this.strings = _.clone(str.strings);
+    } else {
+      this.strings = [];
+    }
+  }
+
+  StringBuilder.prototype.append = function(str){
+    this.strings.push(str.toString());
+    return this;
+  }
+
+  StringBuilder.prototype.toString = function(){
+    return this.strings.join('');
+  }
+
+  StringBuilder.prototype[_r.iterator.Symbol] = function(){
+    var done = false, self = this;
+    return {
+      next: function(){
+        if(done){
+          return {done: done};
+        } else {
+          done = true;
+          return {done:false, value: self.toString()};
+        }
+      }
+    }
+  }
+
+  _r.wrap.register(function(obj){
+    if(_.isString(obj)){
+      return StringBuilder(obj);
+    }
+  });
+
+  _r.unwrap.register(function(obj){
+    if(obj instanceof StringBuilder){
+      return obj.toString();
+    }
+  });
+
+  _r.empty.register(function(obj){
+    if(_.isString(obj) || obj instanceof StringBuilder){
+      return StringBuilder();
+    }
+  });
+
+  _r.append.register(function(obj, item){
+    if(_.isString(obj)){
+      return StringBuilder(item).append(item);
+    } else if(obj instanceof StringBuilder){
+      return obj.append(item);
+    }
+  });
+
+  t.equal(_r(['Hello']).invoke('toLowerCase').value().join(''), 'hello');
+  t.equal(_r(['Hello', ' ', 'World']).invoke('toUpperCase').value().join(''), 'HELLO WORLD');
+
+  t.equal(_r(new StringBuilder('Hello')).invoke('toLowerCase').value(), 'hello');
+  t.equal(_r(new StringBuilder(['Hello', ' ', 'World'])).invoke('toUpperCase').value(), 'HELLO WORLD');
+
+  t.equal(_r('Hello').invoke('toUpperCase').value(), 'HELLO');
+  t.equal(_r('Hello').invoke('toLowerCase').value(), 'hello');
+
+  t.equal(_r('Hello').push(' ', 'World').value(), 'Hello World');
+  t.equal(_r('World').unshift('Hello', ' ').value(), 'Hello World');
 });
 
 test('generate', function(t){

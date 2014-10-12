@@ -14,14 +14,16 @@
       if(transform === undef){
         return obj;
       }
-      var copy = new _r(obj._wrapped, _r.append(obj._wrappedFns, transform));
+      var wrappedFns = _.clone(obj._wrappedFns);
+      wrappedFns.push(transform);
+      var copy = new _r(obj._wrapped, wrappedFns);
       copy._resolveSingleValue = obj._resolveSingleValue;
       return copy;
     }
 
     if (!(this instanceof _r)) return new _r(obj, transform);
 
-    this._wrapped = obj;
+    this._wrapped = _r.wrap(obj);
 
     if(transform instanceof _r){
       transform = transform._wrappedFns;
@@ -270,6 +272,46 @@
   // Array Functions
   // ---------------
 
+  // Adds one or more items to the end of the sequence, like Array.prototype.push.
+  _r.push = function(){
+    var toPush = _.toArray(arguments);
+    return function(step){
+      return function(result, input, key){
+        if(result === undef) return step();
+        if(input === undef){
+          var idx, len = toPush.length;
+          for(idx = 0; idx < len; idx++){
+            result = step(result, toPush[idx]);
+          }
+
+          return step(result);
+        }
+        return step(result, input, key);
+      }
+    }
+  }
+
+  // Adds one or more items to the beginning of the sequence, like Array.prototype.unshift.
+  _r.unshift = function(){
+    var toUnshift = _.toArray(arguments);
+    return function(step){
+      return function(result, input, key){
+        if(result === undef) return step();
+        if(input === undef) return step(result);
+
+        if(toUnshift){
+          var idx, len = toUnshift.length;
+          for(idx = 0; idx < len; idx++){
+            result = step(result, toUnshift[idx]);
+          }
+          toUnshift = null;
+        }
+
+        return step(result, input, key);
+      }
+    }
+  }
+
   // Get the first element of an array. Passing **n** will return the first N
   // values in the array. Aliased as `head` and `take`.
   // Stateful transducer (running count)
@@ -457,8 +499,8 @@
   };
 
   // Returns a new chained instance using current transformation, but
-  // wrapping the given object
-  _r.prototype.wrap = function(obj){
+  // wrapping the given source
+  _r.prototype.withSource = function(obj){
     return _r(obj, this);
   }
 
@@ -485,7 +527,7 @@
   // depending on whether the chained transformation resolves to single value.
   _r.prototype.value = function(){
     if(!this._resolveSingleValue){
-      return this.into(_r.empty());
+      return this.into();
     }
 
     var ret =  this.into(IGNORE);
@@ -494,7 +536,7 @@
 
   // Dispatchers
   // -----------
-  var dispatch = _.reduce(['iterator', 'empty', 'append'], function(memo, item){
+  var dispatch = _.reduce(['iterator', 'empty', 'append', 'wrap', 'unwrap'], function(memo, item){
     var d = function(){
       var args = arguments, fns = d._fns, i = fns.length, result;
       for(; i-- ;){
@@ -515,6 +557,51 @@
     memo[item] = d;
     return memo;
   }, {});
+
+  // Wraps a value used as source for use during chained transformation. 
+  //
+  // Default returns value, or _r.empty() if undefined.
+  //
+  // Dispatch function. To support different types,
+  // call _r.unwrap.register
+  _r.wrap = function(value){
+    return dispatch.wrap(value);
+  }
+
+  _r.wrap.register = function(fn){
+    return dispatch.wrap.register(fn);
+  }
+
+  _r.wrap.register(function(value){
+    if(value === undef){
+      value = _r.empty();
+    }
+    return value;
+  });
+
+  // Unwraps (deref) a possibly wrapped value
+  // Default unwraps values created with _r.reduced,
+  // or calls value() on chained _r transformations,
+  // otherwise returns parameter.
+  //
+  // Dispatch function. To support different types,
+  // call _r.unwrap.register
+  _r.unwrap = _r.deref = function(value){
+    return dispatch.unwrap(value);
+  }
+
+  _r.unwrap.register = function(fn){
+    return dispatch.unwrap.register(fn);
+  }
+
+  _r.unwrap.register(function(value){
+    if(_r.isReduced(value)){
+      return value.value;
+    } else if(value instanceof _r){
+      return r.value();
+    }
+    return value;
+  });
 
   // Returns an iterator that has next function
   // and returns {value, done}. Default looks for
@@ -585,12 +672,17 @@
   // Return undefined if not supported, so other dispatched functions can be checked
   _r.append = _r.conj = _r.conjoin = function(obj, item, key){
     if(obj === undef){
-      // arrays by default
+      // create arrays by default
       return [];
     }
 
-    if(item === undef || item === IGNORE){
-      // completion function or ignore item
+    if(item === undef){
+      // completion function, unwrap object
+      return _r.unwrap(obj);
+    } 
+    
+    if (item === IGNORE){
+      // ignore item
       return obj;
     }
 
@@ -632,12 +724,6 @@
   _r.isReduced = function(value){
     return value instanceof Reduced;
   }
-  _r.reducedValue = function(value){
-    if(_r.isReduced(value)){
-      return value.value;
-    }
-  }
-
   var reduceError = 'Reduce of empty array with no initial value';
 
   // **Reduce** builds up a single result from a list of values, aka `inject`,
@@ -660,7 +746,7 @@
         }
         memo = iteratee(memo, currentKey.value, index++, obj);
         if(_r.isReduced(memo)){
-          return _r.reducedValue(memo);
+          return _r.unwrap(memo);
         }
       }
     }  else {
@@ -673,7 +759,7 @@
         currentKey = keys ? keys[index] : index;
         memo = iteratee(memo, obj[currentKey], currentKey, obj);
         if(_r.isReduced(memo)){
-          return _r.reducedValue(memo);
+          return _r.unwrap(memo);
         }
       }
     }
@@ -690,6 +776,10 @@
   // certain transforms may inject or skip items.
   // The default step function is _r.append (with default value [])
   _r.transduce = function(transform, obj, step, memo){
+    if(obj === undef){
+      obj = _r.empty();
+    }
+
     if(step === undef){
       step = _r.append;
     }
@@ -710,10 +800,10 @@
 
   // Calls transduce using the chained transformation
   _r.prototype.transduce = function(obj, step, memo){
-    if(this._wrapped === undef){
-      return _r.transduce(this.transducer(), obj, step, memo);
+    if(obj === undef){
+      return _r.transduce(this.transducer(), this._wrapped, obj, step);
     }
-    return _r.transduce(this.transducer(), this._wrapped, obj, step);
+    return _r.transduce(this.transducer(), obj, step, memo);
   }
 
   // Creates a callback that starts a transducer process and accepts
@@ -749,7 +839,7 @@
 
         // check if exhausted
         if(_r.isReduced(memo)){
-          memo = step(_r.reducedValue(memo));
+          memo = step(_r.unwrap(memo));
           done = true;
         }
       }
@@ -793,7 +883,7 @@
 
       // check if exhausted
       if(_r.isReduced(memo)){
-        memo = _r.reducedValue(memo);
+        memo = _r.unwrap(memo);
         done = true;
       }
 
@@ -844,16 +934,32 @@
       transform = undef;
     }
 
-    if(transform === undef){
-      return _r.reduce(from, step, to)
+    if(from === undef){
+      from = _r.empty();
     }
 
-    return _r.transduce(transform, from, step, to)
+    if(transform === undef){
+      return _r.reduce(from, step, to);
+    }
+
+    return _r.transduce(transform, from, step, to);
   }
 
   // Calls into using the chained transformation
   _r.prototype.into = function(to, from){
-    return _r.into(to, this.transducer(), from !== undef ? from : this._wrapped);
+    if(from === undef){
+      from = this._wrapped;
+    }
+
+    if(from === undef){
+      from = _r.empty();
+    }
+
+    if(to === undef){
+      to = _r.empty(from);
+    }
+
+    return _r.into(to, this.transducer(), from);
   }
 
   // Returns a new collection of the empty value of the from collection
@@ -895,7 +1001,7 @@
   // Transduces the current chained object by using the chained trasnformation
   // and an iterator created with the callback
   _r.prototype.generate = function(callback, callToInit){
-    return this.wrap(_r.generate(callback, callToInit));
+    return this.withSource(_r.generate(callback, callToInit));
   }
 
   // AMD registration happens at the end for compatibility with AMD loaders

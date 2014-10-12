@@ -2,6 +2,18 @@ var _r = require('../'),
     _ = require('underscore'),
     test = require('tape');
 
+test('push unshift', function(t) {
+  t.plan(6);
+  t.deepEqual(_r([1,2,3]).push(4, 5, 6).value(), [1,2,3,4,5,6]);
+  t.deepEqual(_r([1,2,3]).push(4).push(5, 6).value(), [1,2,3,4,5,6]);
+
+  t.deepEqual(_r([1,2,3]).unshift(4).unshift(5, 6).value(), [5,6,4,1,2,3]);
+  t.deepEqual(_r([1,2,3]).unshift(4, 5, 6).value(), [4,5,6,1,2,3]);
+
+  t.deepEqual(_r([1,2,3]).push(4).unshift(5, 6).value(), [5,6,1,2,3,4]);
+  t.deepEqual(_r([1,2,3]).unshift(4).push(5, 6).value(), [4,1,2,3,5,6]);
+});
+
 test('first', function(t) {
   t.plan(6);
 

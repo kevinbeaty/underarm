@@ -161,12 +161,16 @@ Transducers implemented:
 - last
 - rest
 - uniq
+- push
+- unshift
 
 Generic dispatch functions
 
 - iterator
 - append/conj
 - empty
+- wrap
+- unwrap
 
 Supporting functions
 
@@ -177,6 +181,7 @@ Supporting functions
 - reduce (with support for iterators, empty dispatch, early termination with reduced)
 - reduced
 - asCallback
+- asyncCallback
 - generate
 - mixin
 - (chain is implicit)
@@ -279,9 +284,15 @@ also create a process using a simple callback where each call advances a step in
 ```
 We are simply composing transducers.  The previous examples are all using transducers behind the scenes. Method chaining is implicit and is simple composition, `_r.generate` uses an iterator and passes on to `transduce`. Even `asCallback` uses transducers but steps through the results using the argument of a callback, instead of reducing over the results.
 
-### Streams
+### Node Async
 
-You can transduce over Streams using the [transduce-stream][7] extension.
+If you are using Node.js, `asyncCallback` returns a callback that follows the standard convention of `fh(err, item)` and accepts a continuation with same arguments that is called on completion or error.
+
+### Strings
+Strings can also be considered as a sequence of characters, so you can transduce over those as well. See [transduce-string][8] to lazily process strings using an [underscore.string][9] API.
+
+### Streams
+You can transduce over Node.js Streams using the [transduce-stream][7] extension which also mixes in [transduce-string][8].
 
 ```javascript
 var _r = require('transduce-stream');
@@ -300,7 +311,6 @@ process.stdin.pipe(stream).pipe(process.stdout);
 
 Since input and output are separated the transducer transformation, transducers can be reduced, and sequences can be created over any object that supports the following methods.
 
-
 #### Iterator
 Returns an iterator that has next function and returns {value, done}.  Default looks for object with iterator Symbol (or `'@@iterator'`)
 
@@ -309,6 +319,11 @@ Returns empty object of the same type as argument.  Default returns `[]` if `_.i
 
 #### Append
 Accepts an item and optional key and appends the item to the object.  By default, appends to arrays and objects by key and returns last item when used in `asCallback` or chained transducer with single `value`.
+
+### Wrap/Unwrap
+When chaining transducers, the object passed to `_r(obj)` is dispatched to `_r.wrap`.  By default, the object is not wrapped if it is defined, and wrapped with `_r.empty()` if not defined. When transducing over the sequence (with `value`, `into`, etc.) the object is then unwrapped with `_r.unwrap`.  By default, unwrap calls `_r().value()` on chained transformations, extracts value from `_r.reduced` or simply returns the value.  You can provide custom dispatchers for custom wrapped values (see [transduce-string][8] for an example).
+
+#### Example
 
 You can dispatch to custom objects by registering supporting dispatch functions. Say, for example, you love using [immutable][6] collections.
 
@@ -390,3 +405,5 @@ MIT
 [5]: http://clojure.org/transducers
 [6]: https://github.com/facebook/immutable-js
 [7]: https://github.com/kevinbeaty/transduce-stream
+[8]: https://github.com/kevinbeaty/transduce-string
+[9]: https://github.com/epeli/underscore.string
