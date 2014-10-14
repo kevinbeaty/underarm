@@ -10,7 +10,7 @@
 
   // Create a safe reference to the Underscore object for use below.
   var _r = function(obj, transform) {
-    if (obj instanceof _r){
+    if (_r.as(obj)){
       if(transform === undef){
         return obj;
       }
@@ -21,12 +21,11 @@
       return copy;
     }
 
-    if (!(this instanceof _r)) return new _r(obj, transform);
+    if (!(_r.as(this))) return new _r(obj, transform);
 
-
-    if(transform instanceof _r){
-      transform = transform._wrappedFns;
+    if(_r.as(transform)){
       this._resolveSingleValue = transform._resolveSingleValue;
+      transform = transform._wrappedFns;
     }
 
     if(_.isFunction(transform)){
@@ -80,7 +79,7 @@
   // Return the results of applying the iteratee to each element.
   // Stateless transducer
   _r.map = _r.collect = function(iteratee) {
-    iteratee = _.iteratee(iteratee);
+    iteratee = _r.iteratee(iteratee);
     return function(step){
       return function(result, input, key){
         return (result === undef)  ? step()
@@ -93,7 +92,7 @@
   // Return the first value which passes a truth test. Aliased as `detect`.
   // Stateless transducer
   _r.find = _r.detect = function(predicate) {
-    predicate = _.iteratee(predicate);
+    predicate = _r.iteratee(predicate);
     _r.resolveSingleValue(this);
     return function(step){
       return function(result, input, key){
@@ -109,7 +108,7 @@
   // Aliased as `select`.
   // Stateless transducer
   _r.filter = _r.select = function(predicate) {
-    predicate = _.iteratee(predicate);
+    predicate = _r.iteratee(predicate);
     return function(step){
       return function(result, input, key){
         return (result === undef)  ? step()
@@ -123,7 +122,7 @@
   // Return all the elements for which a truth test fails.
   // Stateless transducer
   _r.reject = function(predicate) {
-    return _r.filter(_.negate(_.iteratee(predicate)));
+    return _r.filter(_.negate(_r.iteratee(predicate)));
   };
 
   // Determine whether all of the elements match a truth test.
@@ -131,7 +130,7 @@
   // Stateful transducer (found).  Early termination if item
   // does not match predicate.
   _r.every = _r.all = function(predicate) {
-    predicate = _.iteratee(predicate);
+    predicate = _r.iteratee(predicate);
     _r.resolveSingleValue(this);
     return function(step){
       var found = false;
@@ -158,7 +157,7 @@
   // Aliased as `any`.
   // Stateful transducer (found).  Early termination if item matches predicate.
   _r.some = _r.any = function(predicate) {
-    predicate = _.iteratee(predicate);
+    predicate = _r.iteratee(predicate);
     _r.resolveSingleValue(this);
     return function(step){
       var found = false;
@@ -221,7 +220,7 @@
   // Return the maximum element (or element-based computation).
   // Stateful transducer (current max value and computed result)
   _r.max = function(iteratee) {
-    iteratee = _.iteratee(iteratee);
+    iteratee = _r.iteratee(iteratee);
     _r.resolveSingleValue(this);
 
     return function(step){
@@ -247,7 +246,7 @@
   // Return the minimum element (or element-based computation).
   // Stateful transducer (current min value and computed result)
   _r.min = function(iteratee) {
-    iteratee = _.iteratee(iteratee);
+    iteratee = _r.iteratee(iteratee);
     _r.resolveSingleValue(this);
 
     return function(step){
@@ -426,7 +425,7 @@
       iteratee = isSorted;
       isSorted = false;
     }
-    if (iteratee != null) iteratee = _.iteratee(iteratee);
+    if (iteratee != null) iteratee = _r.iteratee(iteratee);
 
     return function(step){
       var seen = [],
@@ -492,6 +491,11 @@
   // Add all of the Underscore functions to the wrapper object.
   _r.mixin(_r);
 
+  // Returns the value if it is a chained transformation, else null
+  _r.as = function(value){
+    return value instanceof _r ? _r : null;
+  }
+
   // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
   // previous owner. Returns a reference to the Underscore object.
   _r.noConflict = function() {
@@ -526,7 +530,7 @@
   }
 
   function resolveSingleValue(self, single){
-    if(self instanceof _r){
+    if(_r.as(self)){
       self._resolveSingleValue = single;
     }
   }
@@ -548,10 +552,13 @@
 
   // Dispatchers
   // -----------
-  var dispatch = _.reduce(['iterator', 'empty', 'append', 'wrap', 'unwrap'], function(memo, item){
+  var dispatch = _.reduce(
+    ['iterator', 'iteratee', 'empty', 'append', 'wrap', 'unwrap'],
+    function(memo, item){
+
     var d = function(){
       var args = arguments, fns = d._fns, i = fns.length, result,
-          self = (this instanceof _r) ? this : null;
+          self = _r.as(this);
       for(; i-- ;){
         result = fns[i].apply(self, args);
         if(result !== undef){
@@ -610,7 +617,7 @@
   _r.unwrap.register(function(value){
     if(_r.isReduced(value)){
       return value.value;
-    } else if(value instanceof _r){
+    } else if(_r.as(value)){
       return r.value();
     }
     return value;
@@ -647,6 +654,37 @@
     return null;
   });
 
+  // Mostly internal function that generates a callback from the given value.
+  // For use with generating callbacks for map, filter, find, etc.
+  //
+  // Default returns _.iteratee.
+  //
+  // Dispatch function. To support different types
+  // call _r.iteratee.register and supply function that returns
+  // a callback after checking the input using appropriate
+  // predicates. Return undefined if not supported, so other
+  // dispatched functions can be checked
+  _r.iteratee = function(value){
+    return dispatch.iteratee(value);
+  }
+
+  _r.iteratee.register = function(fn){
+    return dispatch.iteratee.register(fn);
+  }
+
+  _r.iteratee.register(function(value){
+    if(_r.as(value)){
+      return _riteratee(value);
+    }
+    return _.iteratee(value);
+  });
+
+  function _riteratee(value){
+    return function(item){
+      return value.withSource(item).value();
+    }
+  }
+
   // Returns empty object of the same type as argument.
   // Default returns [] if _.isArray or undefined, {} if _.isObject
   // and an internal sentinel to ignore otherwise
@@ -665,7 +703,7 @@
   }
 
   _r.empty.register(function(obj){
-    if(obj === undef || _.isArray(obj)){
+    if(obj === undef || _.isArray(obj) || _r.iterator(obj)){
       return []; // array if not specified or from array
     } else if(_.isObject(obj)){
       return {}; // object if from object
@@ -801,7 +839,7 @@
       memo = step();
     }
 
-    if(transform instanceof _r){
+    if(_r.as(transform)){
       transform = transform.transducer();
     }
 
@@ -822,10 +860,13 @@
   // Creates a callback that starts a transducer process and accepts
   // parameter as a new item in the process. Each item advances the state
   // of the transducer. If the transducer exhausts due to early termination,
-  // all subsequent calls to the callback will no-op.
+  // all subsequent calls to the callback will no-op and return the computed result.
   //
   // If the callback is called with no argument, the transducer terminates,
-  // and all subsequent calls will no-op.
+  // and all subsequent calls will no-op and return the computed result.
+  //
+  // The callback returns undefined until completion. Once completed, the result
+  // is always returned.
   //
   // The step function is _r.append with default memo of null.
   // (This will maintain only last value and not buffer results)
@@ -839,8 +880,8 @@
 
     step = transform(step);
 
-    return function(item){
-      if(done) return;
+    return function(item, key){
+      if(done) return memo;
 
       if(item === undef){
         // complete
@@ -848,7 +889,7 @@
         done = true;
       } else {
         // step to next result.
-        memo = step(memo, item);
+        memo = step(memo, item, key);
 
         // check if exhausted
         if(_r.isReduced(memo)){
@@ -856,6 +897,8 @@
           done = true;
         }
       }
+
+      if(done) return memo;
     }
   }
 

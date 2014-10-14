@@ -205,13 +205,25 @@ test('sequence into chained', function(t){
 });
 
 test('asCallback', function(t){
-  t.plan(2);
-
   var results = [],
-      cb = _r().filter(isEven).map(inc).each(appendEach).take(2).asCallback();
+      trans = _r().filter(isEven).map(inc).each(appendEach).take(2)
+      cb = trans.asCallback();
 
   _.each([1,1,2,3,4,4,5], cb);
   t.deepEqual(results, [3,5]);
+  t.equal(5, cb());
+
+  cb = trans.asCallback([]);
+  results = [];
+  _.each([1,1,2,3,4,4,5], cb);
+  t.deepEqual(results, [3,5]);
+  t.deepEqual([3,5], cb());
+
+  cb = trans.asCallback(_r.empty([1,3]));
+  results = [];
+  _.each([1,1,2,3,4,4,5], cb);
+  t.deepEqual(results, [3,5]);
+  t.deepEqual([3,5], cb());
 
   cb = _r().filter(isEven).map(inc).each(appendEach).asCallback();
   results = [];
@@ -221,6 +233,8 @@ test('asCallback', function(t){
   function appendEach(item){
     results.push(item);
   }
+
+  t.end();
 });
 
 test('asyncCallback', function(t){
@@ -399,4 +413,17 @@ test('generate', function(t){
       return prev;
     }
   }
+});
+
+test('_riteratee', function(t){
+  var value = _r([['foo','bar'],['baz'],{one:'one', two:'two'}])
+    .map(_r().invoke('toUpperCase'))
+    .value();
+  t.deepEqual(value, [['FOO','BAR'],['BAZ'],{one:'ONE', two:'TWO'}])
+
+  value = _r([['foo','bar'],['baz','buzz'], {one:'two'}])
+    .map(_r().invoke('toUpperCase').first())
+    .value();
+  t.deepEqual(value, ['FOO','BAZ','TWO'])
+  t.end();
 });
