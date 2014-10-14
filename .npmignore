@@ -3,3 +3,4 @@ test/
 build/
 .travis.yml
 *.swp
+Makefile

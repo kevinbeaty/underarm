@@ -53,12 +53,12 @@
   }
 
   // Current version.
-  _r.VERSION = '0.0.8';
+  _r.VERSION = '0.0.9';
 
   // Reference to Underscore from browser
   var _ = root._;
   if (typeof _ === 'undefined' && typeof require !== 'undefined'){
-    _ = require('underscore')._;
+    _ = require('underscore');
   }
 
   // Collection Functions
