@@ -15,14 +15,12 @@ test('push unshift', function(t) {
 });
 
 test('first', function(t) {
-  t.plan(6);
+  t.plan(5);
 
   t.equal(_r([1, 2, 3]).first().value(), 1, 'can pull out the first element of an array');
   t.deepEqual(_r([1, 2, 3]).first(0).value(), [], 'can pass an index to first');
   t.deepEqual(_r([1, 2, 3]).first(2).value(), [1, 2], 'can pass an index to first');
   t.deepEqual(_r([1, 2, 3]).first(3).value(), [1, 2, 3], 'can pass an index to first');
-
-  t.equal(_r(null).first().value(), undefined, 'handles nulls');
   t.strictEqual(_r([1, 2, 3]).first(-1).value().length, 0);
 });
 
@@ -65,24 +63,23 @@ test('initial', function(t) {
 });
 
 test('last', function(t) {
-  t.plan(6);
+  t.plan(5);
 
   t.equal(_r([1, 2, 3]).last().value(), 3, 'can pull out the last element of an array');
   t.deepEqual(_r([1, 2, 3]).last(0).value(), [], 'can pass an index to last');
   t.deepEqual(_r([1, 2, 3]).last(2).value(), [2, 3], 'can pass an index to last');
   t.deepEqual(_r([1, 2, 3]).last(5).value(), [1, 2, 3], 'can pass an index to last');
 
-  t.equal(_r(null).last().value(), undefined, 'handles nulls');
   t.strictEqual(_r([1, 2, 3]).last(-1).value().length, 0);
 });
 
 test('compact', function(t) {
   t.plan(1);
-  t.equal(_r([0, 1, false, 2, false, 3]).compact().value().length, 3, 'can trim out all falsy values');
+  t.equal(_r([undefined, 0, 1, false, 2, false, 3]).compact().value().length, 3, 'can trim out all falsy values');
 });
 
 test('uniq', function(t) {
-  t.plan(9);
+  t.plan(8);
 
   var list = [1, 2, 1, 3, 1, 4];
   t.deepEqual(_r(list).uniq().value(), [1, 2, 3, 4], 'can find the unique values of an unsorted array');
@@ -102,8 +99,6 @@ test('uniq', function(t) {
 
   var a = {}, b = {}, c = {};
   t.deepEqual(_r([a, b, a, b, c]).uniq().value(), [a, b, c], 'works on values that can be tested for equivalency but not ordered');
-
-  t.deepEqual(_r(null).uniq().value(), []);
 
   t.deepEqual(_r([{a: 1, b: 1}, {a: 1, b: 2}, {a: 1, b: 3}, {a: 2, b: 1}]).uniq('a').value(), [{a: 1, b: 1}, {a: 2, b: 1}], 'can use pluck like iterator');
   t.deepEqual(_r([{0: 1, b: 1}, {0: 1, b: 2}, {0: 1, b: 3}, {0: 2, b: 1}]).uniq(0).value(), [{0: 1, b: 1}, {0: 2, b: 1}], 'can use falsey pluck like iterator');

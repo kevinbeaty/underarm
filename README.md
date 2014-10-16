@@ -2,7 +2,7 @@
 
 [![Build Status](https://secure.travis-ci.org/kevinbeaty/underscore-transducer.svg)](http://travis-ci.org/kevinbeaty/underscore-transducer)
 
-Transducers using the familiar API from  [Underscore.js][1] that closely follows the [Clojure implementation][5] with extra goodies like lazy generators and callback processes.
+Use [transducers.js][10] with the familiar API from  [Underscore.js][1] that closely follows the [Clojure implementation][5] with extra goodies like lazy generators and callback processes.
 
 If you would like to know how transducers work, check out [this video][2] or [this article][3].  Also see the [Demo and Documentation][4] for this library.
 
@@ -18,7 +18,7 @@ Whereas underscore or lodash operates on arrays and objects calculating intermed
 
 The source could be anything that produces a sequences of values: streams, iterators, callbacks, immutable-js, etc. You simply have to define (external to the transducer) how you append each item to the supplied result. The "step function" that knows how to append results to values is passed to the transducer, and the transducer executes the step function when reducing over results.
 
-This library creates transducers using the familiar underscore API.
+This library creates [transducers.js][10] using the familiar [underscore][1] API.
 
 ### Transducers
 
@@ -45,28 +45,6 @@ function printIt(result, input){
 var trans, result;
 ```
 
-Transduce with all arguments.  ` _r.append` is default step function, empty array is default memo.  If memo is not specified, the step function is called with no arguments `_r.append` returns empty array.
-
-The step function is called with a varying number of arguments
-
-- 0 arguments if memo is not provided
-- Two or three arguments, the result (memo) and current item and optional key on every step (like reduce)
-- One argument with the result on completion
-
-Early termination can be signaled by wrapping value in `_r.reduced`.
-
-```javascript
-result = _r.transduce(_r.filter(isEven), [1,2,3,4], _r.append, [3]);
-// [ 3, 2, 4]
-
-// these are all the same
-result = _r.transduce(_r.filter(isEven), [1,2,3,4], _r.append, []);
-result = _r.transduce(_r.filter(isEven), [1,2,3,4], _r.append);
-result = _r.transduce(_r.filter(isEven), [1,2,3,4]);
-result = _r().filter(isEven).transduce([1,2,3,4]);
-// [ 2, 4]
-```
-
 Chaining transducers is the same as function composition. Composed transducers are executed left to right.
 
 ```javascript
@@ -87,7 +65,7 @@ result = _r()
   .filter(function(num) { return num % 2 == 0; })
   .tap(printIt)
   .map(function(num) { return num * num })
-  .transduce([1,2,3,200]);
+  .seq([1,2,3,200]);
 // 2 []
 // 200 [4]
 // [4, 40000 ]
@@ -226,24 +204,19 @@ function fib(){
 Different ways to use `_r.generate`.  If not chaining, creates an iterator that can be used with transduce. If chaining, creates an iterator a wraps the result. Pass true as second argument optionally call function to init on each iteration (allows reuse).
 
 ```javascript
-// All results below the same
 // [ 1, 1, 2, 3, 5, 8, 13 ]
-result = _r.transduce(_r.first(7), _r.generate(fib()));
 result = _r.into([], _r.first(7), _r.generate(fib()));
-result = _r().first(7).transduce(_r.generate(fib()));
-result = _r().first(7).generate(fib()).value();
-
-result = _r(_r.generate(fib())).first(7).value();
-result = _r().generate(fib()).first(7).value();
+result = _r(_r.generate(fib())).first(7).toArray();
+result = _r().generate(fib()).first(7).toArray();
 
 // call on init to allow reuse
 trans = _r(_r.generate(fib, true)).first(7);
-result = trans.value();
-result = trans.value();
+result = trans.toArray();
+result = trans.toArray();
 
 trans = _r().generate(fib, true).first(7);
-result = trans.value();
-result = trans.value();
+result = trans.toArray();
+result = trans.toArray();
 ```
 
 ### Callback Processes
@@ -429,3 +402,4 @@ MIT
 [7]: https://github.com/kevinbeaty/transduce-stream
 [8]: https://github.com/kevinbeaty/transduce-string
 [9]: https://github.com/epeli/underscore.string
+[10]: https://github.com/jlongster/transducers.js
