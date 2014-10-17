@@ -2,7 +2,7 @@
 
 [![Build Status](https://secure.travis-ci.org/kevinbeaty/underscore-transducer.svg)](http://travis-ci.org/kevinbeaty/underscore-transducer)
 
-Use [transducers-js][10] with the familiar API from  [Underscore.js][1] with extra goodies like lazy generators and callback processes.
+Use [transducers-js][10] with the familiar [Underscore.js][1] API with extra goodies like lazy generators and callback processes.
 
 If you would like to know how transducers work, check out [this video][2] or [this article][3].  Also see the [Demo and Documentation][4] for this library.
 

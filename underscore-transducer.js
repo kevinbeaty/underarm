@@ -528,7 +528,7 @@
 
   // Returns the value if it is a chained transformation, else null
   _r.as = function(value){
-    return value instanceof _r ? this : null;
+    return value instanceof _r ? value : null;
   }
 
   // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
@@ -823,7 +823,6 @@
   _r.isReduced = function(value){
     return t.isReduced(value);
   }
-  var reduceError = 'Reduce of empty array with no initial value';
 
   _r.reduce = _r.foldl = _r.inject = function(xf, init, coll) {
     if (coll == null) coll = _r.empty(coll);
@@ -1023,19 +1022,11 @@
 
   // Returns a new collection of the empty value of the from collection
   _r.sequence = function(xf, from){
-    if(from == undef){
-      from = xf;
-      return _r.into(_r.empty(from), from);
-    }
     return _r.into(_r.empty(from), xf, from);
   }
 
   // calls sequence with chained transformation and optional wrapped object
   _r.prototype.sequence = function(from){
-    if(from == undef){
-      from = this._wrapped;
-    }
-
     return this.into(_r.empty(from), from);
   }
 
