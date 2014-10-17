@@ -55,82 +55,69 @@
   _r.VERSION = '0.0.9';
 
   // Reference to Underscore from browser
-  var _ = root._,
-      t = root.transducers;
+  var _ = root._;
   if (typeof _ === 'undefined' && typeof require !== 'undefined'){
     _ = require('underscore');
-    t = require('transducers.js');
   }
 
   // Collection Functions
   // --------------------
-  function initDefault(){
-    return this.xform.init();
-  }
-
-  function stepDefault(res, input){
-    return this.xform.step(res, input)
-  }
-
-  function resultDefault(res){
-    return this.xform.result(res);
-  }
 
   // Executes the iteratee with iteratee(input, idx, result) for each item
   // passed through transducer without changing the result.
   _r.each = _r.forEach = function(iteratee) {
-    return function(xform){
-      return new Each(iteratee, xform);
+    return function(step){
+      return function(result, input, key){
+        if(result === undef) return step();
+        if(input === undef) return step(result);
+        iteratee(input, key);
+        return step(result, input, key);
+      }
     }
-  }
-
-  function Each(f, xform) {
-    this.xform = xform;
-    this.f = f;
-    this.i = 0;
-  }
-  Each.prototype.init = initDefault;
-  Each.prototype.result = resultDefault;
-  Each.prototype.step = function(res, input) {
-    this.f(input, this.i++);
-    return this.xform.step(res, input);
-  }
+  };
 
   // Return the results of applying the iteratee to each element.
   // Stateless transducer
   _r.map = _r.collect = function(iteratee) {
-    return t.map(null, _r.iteratee(iteratee));
-  }
+    iteratee = _r.iteratee(iteratee);
+    return function(step){
+      return function(result, input, key){
+        return (result === undef)  ? step()
+          :    (input === undef)   ? step(result)
+          :    step(result, iteratee(input, key), key)
+      }
+    }
+  };
 
   // Return the first value which passes a truth test. Aliased as `detect`.
   // Stateless transducer
   _r.find = _r.detect = function(predicate) {
     predicate = _r.iteratee(predicate);
     _r.resolveSingleValue(this);
-    return function(xform){
-      return new Find(predicate, xform);
+    return function(step){
+      return function(result, input, key){
+        return (result === undef)  ? step()
+          :    (input === undef)   ? step(result)
+          :    (predicate(input, key))   ? _r.reduced(step(result, input, key))
+          :    result;
+      }
     }
   };
-
-  function Find(f, xform) {
-    this.xform = xform;
-    this.f = f;
-  }
-  Find.prototype.init = initDefault;
-  Find.prototype.result = resultDefault;
-  Find.prototype.step = function(result, input) {
-    if(this.f(input)){
-      return _r.reduced(this.xform.step(result, input))
-    }
-    return result;
-  }
 
   // Return all the elements that pass a truth test.
   // Aliased as `select`.
   // Stateless transducer
   _r.filter = _r.select = function(predicate) {
-    return t.filter(null, _r.iteratee(predicate));
-  }
+    predicate = _r.iteratee(predicate);
+    return function(step){
+      return function(result, input, key){
+        return (result === undef)  ? step()
+          :    (input === undef)   ? step(result)
+          :    (predicate(input, key))   ? step(result, input, key)
+          :    result;
+      }
+    }
+  };
 
   // Return all the elements for which a truth test fails.
   // Stateless transducer
@@ -145,29 +132,26 @@
   _r.every = _r.all = function(predicate) {
     predicate = _r.iteratee(predicate);
     _r.resolveSingleValue(this);
-    return function(xform){
-      return new Every(predicate, xform);
+    return function(step){
+      var found = false;
+      return function(result, input, key){
+        if(result === undef) return step();
+
+        if(input === undef){
+          if(!found){
+            result = step(result, true);
+          }
+          return step(result);
+        }
+
+        if(!predicate(input, key)){
+          found = true;
+          return _r.reduced(step(result, false));
+        }
+        return result;
+      }
     }
   };
-  function Every(f, xform) {
-    this.xform = xform;
-    this.f = f;
-    this.found = false;
-  }
-  Every.prototype.init = initDefault;
-  Every.prototype.result = function(result){
-    if(!this.found){
-      result = this.xform.step(result, true);
-    }
-    return this.xform.result(result);
-  }
-  Every.prototype.step = function(result, input) {
-    if(!this.f(input)){
-      found = true;
-      return _r.reduced(this.xform.step(result, false));
-    }
-    return result;
-  }
 
   // Determine if at least one element in the object matches a truth test.
   // Aliased as `any`.
@@ -175,29 +159,26 @@
   _r.some = _r.any = function(predicate) {
     predicate = _r.iteratee(predicate);
     _r.resolveSingleValue(this);
-    return function(xform){
-      return new Some(predicate, xform);
+    return function(step){
+      var found = false;
+      return function(result, input, key){
+        if(result === undef) return step();
+
+        if(input === undef){
+          if(!found){
+            result = step(result, found);
+          }
+          return step(result);
+        }
+
+        if(predicate(input, key)){
+          found = true;
+          return _r.reduced(step(result, found, key));
+        }
+        return result;
+      }
     }
   };
-  function Some(f, xform) {
-    this.xform = xform;
-    this.f = f;
-    this.found = false;
-  }
-  Some.prototype.init = initDefault;
-  Some.prototype.result = function(result){
-    if(!this.found){
-      result = this.xform.step(result, false);
-    }
-    return this.xform.result(result);
-  }
-  Some.prototype.step = function(result, input) {
-    if(this.f(input)){
-      found = true;
-      return _r.reduced(this.xform.step(result, true));
-    }
-    return result;
-  }
 
   // Determine if contains a given value (using `===`).
   // Aliased as `include`.
@@ -242,30 +223,25 @@
     iteratee = _r.iteratee(iteratee);
     _r.resolveSingleValue(this);
 
-    return function(xform){
-      return new Max(iteratee, xform);
+    return function(step){
+      var computedResult = -Infinity, lastComputed = -Infinity, computed;
+      return function(result, input, key){
+        if(result === undef) return step();
+
+        if(input === undef){
+          result = step(result, computedResult);
+          return step(result);
+        }
+
+        computed = iteratee(input, key);
+        if (computed > lastComputed || computed === -Infinity && computedResult === -Infinity) {
+          computedResult = input;
+          lastComputed = computed;
+        }
+        return result;
+      }
     }
   };
-  function Max(f, xform) {
-    this.xform = xform;
-    this.f = f;
-    this.computedResult = -Infinity;
-    this.lastComputed = -Infinity
-  }
-  Max.prototype.init = initDefault;
-  Max.prototype.result = function(result){
-    result = this.xform.step(result, this.computedResult);
-    return this.xform.result(result);
-  }
-  Max.prototype.step = function(result, input) {
-    var computed = this.f(input);
-    if (computed > this.lastComputed
-        || computed === -Infinity && this.computedResult === -Infinity) {
-      this.computedResult = input;
-      this.lastComputed = computed;
-    }
-    return result;
-  }
 
   // Return the minimum element (or element-based computation).
   // Stateful transducer (current min value and computed result)
@@ -273,30 +249,25 @@
     iteratee = _r.iteratee(iteratee);
     _r.resolveSingleValue(this);
 
-    return function(xform){
-      return new Min(iteratee, xform);
+    return function(step){
+      var computedResult = Infinity, lastComputed = Infinity, computed;
+      return function(result, input, key){
+        if(result === undef) return step();
+
+        if(input === undef){
+          result = step(result, computedResult);
+          return step(result);
+        }
+
+        computed = iteratee(input, key);
+        if (computed < lastComputed || computed === Infinity && computedResult === Infinity) {
+          computedResult = input;
+          lastComputed = computed;
+        }
+        return result;
+      }
     }
   };
-  function Min(f, xform) {
-    this.xform = xform;
-    this.f = f;
-    this.computedResult = Infinity;
-    this.lastComputed = Infinity
-  }
-  Min.prototype.init = initDefault;
-  Min.prototype.result = function(result){
-    result = this.xform.step(result, this.computedResult);
-    return this.xform.result(result);
-  }
-  Min.prototype.step = function(result, input) {
-    var computed = this.f(input);
-    if (computed < this.lastComputed
-        || computed === Infinity && this.computedResult === Infinity) {
-      this.computedResult = input;
-      this.lastComputed = computed;
-    }
-    return result;
-  }
 
   // Array Functions
   // ---------------
@@ -304,47 +275,41 @@
   // Adds one or more items to the end of the sequence, like Array.prototype.push.
   _r.push = function(){
     var toPush = _.toArray(arguments);
-    return function(xform){
-      return new Push(toPush, xform);
+    return function(step){
+      return function(result, input, key){
+        if(result === undef) return step();
+        if(input === undef){
+          var idx, len = toPush.length;
+          for(idx = 0; idx < len; idx++){
+            result = step(result, toPush[idx]);
+          }
+
+          return step(result);
+        }
+        return step(result, input, key);
+      }
     }
   }
-  function Push(toPush, xform) {
-    this.xform = xform;
-    this.toPush = toPush;
-  }
-  Push.prototype.init = initDefault;
-  Push.prototype.result = function(result){
-    var idx, toPush = this.toPush, len = toPush.length;
-    for(idx = 0; idx < len; idx++){
-      result = this.xform.step(result, toPush[idx]);
-    }
-    return this.xform.result(result);
-  }
-  Push.prototype.step = stepDefault;
 
   // Adds one or more items to the beginning of the sequence, like Array.prototype.unshift.
   _r.unshift = function(){
     var toUnshift = _.toArray(arguments);
-    return function(xform){
-      return new Unshift(toUnshift, xform);
-    }
-  }
-  function Unshift(toUnshift, xform) {
-    this.xform = xform;
-    this.toUnshift = toUnshift;
-  }
-  Unshift.prototype.init = initDefault;
-  Unshift.prototype.result = resultDefault;
-  Unshift.prototype.step = function(result, input){
-    var toUnshift = this.toUnshift;
-    if(toUnshift){
-      var idx, len = toUnshift.length;
-      for(idx = 0; idx < len; idx++){
-        result = this.xform.step(result, toUnshift[idx]);
+    return function(step){
+      return function(result, input, key){
+        if(result === undef) return step();
+        if(input === undef) return step(result);
+
+        if(toUnshift){
+          var idx, len = toUnshift.length;
+          for(idx = 0; idx < len; idx++){
+            result = step(result, toUnshift[idx]);
+          }
+          toUnshift = null;
+        }
+
+        return step(result, input, key);
       }
     }
-    this.toUnshift = null;
-    return this.xform.step(result, input);
   }
 
   // Get the first element of an array. Passing **n** will return the first N
@@ -357,7 +322,19 @@
     } else {
       n = (n > 0) ? n : 0;
     }
-    return t.take(null, n);
+    return function(step){
+      var count = n;
+      return function(result, input, key){
+        if(result === undef) return step();
+        if(input === undef) return step(result);
+
+        if(count > 0){
+          result = step(result, input, key);
+        }
+
+        return (!--count) ?  _r.reduced(result) : result;
+      }
+    }
   };
 
   // Returns everything but the last entry. Passing **n** will return all the values
@@ -366,28 +343,24 @@
   // Note that no items will be sent and all items will be buffered until completion.
   _r.initial = function(n) {
     n = (n === undef) ? 1 : (n > 0) ? n : 0;
-    return function(xform){
-      return new Initial(n, xform);
+    return function(step){
+      var count = 0, buffer = [], idx = 0;
+      return function(result, input){
+        if(result === undef) return step();
+        if(input === undef){
+          count = idx - n;
+          for(idx = 0; idx < count; idx++){
+            result = step(result, buffer[idx]);
+          }
+          return step(result);
+        }
+
+        buffer[idx++] = input;
+        return result;
+      }
     }
+
   };
-  function Initial(n, xform) {
-    this.xform = xform;
-    this.n = n;
-    this.idx = 0;
-    this.buffer = [];
-  }
-  Initial.prototype.init = initDefault;
-  Initial.prototype.result = function(result){
-    var idx = 0, count = this.idx - this.n, buffer = this.buffer;
-    for(idx = 0; idx < count; idx++){
-      result = this.xform.step(result, buffer[idx]);
-    }
-    return result;
-  }
-  Initial.prototype.step = function(result, input){
-    this.buffer[this.idx++] = input;
-    return result;
-  }
 
   // Get the last element. Passing **n** will return the last N  values.
   // Stateful transducer (count and buffer).
@@ -399,39 +372,42 @@
     } else {
       n = (n > 0) ? n : 0;
     }
-    return function(xform){
-      return new Last(n, xform);
+    return function(step){
+      var count = n, buffer = [], idx = 0;
+      return function(result, input){
+        if(result === undef) return step();
+        if(input === undef){
+          while(count--){
+            result = step(result, buffer[idx++ % n]);
+          }
+          return step(result);
+        }
+
+        buffer[idx++ % n] = input;
+        return result;
+      }
     }
   };
-  function Last(n, xform) {
-    this.xform = xform;
-    this.n = n;
-    this.idx = 0;
-    this.buffer = [];
-  }
-  Last.prototype.init = initDefault;
-  Last.prototype.result = function(result){
-    var n = this.n, count = n, buffer=this.buffer, idx=this.idx;
-    if(idx < count){
-      count = idx;
-      idx = 0;
-    }
-    while(count--){
-      result = this.xform.step(result, buffer[idx++ % n]);
-    }
-    return this.xform.result(result);
-  }
-  Last.prototype.step = function(result, input){
-    this.buffer[this.idx++ % this.n] = input;
-    return result;
-  }
 
   // Returns everything but the first entry. Aliased as `tail` and `drop`.
   // Passing an **n** will return the rest N values.
   // Stateful transducer (count of items)
   _r.rest = _r.tail = _r.drop = function(n) {
     n = (n === undef) ? 1 : (n > 0) ? n : 0;
-    return t.drop(null, n);
+    return function(step){
+      var count = n;
+      return function(result, input, key){
+        if(result === undef) return step();
+        if(input === undef) return step(result);
+
+        if(count > 0){
+          count--;
+          return result;
+        } else {
+          return step(result, input, key);
+        }
+      }
+    }
   };
 
   // Trim out all falsy values from an array.
@@ -451,37 +427,33 @@
     }
     if (iteratee != null) iteratee = _r.iteratee(iteratee);
 
-    if(isSorted){
-      return t.dedupe();
-    }
+    return function(step){
+      var seen = [],
+          i = 0;
+      return function(result, input, key){
+        if(result === undef) return step();
+        if(input === undef) return step(result);
 
-    return function(xform){
-      return new Uniq(iteratee, xform);
+        if (isSorted) {
+          if (!i || seen !== input){
+            result = step(result, input, key);
+          }
+          seen = input;
+        } else if (iteratee) {
+          var computed = iteratee(input, i, result);
+          if (_.indexOf(seen, computed) < 0) {
+            seen.push(computed);
+            result = step(result, input, key);
+          }
+        } else if (_.indexOf(seen, input) < 0) {
+          seen.push(input);
+          result = step(result, input, key);
+        }
+        ++i;
+        return result;
+      }
     }
   };
-
-  function Uniq(f, xform) {
-    this.xform = xform;
-    this.f = f;
-    this.seen = [];
-    this.i = 0;
-  }
-  Uniq.prototype.init = initDefault;
-  Uniq.prototype.result = resultDefault;
-  Uniq.prototype.step = function(result, input){
-    var seen = this.seen;
-    if (this.f) {
-      var computed = this.f(input);
-      if (_.indexOf(seen, computed) < 0) {
-        seen.push(computed);
-        result = this.xform.step(result, input);
-      }
-    } else if (_.indexOf(seen, input) < 0) {
-      seen.push(input);
-      result = this.xform.step(result, input);
-    }
-    return result;
-  }
 
   // Invokes interceptor with each result and input, and then passes through input.
   // The primary purpose of this method is to "tap into" a method chain, in
@@ -489,21 +461,15 @@
   // Executes interceptor with current result and input
   // Stateless transducer
   _r.tap = function(interceptor) {
-    return function(xform){
-      return new Tap(interceptor, xform);
+    return function(step){
+      return function(result, input, key){
+        if(result === undef) return step();
+        if(input === undef) return step(result);
+        interceptor(result, input, key);
+        return step(result, input, key);
+      }
     }
   };
-  function Tap(f, xform) {
-    this.xform = xform;
-    this.f = f;
-    this.i = 0;
-  }
-  Tap.prototype.init = initDefault;
-  Tap.prototype.result = resultDefault;
-  Tap.prototype.step = function(result, input) {
-    this.f(result, input, this.i++);
-    return this.xform.step(result, input);
-  }
 
   // OOP
   // ---------------
@@ -569,27 +535,25 @@
     }
   }
 
+  // sentinel to ignore wrapped objects (maintain only last item)
+  var IGNORE = {};
+
   // Resolves the value of the wrapped object, similar to underscore.
   // Returns an array, or single value (to match underscore API)
   // depending on whether the chained transformation resolves to single value.
   _r.prototype.value = function(){
-    var ret = this.seq();
-    if(this._resolveSingleValue){
-      var it = t.iterator(ret);
-      if(it){
-        ret = it.next();
-        ret = ret.done ? undef : ret.value;
-      }
+    if(!this._resolveSingleValue){
+      return this.into();
     }
-    return ret;
+
+    var ret =  this.into(IGNORE);
+    return ret === IGNORE ? undef : ret;
   }
 
   // Dispatchers
   // -----------
-  _r.protocols = t.protocols;
-
   var dispatch = _.reduce(
-    ['iteratee', 'wrap', 'unwrap'],
+    ['iterator', 'iteratee', 'empty', 'append', 'wrap', 'unwrap'],
     function(memo, item){
 
     var d = function(){
@@ -614,9 +578,9 @@
     return memo;
   }, {});
 
-  // Wraps a value used as source for use during chained transformation.
+  // Wraps a value used as source for use during chained transformation. 
   //
-  // Default returns value, or [] if undefined.
+  // Default returns value, or _r.empty() if undefined.
   //
   // Dispatch function. To support different types,
   // call _r.unwrap.register
@@ -630,7 +594,7 @@
 
   _r.wrap.register(function(value){
     if(value === undef){
-      value = [];
+      value = _r.empty();
     }
     return value;
   });
@@ -638,7 +602,6 @@
   // Unwraps (deref) a possibly wrapped value
   // Default unwraps values created with _r.reduced,
   // or calls value() on chained _r transformations,
-  // or calls result on objects with transformer protocol
   // otherwise returns parameter.
   //
   // Dispatch function. To support different types,
@@ -653,11 +616,42 @@
 
   _r.unwrap.register(function(value){
     if(_r.isReduced(value)){
-      return value.val;
+      return value.value;
     } else if(_r.as(value)){
       return r.value();
     }
     return value;
+  });
+
+  // Returns an iterator that has next function
+  // and returns {value, done}. Default looks for
+  // object with iterator Symbol (or '@@iterator').
+  // This is available with _r.iterator.Symbol
+  //
+  // Dispatch function. To support different types
+  // call _r.iterator.register and supply function that returns
+  // an iterator after checking the input using appropriate
+  // predicates. Return undefined if not supported, so other
+  // dispatched functions can be checked
+  _r.iterator = function(obj){
+    return dispatch.iterator(obj);
+  }
+
+  _r.iterator.register = function(fn){
+    return dispatch.iterator.register(fn);
+  }
+
+  var Symbol_iterator = (typeof Symbol !== 'undefined' && Symbol.iterator || '@@iterator');
+  _r.iterator.Symbol = Symbol_iterator;
+
+  _r.iterator.register(function(obj){
+    if (_.isObject(obj)){
+      var iterator = ((obj[Symbol_iterator] && obj[Symbol_iterator]() || obj));
+      if(_.isFunction(iterator.next)){
+        return iterator;
+      }
+    }
+    return null;
   });
 
   // Mostly internal function that generates a callback from the given value.
@@ -691,109 +685,176 @@
     }
   }
 
+  // Returns empty object of the same type as argument.
+  // Default returns [] if _.isArray or undefined, {} if _.isObject
+  // and an internal sentinel to ignore otherwise
+  //
+  // Dispatch function. To support different types
+  // call _r.empty.register and supply function that returns
+  // an empty object after checking the input using appropriate
+  // predicates. Return undefined if not supported, so other
+  // dispatched functions can be checked
+  _r.empty = function(obj){
+    return obj === IGNORE ? IGNORE : dispatch.empty(obj);
+  }
+
+  _r.empty.register = function(fn){
+    return dispatch.empty.register(fn);
+  }
+
+  _r.empty.register(function(obj){
+    if(obj === undef || _.isArray(obj) || _r.iterator(obj)){
+      return []; // array if not specified or from array
+    } else if(_.isObject(obj)){
+      return {}; // object if from object
+    }
+
+    // ignore by default. Default append just maintains last item.
+    return IGNORE;
+  });
+
+  // Appends (conjoins) the item to the collection, and returns collection
+  //
+  // Dispatch function. To support different types
+  // call _r.append.register and supply function that append to the object
+  // (first param) with the item and optional key after checking the input
+  // using appropriate predicates.
+  //
+  // Return undefined if not supported, so other dispatched functions can be checked
+  _r.append = _r.conj = _r.conjoin = function(obj, item, key){
+    if(obj === undef){
+      // create arrays by default
+      return [];
+    }
+
+    if(item === undef){
+      // completion function, unwrap object
+      return _r.unwrap(obj);
+    } 
+    
+    if (item === IGNORE){
+      // ignore item
+      return obj;
+    }
+
+    if(obj === IGNORE){
+      // Maintain last item if requested to ignore object
+      return item;
+    }
+
+    // valid object and item, dispatch
+    return dispatch.append(obj, item, key);
+  }
+
+  _r.append.register = function(fn){
+    return dispatch.append.register(fn);
+  }
+
+  _r.append.register(function(obj, item, key){
+    if(_.isArray(obj)){
+      obj.push(item);
+      return obj;
+    } else if(key !== undef && _.isObject(obj)){
+      obj[key] = item;
+      return obj;
+    }
+
+    // just maintain last item
+    return item;
+  });
+
   // Transducer Functions
   // --------------------
 
   // Wrapper to return from iteratee of reduce to terminate
   // _r.reduce early with the provided value
+  function Reduced(value){this.value = value};
   _r.reduced = function(value){
-    return new t.Reduced(value);
+    return new Reduced(value);
   }
   _r.isReduced = function(value){
-    return value instanceof t.Reduced;
+    return value instanceof Reduced;
   }
+  var reduceError = 'Reduce of empty array with no initial value';
 
   // **Reduce** builds up a single result from a list of values, aka `inject`,
   // or `foldl`.  This implementation extends underscores implementation by
   // allowing early termination using _r.reduced and accepts iterators (ES6 or any object
   // that defines a next method)
-  _r.reduce = _r.foldl = _r.inject = t.reduce;
+  _r.reduce = _r.foldl = _r.inject = function(obj, iteratee, memo) {
+    if (obj == null) obj = _r.empty();
+    var keys = obj.length !== +obj.length && _.keys(obj),
+        length = (keys || obj).length,
+        index = 0, currentKey,
+        iterator = _r.iterator(obj);
 
-  _r.seq = _r.sequence = function(coll, xform){
-    if(_r.as(xform)){
-      xform = xform.transducer();
+    if(iterator && _.isFunction(iterator.next)){
+      // Detected an iterator
+      for(;;){
+        currentKey = iterator.next();
+        if(currentKey.done){
+          return memo;
+        }
+        memo = iteratee(memo, currentKey.value, index++, obj);
+        if(_r.isReduced(memo)){
+          return _r.unwrap(memo);
+        }
+      }
+    }  else {
+      // underscore behavior + Reduced if not iterator
+      if (arguments.length < 3) {
+        if (!length) throw new TypeError(reduceError);
+        memo = obj[keys ? keys[index++] : index++];
+      }
+      for (; index < length; index++) {
+        currentKey = keys ? keys[index] : index;
+        memo = iteratee(memo, obj[currentKey], currentKey, obj);
+        if(_r.isReduced(memo)){
+          return _r.unwrap(memo);
+        }
+      }
     }
-    return t.seq(coll, xform);
+    return memo;
+  };
+
+  // Reduce with a transformation of step (transform). If memo is not
+  // supplied, step() will be called to produce it. step should be a reducing
+  // step function that accepts both 1 and 2 arguments, if it accepts
+  // only 2 you can add the arity-1 with _r.completing. Returns the result
+  // of applying (the transformed) transform to memo and the first item in collection,
+  // then applying transform to that result and the 2nd item, etc. If collection
+  // contains no items, returns memo and step is not called. Note that
+  // certain transforms may inject or skip items.
+  // The default step function is _r.append (with default value [])
+  _r.transduce = function(transform, obj, step, memo){
+    if(obj === undef){
+      obj = _r.empty();
+    }
+
+    if(step === undef){
+      step = _r.append;
+    }
+
+    if(memo === undef){
+      memo = step();
+    }
+
+    if(_r.as(transform)){
+      transform = transform.transducer();
+    }
+
+    if(transform !== undef){
+      step = transform(step);
+    }
+    return step(_r.reduce(obj, step, memo));
   }
 
-  _r.prototype.seq = _r.prototype.sequence = function(coll){
-    if(coll === undef){
-      coll = this._wrapped;
+  // Calls transduce using the chained transformation
+  _r.prototype.transduce = function(obj, step, memo){
+    if(obj === undef){
+      return _r.transduce(this.transducer(), this._wrapped, obj, step);
     }
-    return _r.seq(coll, this);
-  }
-
-  _r.transduce = function(coll, xform, reducer, init){
-    if(_r.as(xform)){
-      xform = xform.transducer();
-    }
-    return t.transduce(coll, xform, reducer, init);
-  }
-
-  // Returns a new coll consisting of to-coll with all of the items of
-  // from-coll conjoined. A transducer (step function) may be supplied.
-  _r.into = function(to, xform, from){
-    if(_r.as(xform)){
-      xform = xform.transducer();
-    }
-    return t.into(to, xform, from);
-  }
-
-  // Calls into using the chained transformation
-  _r.prototype.into = function(to, from){
-    if(from === undef){
-      from = this._wrapped;
-    }
-
-    return _r.into(to, this, from);
-  }
-
-  _r.toArray = function(coll, xform){
-    if(_r.as(xform)){
-      xform = xform.transducer();
-    }
-    return t.toArray(coll, xform);
-  }
-  _r.prototype.toArray = function(coll){
-    if(coll === undef){
-      coll = this._wrapped;
-    }
-    return _r.toArray(coll, this);
-  }
-
-  _r.toObj = _r.toObject = function(coll, xform){
-    if(_r.as(xform)){
-      xform = xform.transducer();
-    }
-    return t.toObj(coll, xform);
-  }
-  _r.prototype.toObj = _r.prototype.toObject = function(coll){
-    if(coll === undef){
-      coll = this._wrapped;
-    }
-    return _r.toObj(coll, this);
-  }
-
-  _r.toIter = _r.toIterator = function(coll, xform){
-    if(_r.as(xform)){
-      xform = xform.transducer();
-    }
-    return t.toIterator(coll, xform);
-  }
-  _r.prototype.toIter = _r.prototype.toIterator = function(coll){
-    if(coll === undef){
-      coll = this._wrapped;
-    }
-    return _r.toObj(coll, this);
-  }
-
-
-  // Reducer that maintains last value
-  function LastValue(){}
-  LastValue.prototype.init = _.identity;
-  LastValue.prototype.result = _.identity;
-  LastValue.prototype.step = function(result, input){
-    return input;
+    return _r.transduce(this.transducer(), obj, step, memo);
   }
 
   // Creates a callback that starts a transducer process and accepts
@@ -807,25 +868,32 @@
   // The callback returns undefined until completion. Once completed, the result
   // is always returned.
   //
-  // This will maintain only last value and not buffer results
-  _r.asCallback = function(transform){
-    var done = false, memo,
-        stepper = transform(new LastValue());
+  // The step function is _r.append with default memo of null.
+  // (This will maintain only last value and not buffer results)
+  _r.asCallback = function(transform, memo){
+    var done = false,
+      step = _r.append;
 
-    return function(item){
+    if(memo === undef){
+      memo = null;
+    }
+
+    step = transform(step);
+
+    return function(item, key){
       if(done) return memo;
 
       if(item === undef){
         // complete
-        memo = stepper.result(memo);
+        memo = step(memo);
         done = true;
       } else {
         // step to next result.
-        memo = stepper.step(memo, item);
+        memo = step(memo, item, key);
 
         // check if exhausted
         if(_r.isReduced(memo)){
-          memo = _r.unwrap(memo);
+          memo = step(_r.unwrap(memo));
           done = true;
         }
       }
@@ -850,10 +918,17 @@
   //
   // If the callback is called with no item, it will terminate the transducer process.
   //
-  // This will maintain only last value and not buffer results
-  _r.asyncCallback = function(transform, continuation){
-    var done = false, memo,
-        stepper = transform(new LastValue());
+  // The step function is _r.append with default memo of null.
+  // (This will maintain only last value and not buffer results)
+  _r.asyncCallback = function(transform, continuation, memo){
+    var done = false,
+        step = _r.append;
+
+    if(memo === undef){
+      memo = null;
+    }
+
+    step = transform(step);
 
     function checkDone(err, item){
       if(done){
@@ -869,7 +944,7 @@
       }
 
       if(err || done || item === undef){
-        memo = stepper.result(memo);
+        memo = step(memo);
         done = true;
       }
 
@@ -891,7 +966,7 @@
       if(!checkDone(err, item)){
         try {
           // step to next result.
-          memo = stepper.step(memo, item);
+          memo = step(memo, item);
           checkDone(err, item);
         } catch(err2){
           checkDone(err2, item);
@@ -905,33 +980,84 @@
     return _r.asyncCallback(this.transducer(), continuation, memo);
   }
 
+  // Returns a new coll consisting of to-coll with all of the items of
+  // from-coll conjoined. A transducer (step function) may be supplied.
+  _r.into = function(to, transform, from){
+    var step = _r.append;
+
+    if(from === undef){
+      from = transform;
+      transform = undef;
+    }
+
+    if(from === undef){
+      from = _r.empty();
+    }
+
+    if(transform === undef){
+      return _r.reduce(from, step, to);
+    }
+
+    return _r.transduce(transform, from, step, to);
+  }
+
+  // Calls into using the chained transformation
+  _r.prototype.into = function(to, from){
+    if(from === undef){
+      from = this._wrapped;
+    }
+
+    if(from === undef){
+      from = _r.empty();
+    }
+
+    if(to === undef){
+      to = _r.empty(from);
+    }
+
+    return _r.into(to, this.transducer(), from);
+  }
+
+  // Returns a new collection of the empty value of the from collection
+  _r.sequence = function(transform, from){
+    if(from == undef){
+      from = transform
+      return _r.into(_r.empty(from), from);
+    }
+    return _r.into(_r.empty(from), transform, from);
+  }
+
+  // calls sequence with chained transformation and optional wrapped object
+  _r.prototype.sequence = function(from){
+    if(from == undef){
+      from = this._wrapped;
+    }
+
+    return this.into(_r.empty(from), from);
+  }
+
   // Creates an (duck typed) iterator that calls the provided next callback repeatedly
   // and uses the return value as the next value of the iterator.
   // Marks iterator as done if the next callback returns undefined (returns nothing)
   // Can be used to as a source obj to reduce, transduce etc
   _r.generate = function(callback, callToInit){
-    return new Generate(callback, callToInit);
+    var gen = {};
+    gen[Symbol_iterator] = function(){
+      var next = callToInit ? callback() : callback;
+      return {
+        next: function(){
+          var value = next();
+          return (value === undef) ? {done: true} : {done: false, value: value};
+        }
+      }
+    }
+    return gen;
   }
 
   // Transduces the current chained object by using the chained trasnformation
   // and an iterator created with the callback
   _r.prototype.generate = function(callback, callToInit){
     return this.withSource(_r.generate(callback, callToInit));
-  }
-
-  function Generate(callback, callToInit){
-    this.cb = callback;
-    this.init = callToInit;
-  }
-  Generate.prototype[t.protocols.iterator] = function(){
-    var callback = this.cb, callToInit = this.init;
-    var next = callToInit ? callback() : callback;
-    return {
-      next: function(){
-        var value = next();
-        return (value === undef) ? {done: true} : {done: false, value: value};
-      }
-    }
   }
 
   // AMD registration happens at the end for compatibility with AMD loaders
