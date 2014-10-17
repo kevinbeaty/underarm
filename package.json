@@ -23,7 +23,8 @@
   },
   "homepage": "http://simplectic.com/projects/underscore-transducer/",
   "dependencies": {
-    "underscore": "~1.7.0"
+    "underscore": "~1.7.0",
+    "transducers-js": "~0.4.132"
   },
   "devDependencies": {
     "tape": "~3.0.0",
