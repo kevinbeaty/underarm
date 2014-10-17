@@ -13,8 +13,8 @@ function inc(x){
 var trans, result;
 
 
-test('into transduce sequence', function(t){
-  t.plan(39);
+test('into sequence', function(t){
+  t.plan(34);
 
   result = _r.into([], [1,2,3,4]);
   t.deepEqual(result, [1,2,3,4], 'into empty array');
@@ -22,26 +22,11 @@ test('into transduce sequence', function(t){
   result = _r.sequence([1,2,3,4]);
   t.deepEqual(result, [1,2,3,4], 'sequence empty');
 
-  result = _r.into({}, {one: 1, two: 2, four: 4});
-  t.deepEqual(result, {one: 1, two: 2, four: 4}, 'into empty object');
-
-  result = _r.sequence({one: 1, two: 2, four: 4});
-  t.deepEqual(result, {one: 1, two: 2, four: 4}, 'sequence empty object');
-  
   result = _r.into([], _r.filter(isEven), [1,2,3,4]);
   t.deepEqual(result, [2, 4], 'filter into empty array');
 
-  result = _r.into({}, _r.filter(isEven), {one: 1, two: 2, four: 4});
-  t.deepEqual(result, {two: 2, four: 4}, 'filter into empty object');
-
-  result = _r.sequence(_r.filter(isEven), {one: 1, two: 2, four: 4});
-  t.deepEqual(result, {two: 2, four: 4}, 'filter sequence empty object');
-
   result = _r.into([3], _r.reject(isEven), [1,2,3,4]);
   t.deepEqual(result, [3,1,3], 'reject into non empty array');
-
-  result = _r.into({three: 3}, _r.reject(isEven), {one: 1, two: 2, four: 4});
-  t.deepEqual(result, {one: 1, three: 3}, 'reject into non empty array');
 
   result = _r.into([3], _r.map(inc), [1,2,3,4]);
   t.deepEqual(result, [3,2,3,4,5], 'map into non empty array');
@@ -69,7 +54,7 @@ test('into transduce sequence', function(t){
   result = _r.into([], trans, [1,2,3,4,5]);
   t.deepEqual(result, [3,5], 'filter and map into');
 
-  trans = _r().filter(isEven).map(inc).transducer();
+  trans = _r().filter(isEven).map(inc);
   result = _r.sequence(trans, [1,2,3,4,5]);
   t.deepEqual(result, [3,5], 'filter and map into chain');
 
@@ -77,7 +62,7 @@ test('into transduce sequence', function(t){
   result = _r.into([], trans, [1,2,3,4,5]);
   t.deepEqual(result, [3,5], 'filter and map into chain');
 
-  result = _r().filter(isEven).map(inc).transduce([1, 2, 3, 4]);
+  result = _r().filter(isEven).map(inc).sequence([1, 2, 3, 4]);
   t.deepEqual(result, [3,5], 'filter and map into chain');
 
   result = _r().filter(isEven).map(inc).into([1,2], [1, 2, 3, 4]);
@@ -142,7 +127,7 @@ test('into transduce sequence', function(t){
 });
 
 test('sequence into chained', function(t){
-  t.plan(27);
+  t.plan(18);
 
   var results = [], items = [];
   trans = _r()
@@ -161,12 +146,6 @@ test('sequence into chained', function(t){
   t.deepEqual(items, [2, 200], 'sequence filter and map chained with tap items');
 
   results = [], items = [];
-  result = _r.sequence(trans, {one: 1, two: 2, three: 3, twohundred: 200});
-  t.deepEqual(result, {two: 4, twohundred: 40000}, 'sequence object filter and map chained with tap');
-  t.deepEqual(results, [{}, {two: 4}], 'sequence object filter and map chained with tap results');
-  t.deepEqual(items, [2, 200], 'sequence object filter and map chained with tap items');
-
-  results = [], items = [];
   result = trans.into([], [1,2,3,200]);
   t.deepEqual(result, [4, 40000], 'chained into filter and map chained with tap');
   t.deepEqual(results, [[], [4]], 'chained into filter and map chained with tap results');
@@ -179,12 +158,6 @@ test('sequence into chained', function(t){
   t.deepEqual(items, [2, 200], 'chained seqeuence filter and map chained with tap items');
 
   results = [], items = [];
-  result = trans.sequence({one: 1, two: 2, three: 3, twohundred: 200});
-  t.deepEqual(result, {two: 4, twohundred: 40000}, 'wrap chained sequence object filter and map chained with tap');
-  t.deepEqual(results, [{}, {two: 4}], 'wrap chained sequence object filter and map chained with tap results');
-  t.deepEqual(items, [2, 200], 'wrap chained sequence object filter and map chained with tap items');
-
-  results = [], items = [];
   result = trans.withSource([1,2,3,200]).into([]);
   t.deepEqual(result, [4, 40000], 'wrap chained into filter and map chained with tap');
   t.deepEqual(results, [[], [4]], 'wrap chained into filter and map chained with tap results');
@@ -195,18 +168,11 @@ test('sequence into chained', function(t){
   t.deepEqual(result, [4, 40000], 'wrap chained sequence filter and map chained with tap');
   t.deepEqual(results, [[], [4]], 'wrap chained seqeuence filter and map chained with tap results');
   t.deepEqual(items, [2, 200], 'wrap chained seqeuence filter and map chained with tap items');
-
-  results = [], items = [];
-  result = trans.withSource({one: 1, two: 2, three: 3, twohundred: 200}).sequence();
-  t.deepEqual(result, {two: 4, twohundred: 40000}, 'wrap chained sequence object filter and map chained with tap');
-  t.deepEqual(results, [{}, {two: 4}], 'wrap chained sequence object filter and map chained with tap results');
-  t.deepEqual(items, [2, 200], 'wrap chained sequence object filter and map chained with tap items');
-
 });
 
 test('asCallback', function(t){
   var results = [],
-      trans = _r().filter(isEven).map(inc).each(appendEach).take(2)
+      trans = _r().filter(isEven).map(inc).take(2).each(appendEach)
       cb = trans.asCallback();
 
   _.each([1,1,2,3,4,4,5], cb);
@@ -242,7 +208,7 @@ test('asyncCallback', function(t){
 
   var results, result, cb, abort = new Error('abort');
 
-  cb = _r().filter(isEven).map(inc).each(appendEach).take(2).asyncCallback(continuation);
+  cb = _r().filter(isEven).map(inc).take(2).each(appendEach).asyncCallback(continuation);
 
   results = [];
   result = {done: false, error: false};
@@ -375,8 +341,8 @@ test('generate', function(t){
   result = _r.into([], _r.first(7), _r.generate(fib()));
   t.deepEqual(result, [1,1,2,3,5,8,13], 'generate into');
 
-  result = _r().first(7).transduce(_r.generate(fib()));
-  t.deepEqual(result, [1,1,2,3,5,8,13], 'generate transduce chain');
+  result = _r().first(7).sequence(_r.generate(fib()));
+  t.deepEqual(result, [1,1,2,3,5,8,13], 'generate chain');
 
   result = _r().first(7).generate(fib()).value();
   t.deepEqual(result, [1,1,2,3,5,8,13], 'generate chain after');
@@ -384,8 +350,8 @@ test('generate', function(t){
   result = _r().generate(fib()).first(7).value();
   t.deepEqual(result, [1,1,2,3,5,8,13], 'generate chain before');
 
-  result = _r.transduce(_r.first(7), _r.generate(fib()));
-  t.deepEqual(result, [1,1,2,3,5,8,13], 'generate transduce');
+  result = _r.sequence(_r.first(7), _r.generate(fib()));
+  t.deepEqual(result, [1,1,2,3,5,8,13], 'generate');
 
   result = _r(_r.generate(fib())).first(7).value();
   t.deepEqual(result, [1,1,2,3,5,8,13], 'generate with wrapper');
@@ -416,12 +382,12 @@ test('generate', function(t){
 });
 
 test('_riteratee', function(t){
-  var value = _r([['foo','bar'],['baz'],{one:'one', two:'two'}])
+  var value = _r([['foo','bar'],['baz']])
     .map(_r().invoke('toUpperCase'))
     .value();
-  t.deepEqual(value, [['FOO','BAR'],['BAZ'],{one:'ONE', two:'TWO'}])
+  t.deepEqual(value, [['FOO','BAR'],['BAZ']])
 
-  value = _r([['foo','bar'],['baz','buzz'], {one:'two'}])
+  value = _r([['foo','bar'],['baz','buzz'], ['two']])
     .map(_r().invoke('toUpperCase').first())
     .value();
   t.deepEqual(value, ['FOO','BAZ','TWO'])

@@ -5,17 +5,12 @@ var _r = require('../'),
 test('each', function(t){
   var trans, result;
   t.test('iteration count', function(t){
-    t.plan(5);
+    t.plan(4);
     trans = _r.each(function(num, i){
       t.equal(num, i+1, 'index passed with item');
     });
-    result = _r.transduce(trans, [1, 2, 3]);
+    result = _r.sequence(trans, [1, 2, 3]);
     t.deepEqual(result, [1, 2, 3], 'result passed through');
-
-    var answers = [];
-    var obj = {one : 1, two : 2, three : 3};
-    _r(obj).each(function(value, key){ answers.push([key, value]); }).value();
-    t.deepEqual(obj, _.object(answers), 'iterating over objects works');
   });
 
   t.test('alias', function(t){
@@ -29,12 +24,12 @@ test('map', function(t){
     t.plan(5);
 
     var doubled = _r.map(function(num){ return num * 2; });
-    t.deepEqual([2,4,6], _r.transduce(doubled, [1,2,3]), 'can double');
+    t.deepEqual([2,4,6], _r.sequence(doubled, [1,2,3]), 'can double');
 
     var tripled = _r.map(function(num){ return num * 3; });
-    t.deepEqual([3,6,9], _r.transduce(tripled, [1,2,3]), 'can triple');
+    t.deepEqual([3,6,9], _r.sequence(tripled, [1,2,3]), 'can triple');
 
-    doubled = _r().map(function(num){ return num * 2; }).transduce([1,2,3]);
+    doubled = _r().map(function(num){ return num * 2; }).sequence([1,2,3]);
     t.deepEqual([2,4,6], doubled, 'can double in chain');
 
     doubled = _r([1,2,3]).map(function(num){ return num * 2; }).value();
@@ -55,23 +50,13 @@ test('map', function(t){
 
 test('reduce', function(t) {
   t.test('reduce ops', function(t){
-    t.plan(8);
+    t.plan(2);
 
-    var sum = _r.reduce([1, 2, 3], function(sum, num){ return sum + num; }, 0);
+    var sum = _r.reduce(function(sum, num){ return sum + num; }, 0, [1,2,3]);
     t.equal(sum, 6, 'can sum up an array');
 
-    sum = _r.reduce([1, 2, 3], function(sum, num){ return sum + num; });
-    t.equal(sum, 6, 'default initial value');
-
-    var prod = _r.reduce([1, 2, 3, 4], function(prod, num){ return prod * num; });
+    var prod = _r.reduce(function(prod, num){ return prod * num; }, 1, [1, 2, 3, 4]);
     t.equal(prod, 24, 'can reduce via multiplication');
-
-    t.ok(_r.reduce(null, _.noop, 138) === 138, 'handles a null (with initial value) properly');
-    t.equal(_r.reduce([], _.noop, undefined), undefined, 'undefined can be passed as a special case');
-    t.equal(_r.reduce([_r], _.noop), _r, 'collection of length one with no initial value returns the first item');
-
-    t.throws(function() { _r.reduce([], _.noop); }, TypeError, 'throws an error for empty arrays with no initial value');
-    t.throws(function() {_r.reduce(null, _.noop);}, TypeError, 'handles a null (without initial value) properly');
   });
 
   t.test('alias', function(t) {
@@ -85,8 +70,8 @@ test('find', function(t) {
   t.test('find ops', function(t){
     t.plan(7);
     var array = [1, 2, 3, 4];
-    t.strictEqual(_r.transduce(_r.find(function(n) { return n > 2; }), array)[0], 3, 'should return first found `value`');
-    t.strictEqual(_r.transduce(_r.find(function() { return false; }), array)[0], void 0, 'should return `undefined` if `value` is not found');
+    t.strictEqual(_r.sequence(_r.find(function(n) { return n > 2; }), array)[0], 3, 'should return first found `value`');
+    t.strictEqual(_r.sequence(_r.find(function() { return false; }), array)[0], void 0, 'should return `undefined` if `value` is not found');
 
     // Matching an object like _.findWhere.
     var list = [{a: 1, b: 2}, {a: 2, b: 2}, {a: 1, b: 3}, {a: 1, b: 4}, {a: 2, b: 4}];

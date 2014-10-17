@@ -2,7 +2,7 @@
 
 [![Build Status](https://secure.travis-ci.org/kevinbeaty/underscore-transducer.svg)](http://travis-ci.org/kevinbeaty/underscore-transducer)
 
-Transducers using the familiar API from  [Underscore.js][1] that closely follows the [Clojure implementation][5] with extra goodies like lazy generators and callback processes.
+Use [transducers-js][10] with the familiar API from  [Underscore.js][1] with extra goodies like lazy generators and callback processes.
 
 If you would like to know how transducers work, check out [this video][2] or [this article][3].  Also see the [Demo and Documentation][4] for this library.
 
@@ -45,28 +45,6 @@ function printIt(result, input){
 var trans, result;
 ```
 
-Transduce with all arguments.  ` _r.append` is default step function, empty array is default memo.  If memo is not specified, the step function is called with no arguments `_r.append` returns empty array.
-
-The step function is called with a varying number of arguments
-
-- 0 arguments if memo is not provided
-- Two or three arguments, the result (memo) and current item and optional key on every step (like reduce)
-- One argument with the result on completion
-
-Early termination can be signaled by wrapping value in `_r.reduced`.
-
-```javascript
-result = _r.transduce(_r.filter(isEven), [1,2,3,4], _r.append, [3]);
-// [ 3, 2, 4]
-
-// these are all the same
-result = _r.transduce(_r.filter(isEven), [1,2,3,4], _r.append, []);
-result = _r.transduce(_r.filter(isEven), [1,2,3,4], _r.append);
-result = _r.transduce(_r.filter(isEven), [1,2,3,4]);
-result = _r().filter(isEven).transduce([1,2,3,4]);
-// [ 2, 4]
-```
-
 Chaining transducers is the same as function composition. Composed transducers are executed left to right.
 
 ```javascript
@@ -87,7 +65,7 @@ result = _r()
   .filter(function(num) { return num % 2 == 0; })
   .tap(printIt)
   .map(function(num) { return num * num })
-  .transduce([1,2,3,200]);
+  .sequence([1,2,3,200]);
 // 2 []
 // 200 [4]
 // [4, 40000 ]
@@ -228,9 +206,9 @@ Different ways to use `_r.generate`.  If not chaining, creates an iterator that 
 ```javascript
 // All results below the same
 // [ 1, 1, 2, 3, 5, 8, 13 ]
-result = _r.transduce(_r.first(7), _r.generate(fib()));
+result = _r.seqeuence(_r.first(7), _r.generate(fib()));
 result = _r.into([], _r.first(7), _r.generate(fib()));
-result = _r().first(7).transduce(_r.generate(fib()));
+result = _r().first(7).seqeuence(_r.generate(fib()));
 result = _r().first(7).generate(fib()).value();
 
 result = _r(_r.generate(fib())).first(7).value();
@@ -429,3 +407,4 @@ MIT
 [7]: https://github.com/kevinbeaty/transduce-stream
 [8]: https://github.com/kevinbeaty/transduce-string
 [9]: https://github.com/epeli/underscore.string
+[10]: https://github.com/cognitect-labs/transducers-js
