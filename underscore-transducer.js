@@ -52,14 +52,16 @@
   }
 
   // Current version.
-  _r.VERSION = '0.0.9';
+  _r.VERSION = '0.0.10';
 
   // Reference to Underscore from browser
   var _ = root._,
-      t = root.transducers;
+      t = root.transducers,
+      tp = root.transduce;
   if (typeof _ === 'undefined' && typeof require !== 'undefined'){
     _ = require('underscore');
     t = require('transducers-js');
+    tp = require('transduce');
   }
 
   // Collection Functions
@@ -80,20 +82,7 @@
   // Executes the iteratee with iteratee(input, idx, result) for each item
   // passed through transducer without changing the result.
   _r.each = _r.forEach = function(iteratee) {
-    return function(xf){
-      return new Each(iteratee, xf);
-    }
-  }
-  function Each(f, xf) {
-    this.xf = xf;
-    this.f = f;
-    this.i = 0;
-  }
-  Each.prototype.init = initDefault;
-  Each.prototype.result = resultDefault;
-  Each.prototype.step = function(res, input) {
-    this.f(input, this.i++);
-    return this.xf.step(res, input);
+    return tp.each(iteratee);
   }
 
   // Return the results of applying the iteratee to each element.
@@ -241,111 +230,25 @@
   _r.max = function(iteratee) {
     iteratee = _r.iteratee(iteratee);
     _r.resolveSingleValue(this);
-    return function(xf){
-      return new Max(iteratee, xf);
-    }
+    return tp.max(iteratee);
   };
-  function Max(f, xf) {
-    this.xf = xf;
-    this.f = f;
-    this.computedResult = -Infinity;
-    this.lastComputed = -Infinity
-  }
-  Max.prototype.init = initDefault;
-  Max.prototype.result = function(result){
-    result = this.xf.step(result, this.computedResult);
-    return this.xf.result(result);
-  }
-  Max.prototype.step = function(result, input) {
-    var computed = this.f(input);
-    if (computed > this.lastComputed
-        || computed === -Infinity && this.computedResult === -Infinity) {
-      this.computedResult = input;
-      this.lastComputed = computed;
-    }
-    return result;
-  }
 
   // Return the minimum element (or element-based computation).
   // Stateful transducer (current min value and computed result)
   _r.min = function(iteratee) {
     iteratee = _r.iteratee(iteratee);
     _r.resolveSingleValue(this);
-    return function(xf){
-      return new Min(iteratee, xf);
-    }
+    return tp.min(iteratee);
   };
-  function Min(f, xf) {
-    this.xf = xf;
-    this.f = f;
-    this.computedResult = Infinity;
-    this.lastComputed = Infinity
-  }
-  Min.prototype.init = initDefault;
-  Min.prototype.result = function(result){
-    result = this.xf.step(result, this.computedResult);
-    return this.xf.result(result);
-  }
-  Min.prototype.step = function(result, input) {
-    var computed = this.f(input);
-    if (computed < this.lastComputed
-        || computed === Infinity && this.computedResult === Infinity) {
-      this.computedResult = input;
-      this.lastComputed = computed;
-    }
-    return result;
-  }
-
 
   // Array Functions
   // ---------------
 
   // Adds one or more items to the end of the sequence, like Array.prototype.push.
-  _r.push = function(){
-    var toPush = _.toArray(arguments);
-    return function(xf){
-      return new Push(toPush, xf);
-    }
-  }
-  function Push(toPush, xf) {
-    this.xf = xf;
-    this.toPush = toPush;
-  }
-  Push.prototype.init = initDefault;
-  Push.prototype.result = function(result){
-    var idx, toPush = this.toPush, len = toPush.length;
-    for(idx = 0; idx < len; idx++){
-      result = this.xf.step(result, toPush[idx]);
-    }
-    return this.xf.result(result);
-  }
-  Push.prototype.step = stepDefault;
-
+  _r.push = tp.push;
 
   // Adds one or more items to the beginning of the sequence, like Array.prototype.unshift.
-  _r.unshift = function(){
-    var toUnshift = _.toArray(arguments);
-    return function(xf){
-      return new Unshift(toUnshift, xf);
-    }
-  }
-  function Unshift(toUnshift, xf) {
-    this.xf = xf;
-    this.toUnshift = toUnshift;
-  }
-  Unshift.prototype.init = initDefault;
-  Unshift.prototype.result = resultDefault;
-  Unshift.prototype.step = function(result, input){
-    var toUnshift = this.toUnshift;
-    if(toUnshift){
-      var idx, len = toUnshift.length;
-      for(idx = 0; idx < len; idx++){
-        result = this.xf.step(result, toUnshift[idx]);
-      }
-    }
-    this.toUnshift = null;
-    return this.xf.step(result, input);
-  }
+  _r.unshift = tp.unshift;
 
   // Get the first element of an array. Passing **n** will return the first N
   // values in the array. Aliased as `head` and `take`.
@@ -650,12 +553,10 @@
   }
 
   _r.unwrap.register(function(value){
-    if(_r.isReduced(value)){
-      return value.value;
-    } else if(_r.as(value)){
+    if(_r.as(value)){
       return r.value();
     }
-    return value;
+    return tp.unreduced(value);
   });
 
   // Returns an iterator that has next function
@@ -676,18 +577,7 @@
     return dispatch.iterator.register(fn);
   }
 
-  var Symbol_iterator = (typeof Symbol !== 'undefined' && Symbol.iterator || '@@iterator');
-  _r.iterator.Symbol = Symbol_iterator;
-
-  _r.iterator.register(function(obj){
-    if (_.isObject(obj)){
-      var iterator = ((obj[Symbol_iterator] && obj[Symbol_iterator]() || obj));
-      if(_.isFunction(iterator.next)){
-        return iterator;
-      }
-    }
-    return null;
-  });
+  _r.iterator.register(tp.iterator);
 
   // Mostly internal function that generates a callback from the given value.
   // For use with generating callbacks for map, filter, find, etc.
@@ -756,41 +646,18 @@
   // using appropriate predicates.
   //
   // Return undefined if not supported, so other dispatched functions can be checked
-  _r.append = _r.conj = _r.conjoin = function(obj, item, key){
-    if(obj === undef){
-      // create arrays by default
-      return [];
-    }
-
-    if(item === undef){
-      // completion function, unwrap object
-      return _r.unwrap(obj);
-    } 
-    
-    if (item === IGNORE){
-      // ignore item
-      return obj;
-    }
-
-    if(obj === IGNORE){
-      // Maintain last item if requested to ignore object
-      return item;
-    }
-
+  _r.append = _r.conj = _r.conjoin = function(obj, item){
     // valid object and item, dispatch
-    return dispatch.append(obj, item, key);
+    return dispatch.append(obj, item);
   }
 
   _r.append.register = function(fn){
     return dispatch.append.register(fn);
   }
 
-  _r.append.register(function(obj, item, key){
+  _r.append.register(function(obj, item){
     if(_.isArray(obj)){
       obj.push(item);
-      return obj;
-    } else if(key !== undef && _.isObject(obj)){
-      obj[key] = item;
       return obj;
     }
 
@@ -804,25 +671,14 @@
   Dispatch.prototype.result = _r.unwrap;
   Dispatch.prototype.step = _r.append;
 
-   // Reducer that maintains last value
-   function LastValue(){}
-   LastValue.prototype.init = _.identity;
-   LastValue.prototype.result = _.identity;
-   LastValue.prototype.step = function(result, input){
-     return input;
-   }
 
   // Transducer Functions
   // --------------------
 
   // Wrapper to return from iteratee of reduce to terminate
   // _r.reduce early with the provided value
-  _r.reduced = function(value){
-    return t.ensureReduced(value);
-  }
-  _r.isReduced = function(value){
-    return t.isReduced(value);
-  }
+  _r.reduced = tp.reduced;
+  _r.isReduced = tp.isReduced;
 
   _r.reduce = _r.foldl = _r.inject = function(xf, init, coll) {
     if (coll == null) coll = _r.empty(coll);
@@ -859,40 +715,15 @@
   // If init is defined, maintains last value and does not buffer results.
   // If init is provided, it is dispatched
   _r.asCallback = function(xf, init){
-    var done = false, stepper, result;
-
     if(_r.as(xf)){
       xf = xf.compose();
     }
 
-    if(init === undef){
-      stepper = xf(new LastValue());
-    } else {
-      stepper = xf(new Dispatch());
+    var reducer;
+    if(init !== undef){
+      reducer = new Dispatch();
     }
-
-    result = stepper.init();
-
-    return function(item){
-      if(done) return result;
-
-      if(item === undef){
-        // complete
-        result = stepper.result(result);
-        done = true;
-      } else {
-        // step to next result.
-        result = stepper.step(result, item);
-
-        // check if exhausted
-        if(_r.isReduced(result)){
-          result = stepper.result(_r.unwrap(result));
-          done = true;
-        }
-      }
-
-      if(done) return result;
-    }
+    return tp.asCallback(xf, reducer);
   }
 
   // Calls asCallback with the chained transformation
@@ -914,63 +745,15 @@
   // If init is defined, maintains last value and does not buffer results.
   // If init is provided, it is dispatched
   _r.asyncCallback = function(xf, continuation, init){
-    var done = false, stepper, result;
-
     if(_r.as(xf)){
       xf = xf.compose();
     }
 
-    if(init === undef){
-      stepper = xf(new LastValue());
-    } else {
-      stepper = xf(new Dispatch());
+    var reducer;
+    if(init !== undef){
+      reducer = new Dispatch();
     }
-
-    result = stepper.init();
-
-    function checkDone(err, item){
-      if(done){
-        return true;
-      }
-
-      err = err || null;
-
-      // check if exhausted
-      if(_r.isReduced(result)){
-        result = _r.unwrap(result);
-        done = true;
-      }
-
-      if(err || done || item === undef){
-        result = stepper.result(result);
-        done = true;
-      }
-
-      // notify if done
-      if(done){
-        if(continuation){
-          continuation(err, result);
-          continuation = null;
-        } else if(err){
-          throw err;
-        }
-        result = null;
-      }
-
-      return done;
-    }
-
-    return function(err, item){
-      if(!checkDone(err, item)){
-        try {
-          // step to next result.
-          result = stepper.step(result, item);
-          checkDone(err, item);
-        } catch(err2){
-          checkDone(err2, item);
-        }
-      }
-    }
+    return tp.asyncCallback(xf, continuation, reducer);
   }
 
   // Calls asyncCallback with the chained transformation
@@ -1036,7 +819,7 @@
   // Can be used to as a source obj to reduce, transduce etc
   _r.generate = function(callback, callToInit){
     var gen = {};
-    gen[Symbol_iterator] = function(){
+    gen[tp.protocols.iterator] = function(){
       var next = callToInit ? callback() : callback;
       return {
         next: function(){

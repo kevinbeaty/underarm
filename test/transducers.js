@@ -1,5 +1,6 @@
 var _r = require('../'),
     _ = require('underscore'),
+    tp = require('transduce'),
     test = require('tape');
 
 function isEven(x){
@@ -282,7 +283,7 @@ test('dispatch', function(t){
     return this.strings.join('');
   }
 
-  StringBuilder.prototype[_r.iterator.Symbol] = function(){
+  StringBuilder.prototype[tp.protocols.iterator] = function(){
     var done = false, self = this;
     return {
       next: function(){
