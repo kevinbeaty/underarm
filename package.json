@@ -24,11 +24,14 @@
   "homepage": "http://simplectic.com/projects/underscore-transducer/",
   "dependencies": {
     "underscore": "~1.7.0",
-    "transducers-js": "~0.4.132",
-    "transduce": "0.0.2"
+    "transduce": "0.0.3",
+    "transduce-math": "0.0.2",
+    "transduce-array": "0.0.3",
+    "transduce-push": "0.0.3"
   },
   "devDependencies": {
     "tape": "~3.0.0",
-    "uglify-js": "~2.3.6"
+    "uglify-js": "~2.3.6",
+    "transducers-js": "~0.4.135"
   }
 }
