@@ -2,9 +2,34 @@
 
 [![Build Status](https://secure.travis-ci.org/kevinbeaty/underscore-transducer.svg)](http://travis-ci.org/kevinbeaty/underscore-transducer)
 
-Use [transducers-js][10] with the familiar [Underscore.js][1] API with extra goodies like lazy generators and callback processes.
+Use [transducers-js][10] or [transducers.js][11] (your choice) with the familiar [Underscore.js][1] API with extra goodies like lazy generators and callback processes.
 
 If you would like to know how transducers work, check out [this video][2] or [this article][3].  Also see the [Demo and Documentation][4] for this library.
+
+## Install
+
+### Browser
+Install browser version of [transducers-js][10] or [transducers.js][11] and include with `<script>`.  Then include the browser version of underscore-transducer.
+
+* [Development][12]
+* [Minified][13]
+
+### Node.js
+Library depends on either [transducers-js][10] or [transducers.js][11]. It is your choice.  Must `npm install` either one and it will be detected automatically.
+
+Using transducers-js:
+```bash
+$ npm install transducers.js
+$ npm install underscore-transducer
+```
+
+Using transducers.js:
+```bash
+$ npm install transducers.js
+$ npm install underscore-transducer
+```
+
+If both are installed, prefers transducers-js by default.  If you need to override this (maybe you want to test against both), you can change the implementation using the `TRANSDUCE_IMPL` environment variable.
 
 ## What?
 
@@ -267,34 +292,33 @@ We are simply composing transducers.  The previous examples are all using transd
 If you are using Node.js, `asyncCallback` returns a callback that follows the standard convention of `fn(err, item)` and accepts a continuation that is called on completion or error.
 
 ### Strings
-Strings are a sequence of characters, so you can transduce over those as well. See [transduce-string][8] to lazily process strings using an [underscore.string][9] API.
+Strings are a sequence of characters, so you can transduce over those as well. See [transduce-string][8] to lazily process strings.
 
 ### Streams
-You can transduce over Node.js Streams using the [transduce-stream][7] extension which also mixes in [transduce-string][8].
+You can transduce over Node.js Streams using the [transduce-stream][7] extension.
 
 ```javascript
 // test.js
-var _r = require('transduce-stream');
+var _r = require('underscore-transducer');
+    stream = require('transduce-stream');
 
-var stream = _r()
+var transducer = _r()
   .words()
-  .map(function(x){return (+x * +x)})
+  .map(function(x){return (+x * +x)+ ' '})
   .uniq()
-  .numberFormat(2)
-  .surround(' ')
   .take(4)
   .push('\n')
-  .stream();
+  .compose();
 
 process.stdin.resume();
-process.stdin.pipe(stream).pipe(process.stdout);
+process.stdin.pipe(stream(transducer)).pipe(process.stdout);
 ```
 
 Run this from the terminal to calculate a formatted sequence of the first 4 unique squared values.
 
 ```bash
 $ echo '33 27 33 444' | node test.js
- 1,089.00  729.00  197,136.00
+ 1089  729  197136
 
 $ node test.js << EOT
 12 32
@@ -302,7 +326,7 @@ $ node test.js << EOT
 33 43
 12 33 12
 EOT
- 144.00  1,024.00  1,089.00  1,849.00
+ 144  1024  1089  1849
 ```
 
 Functions that `split` over the String are processed lazily and as soon as possible: `lines`, `words` and `chars` will process a line/word/char as they are received, and buffer any intermediate chunks appropriately.
@@ -408,3 +432,7 @@ MIT
 [8]: https://github.com/kevinbeaty/transduce-string
 [9]: https://github.com/epeli/underscore.string
 [10]: https://github.com/cognitect-labs/transducers-js
+[11]: https://github.com/jlongster/transducers.js 
+[12]: https://raw.githubusercontent.com/kevinbeaty/underscore-transducer/master/build/underscore-transducer.js
+[13]: https://raw.githubusercontent.com/kevinbeaty/underscore-transducer/master/build/underscore-transducer.min.js
+

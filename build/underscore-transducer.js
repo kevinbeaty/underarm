@@ -498,6 +498,76 @@ module.exports=require(2)
 },{"/Users/kbeaty/Projects/underscore-transducer/node_modules/transduce-array/node_modules/transduce-protocol/transduce-protocol.js":2}],8:[function(require,module,exports){
 var protocol = require('transduce-protocol');
 
+function load(){
+  var libs = ['transducers-js', 'transducers.js'], impl;
+  if(typeof process !== 'undefined' && process.env && process.env.TRANSDUCE_IMPL){
+    libs = [process.env.TRANSDUCE_IMPL];
+  }
+  var i = 0; len = libs.length;
+  for(; i < len; i++){
+    try {
+      impl = loader[libs[i]]();
+      if(impl && impl.map){
+        return impl;
+      }
+    } catch(e){}
+  }
+  throw new Error('Must install one of: '+libs.join());
+}
+
+var undef, loader = {
+  'transducers-js': function(){
+    var impl = loadFromBrowser();
+    if(impl){
+      if(!impl.Wrap){
+        // if no Wrap exported, probably transducers.js
+        impl = undef;
+      }
+    } else {
+      impl = require('transducers-js');
+    }
+    return impl;
+  },
+  'transducers.js': function(){
+    //adapt methods to match transducers-js API
+    var impl = loadFromBrowser();
+    if(!impl){
+      impl = require('transducers.js');
+    }
+    return {
+      into: impl.into,
+      transduce: function(xf, f, init, coll){
+        f = protocol.transformer(f);
+        return impl.transduce(coll, xf, f, init);
+      },
+      reduce: function(f, init, coll){
+        f = protocol.transformer(f);
+        return impl.reduce(coll, f, init);
+      },
+      map: nullFirst(impl, 'map'),
+      filter: nullFirst(impl, 'filter'),
+      remove: nullFirst(impl, 'remove'),
+      take: nullFirst(impl, 'take'),
+      takeWhile: nullFirst(impl, 'takeWhile'),
+      drop: nullFirst(impl, 'drop'),
+      dropWhile: nullFirst(impl, 'dropWhile'),
+    }
+    return impl;
+  }
+}
+
+function nullFirst(impl, method){
+  return function(f){
+    return impl[method](f);
+  }
+}
+
+function loadFromBrowser(){
+  if(typeof window !== 'undefined'){
+    return window.transducers;
+  }
+}
+
 var impl = load();
 
 module.exports = {
@@ -521,73 +591,6 @@ module.exports = {
   unreduced: protocol.unreduced,
   compose: protocol.compose
 };
-
-function load(){
-  var impl;
-  try {
-    impl = loadTransducersDashJS();
-  } catch (e) {
-    try {
-      impl = loadTransducersDotJS();
-    } catch(e2){
-      throw new Error('Must npm install either transducers-js or transducers.js, your choice');
-    }
-  }
-  return impl;
-}
-
-function loadTransducersDashJS(){
-  var impl;
-  if(typeof window !== 'undefined' && window.transducers && window.transducers.Wrap){
-    impl = window.transducers;
-  } else {
-    impl = require('transducers-js');
-  }
-  return impl;
-}
-
-function loadTransducersDotJS(){
-  //adapt methods to match transducers-js API
-  var impl;
-  if(typeof window !== 'undefined' && window.transducers){
-    impl = window.transducers;
-  } else {
-    impl = require('transducers.js');
-  }
-  return {
-    into: impl.into,
-    transduce: function(xf, f, init, coll){
-      f = protocol.transformer(f);
-      return impl.transduce(coll, xf, f, init);
-    },
-    reduce: function(f, init, coll){
-      f = protocol.transformer(f);
-      return impl.reduce(coll, f, init);
-    },
-    map: function(f){
-      return impl.map(null, f);
-    },
-    filter: function(p){
-      return impl.filter(null, f);
-    },
-    remove: function(p){
-      return impl.remove(null, f);
-    },
-    take: function(n){
-      return impl.take(null, n);
-    },
-    takeWhile: function(pred){
-      return impl.takeWhile(null, pred);
-    },
-    drop: function(n){
-      return impl.drop(null, n);
-    },
-    dropWhile: function(pred){
-      return impl.dropWhile(null, pred);
-    }
-  }
-  return impl;
-}
 
 },{"transduce-protocol":7,"transducers-js":1,"transducers.js":1}],9:[function(require,module,exports){
   // Create quick reference variables for speed access to core prototypes.

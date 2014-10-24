@@ -1,7 +1,6 @@
 PROJECT:=underscore-transducer
-VERSION:=0.0.10
 
-JS_TARGET ?= build/$(PROJECT)-$(VERSION).js
+JS_TARGET ?= build/$(PROJECT).js
 
 .PHONY: all clean js test serve
 all: test js
@@ -24,7 +23,7 @@ node_modules:
 js: $(JS_TARGET) $(JS_TARGET:.js=.min.js)
 
 $(JS_TARGET): $(PROJECT).js | build
-	`npm bin`/browserify -i underscore -i transducers.js -i transducers-js $< > $@
+	`npm bin`/browserify --dg false -i underscore -i transducers.js -i transducers-js $< > $@
 
 build: 
 	mkdir -p build
