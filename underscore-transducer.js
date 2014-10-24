@@ -1,10 +1,3 @@
-(function() {
-  // Establish the root object, `window` in the browser, or `exports` on the server.
-  var root = this;
-
-  // Save the previous value of the `_r` variable.
-  var previous_r = root._r;
-
   // Create quick reference variables for speed access to core prototypes.
   var slice = Array.prototype.slice, undef;
 
@@ -39,33 +32,26 @@
     this._wrapped = _r.wrap.call(this, obj);
   };
 
-  // Export the Underscore object for **Node.js**, with
-  // backwards-compatibility for the old `require()` API. If we're in
-  // the browser, add `_r` as a global object.
-  if (typeof exports !== 'undefined') {
-    if (typeof module !== 'undefined' && module.exports) {
-      exports = module.exports = _r;
-    }
-    exports._r = _r;
-  } else {
-    root._r = _r;
-  }
-
   // Current version.
   _r.VERSION = '0.0.10';
 
   // Reference to Underscore from browser
-  var _ = root._,
-      transduce = root.transduce || {},
-      array = transduce.array,
-      math = transduce.math,
-      tpush = transduce.push;
-  if (typeof _ === 'undefined' && typeof require !== 'undefined'){
-    _ = require('underscore');
-    transduce = require('transduce');
-    math = require('transduce-math');
-    array = require('transduce-array');
+  var _ = require('underscore'),
+    transduce = require('transduce'),
+    math = require('transduce-math'),
+    array = require('transduce-array'),
     tpush = require('transduce-push');
+
+  // Save the previous value of the `_r` variable.
+  var previous_r, root;
+  if(typeof window !== 'undefined'){
+    var root = window;
+    previous_r = root._r;
+    root._r = _r;
+    _ = root._;
+  } else {
+    root = {};
+    module.exports = _r;
   }
 
   // Collection Functions
@@ -78,7 +64,7 @@
   // Return the results of applying the iteratee to each element.
   // Stateless transducer
   _r.map = _r.collect = function(iteratee) {
-    return array.map(_r.iteratee(iteratee));
+    return transduce.map(_r.iteratee(iteratee));
   };
 
   // Return the first value which passes a truth test. Aliased as `detect`.
@@ -94,13 +80,13 @@
   // Stateless transducer
   _r.filter = _r.select = function(predicate) {
     predicate = _r.iteratee(predicate);
-    return array.filter(predicate);
+    return transduce.filter(predicate);
   };
 
   // Return all the elements for which a truth test fails.
   // Stateless transducer
   _r.reject = _r.remove = function(predicate) {
-    return array.filter(_.negate(_r.iteratee(predicate)));
+    return transduce.remove(_r.iteratee(predicate));
   };
 
   // Determine whether all of the elements match a truth test.
@@ -197,6 +183,11 @@
      return transduce.take(n);
   };
 
+  _r.takeWhile = function(pred) {
+     pred = _r.iteratee(pred);
+     return transduce.takeWhile(pred);
+  };
+
   // Returns everything but the last entry. Passing **n** will return all the values
   // excluding the last N.
   // Stateful transducer (count and buffer).
@@ -273,6 +264,11 @@
   _r.rest = _r.tail = _r.drop = function(n) {
     n = (n === undef) ? 1 : (n > 0) ? n : 0;
     return transduce.drop(n);
+  };
+
+  _r.dropWhile = function(pred) {
+     pred = _r.iteratee(pred);
+     return transduce.dropWhile(pred);
   };
 
   // Trim out all falsy values from an array.
@@ -781,17 +777,3 @@
   _r.prototype.generate = function(callback, callToInit){
     return this.withSource(_r.generate(callback, callToInit));
   }
-
-  // AMD registration happens at the end for compatibility with AMD loaders
-  // that may not enforce next-turn semantics on modules. Even though general
-  // practice for AMD registration is to be anonymous, underscore registers
-  // as a named module because, like jQuery, it is a base library that is
-  // popular enough to be bundled in a third party lib, but not be part of
-  // an AMD load request. Those cases could generate an error when an
-  // anonymous define() is called outside of a loader request.
-  if (typeof define === 'function' && define.amd) {
-    define('underscore.transducer', [], function() {
-      return _r;
-    });
-  }
-}.call(this));

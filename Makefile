@@ -24,7 +24,7 @@ node_modules:
 js: $(JS_TARGET) $(JS_TARGET:.js=.min.js)
 
 $(JS_TARGET): $(PROJECT).js | build
-	cp $< $@
+	`npm bin`/browserify -i underscore -i transducers.js -i transducers-js $< > $@
 
 build: 
 	mkdir -p build
