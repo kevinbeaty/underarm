@@ -4,7 +4,7 @@
 
 Use [transducers-js][10] or [transducers.js][11] (your choice) with the familiar [Underscore.js][1] API with extra goodies like lazy generators and callback processes.
 
-If you would like to know how transducers work, check out [this video][2] or [this article][3].  Also see the [Demo and Documentation][4] for this library.
+If you are not familiar with transducers, check out [Transducers Explained][1].
 
 ## Install
 
@@ -423,14 +423,12 @@ _r(vector).value();
 MIT
 
 [1]: http://underscorejs.org/
-[2]: https://www.youtube.com/watch?v=6mTbuzafcII
-[3]: http://phuu.net/2014/08/31/csp-and-transducers.html
+[3]: http://simplectic.com/blog/2014/transducers-explained-1/
 [4]: http://simplectic.com/projects/underscore-transducer/
 [5]: http://clojure.org/transducers
 [6]: https://github.com/facebook/immutable-js
 [7]: https://github.com/kevinbeaty/transduce-stream
 [8]: https://github.com/kevinbeaty/transduce-string
-[9]: https://github.com/epeli/underscore.string
 [10]: https://github.com/cognitect-labs/transducers-js
 [11]: https://github.com/jlongster/transducers.js 
 [12]: https://raw.githubusercontent.com/kevinbeaty/underscore-transducer/master/build/underscore-transducer.js

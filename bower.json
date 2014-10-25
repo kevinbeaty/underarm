@@ -1,0 +1,28 @@
+{
+  "name": "underscore-transducer",
+  "main": "build/underscore-transducer.min.js",
+  "version": "0.0.11",
+  "homepage": "https://github.com/kevinbeaty/underscore-transducer",
+  "authors": [
+    "Kevin Beaty <kevin@simplectic.com>"
+  ],
+  "description": "Transducers for JavaScript with Underscore API",
+  "moduleType": [
+    "amd",
+    "globals"
+  ],
+  "keywords": [
+    "transducer",
+    "underscore",
+    "reactive",
+    "reducer"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
