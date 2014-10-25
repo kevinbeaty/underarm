@@ -4,7 +4,7 @@
 
 Use [transducers-js][10] or [transducers.js][11] (your choice) with the familiar [Underscore.js][1] API with extra goodies like lazy generators and callback processes.
 
-If you are not familiar with transducers, check out [Transducers Explained][1].
+If you are not familiar with transducers, check out [Transducers Explained][3].
 
 ## Install
 
