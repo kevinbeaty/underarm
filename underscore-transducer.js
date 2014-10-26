@@ -79,8 +79,8 @@
   // import transducer libraries to mixin
   _.each([
     require('./lib/base'),
-    require('./lib/math'),
     require('./lib/array'),
+    require('./lib/math'),
     require('./lib/string')],
     importLib);
 
