@@ -80,7 +80,8 @@
   _.each([
     require('./lib/base'),
     require('./lib/math'),
-    require('./lib/array')],
+    require('./lib/array'),
+    require('./lib/string')],
     importLib);
 
   // Add all of the Underscore functions to the wrapper object.
