@@ -137,6 +137,7 @@
   // important non-mixin libraries
   require('./lib/push')(_r);
   require('./lib/dispatch')(_r);
+  require('./lib/iterators')(_r);
 
   // Transducer Functions
   // --------------------
@@ -217,28 +218,4 @@
   // calls sequence with chained transformation and optional wrapped object
   _r.prototype.sequence = function(from){
     return this.into(_r.empty(from), from);
-  }
-
-  // Creates an (duck typed) iterator that calls the provided next callback repeatedly
-  // and uses the return value as the next value of the iterator.
-  // Marks iterator as done if the next callback returns undefined (returns nothing)
-  // Can be used to as a source obj to reduce, transduce etc
-  _r.generate = function(callback, callToInit){
-    var gen = {};
-    gen[transduce.protocols.iterator] = function(){
-      var next = callToInit ? callback() : callback;
-      return {
-        next: function(){
-          var value = next();
-          return (value === undef) ? {done: true} : {done: false, value: value};
-        }
-      }
-    }
-    return gen;
-  }
-
-  // Transduces the current chained object by using the chained trasnformation
-  // and an iterator created with the callback
-  _r.prototype.generate = function(callback, callToInit){
-    return this.withSource(_r.generate(callback, callToInit));
   }
