@@ -19,7 +19,7 @@ Library depends on either [transducers-js][10] or [transducers.js][11]. It is yo
 
 Using transducers-js:
 ```bash
-$ npm install transducers.js
+$ npm install transducers-js
 $ npm install underscore-transducer
 ```
 
