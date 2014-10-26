@@ -69,9 +69,19 @@
     });
   };
 
+  function importLib(lib){
+    // only import if included in build
+    if(_.isFunction(lib)){
+      lib(_r);
+    }
+  }
+
   // import transducer libraries to mixin
-  require('./lib/collections')(_r);
-  require('./lib/arrays')(_r);
+  _.each([
+    require('./lib/base'),
+    require('./lib/math'),
+    require('./lib/array')],
+    importLib);
 
   // Add all of the Underscore functions to the wrapper object.
   _r.mixin(_r);
@@ -80,10 +90,12 @@
   _r._ = _;
 
   // important non-mixin libraries
-  require('./lib/push')(_r);
-  require('./lib/dispatch')(_r);
-  require('./lib/iterators')(_r);
-  require('./lib/transduce')(_r);
+  _.each([
+    require('./lib/push'),
+    require('./lib/dispatch'),
+    require('./lib/iterator'),
+    require('./lib/transduce')],
+    importLib);
 
   // Returns the value if it is a chained transformation, else null
   _r.as = function(value){

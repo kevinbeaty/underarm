@@ -1,6 +1,6 @@
 PROJECT:=underscore-transducer
 
-JS_TARGET ?= build/$(PROJECT).js
+BUILD ?= build/$(PROJECT)
 
 .PHONY: all clean js test serve
 all: test js
@@ -20,10 +20,15 @@ node_modules:
 %.gz: %
 	gzip -c9 $^ > $@
 
-js: $(JS_TARGET) $(JS_TARGET:.js=.min.js)
+js: $(BUILD).js $(BUILD).min.js $(BUILD).base.js $(BUILD).base.min.js
 
-$(JS_TARGET): $(PROJECT).js | build
+$(BUILD).js: $(PROJECT).js | build
 	`npm bin`/browserify --dg false -i underscore -i transducers.js -i transducers-js $< > $@
 
-build: 
+$(BUILD).base.js: $(PROJECT).js | build
+	`npm bin`/browserify --dg false -i underscore -i transducers.js -i transducers-js \
+		-i './lib/array.js' -i './lib/math.js' -i './lib/push.js' -i './lib/string.js' \
+		-i './lib/iterator.js' $< > $@
+
+build:
 	mkdir -p build
