@@ -1,5 +1,4 @@
-  // Create quick reference variables for speed access to core prototypes.
-  var slice = Array.prototype.slice, undef;
+  var undef;
 
   // Create a safe reference to the Underscore object for use below.
   var _r = function(obj, transform) {
@@ -33,10 +32,12 @@
   };
 
   // Current version.
-  _r.VERSION = '0.0.10';
+  _r.VERSION = '0.1.0';
 
-  var _ = require('underscore'),
-    transduce = require('transduce');
+  // sentinel to ignore wrapped objects (maintain only last item)
+  var IGNORE = _r.IGNORE = {};
+
+  var _ = require('underscore');
 
   // Export for browser or Common-JS
   // Save the previous value of the `_r` variable.
@@ -74,6 +75,15 @@
 
   // Add all of the Underscore functions to the wrapper object.
   _r.mixin(_r);
+
+  // access to browser or imported underscore object.
+  _r._ = _;
+
+  // important non-mixin libraries
+  require('./lib/push')(_r);
+  require('./lib/dispatch')(_r);
+  require('./lib/iterators')(_r);
+  require('./lib/transduce')(_r);
 
   // Returns the value if it is a chained transformation, else null
   _r.as = function(value){
@@ -119,9 +129,6 @@
     }
   }
 
-  // sentinel to ignore wrapped objects (maintain only last item)
-  var IGNORE = _r.IGNORE = {};
-
   // Resolves the value of the wrapped object, similar to underscore.
   // Returns an array, or single value (to match underscore API)
   // depending on whether the chained transformation resolves to single value.
@@ -133,9 +140,3 @@
     var ret =  this.into(IGNORE);
     return ret === IGNORE ? undef : ret;
   }
-
-  // important non-mixin libraries
-  require('./lib/push')(_r);
-  require('./lib/dispatch')(_r);
-  require('./lib/iterators')(_r);
-  require('./lib/transduce')(_r);
