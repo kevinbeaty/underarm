@@ -119,7 +119,7 @@
   // Composes and returns the underlying wrapped functions
   _r.prototype.transducer = _r.prototype.compose = function() {
     var fns = this._wrappedFns;
-    return fns.length ? _.compose.apply(null, fns) : undef;
+    return fns.length ? _.compose.apply(null, fns) : _.identity;
   }
 
   // Helper to mark transducer to expect single value when

@@ -113,3 +113,39 @@ test('unique', function(t) {
   t.plan(1);
   t.strictEqual(_r.uniq, _r.unique, 'alias for uniq');
 });
+
+test('cat', function(t) {
+  t.plan(1);
+  var res = _r([[1,2,3],[4,5,6],[7,8,9]]).cat().value();
+  t.deepEqual(res, [1,2,3,4,5,6,7,8,9]);
+});
+
+test('mapcat', function(t) {
+  t.plan(1);
+  var res = _r([[3,2,1],[6,5,4],[9,8,7]]).mapcat(function(arr){return arr.reverse();}).value();
+  t.deepEqual(res, [1,2,3,4,5,6,7,8,9]);
+});
+
+test('partitionBy', function(t) {
+  t.plan(2);
+  var result = _r.into([], _r.partitionBy(function(x){return x % 2 === 1}), [0,1,1,3,4,6,8,7,7,8]);
+  t.deepEqual(result, [[0], [1,1,3], [4,6,8], [7,7], [8]]);
+  var arr = [1,1,1,2,2,3,3,3];
+  result = _r(arr).partitionBy(_.identity).take(2).value();
+  t.deepEqual(result, [[1,1,1],[2,2]]);
+});
+
+test('partitionAll', function(t) {
+  t.plan(3);
+  var result = _r().partitionAll(2).sequence([0,1,2,3,4,5,6,7,8,9]);
+  t.deepEqual(result, [[0,1],[2,3],[4,5],[6,7],[8,9]]);
+  var result = _r([0,1,2,3,4,5,6,7,8]).partitionAll(2).value();
+  t.deepEqual(result, [[0,1],[2,3],[4,5],[6,7],[8]]);
+  result = _r([0,1,2,3,4,5,6,7,8,9]).partitionAll(2).take(2).value();
+  t.deepEqual(result, [[0,1],[2,3]]);
+});
+
+test('chunkAll', function(t) {
+  t.plan(1);
+  t.strictEqual(_r.chunkAll, _r.partitionAll, 'alias for partitionAll');
+});
