@@ -1,3 +1,4 @@
+"use strict";
 var undef;
 
 // Create a safe reference to the Underscore object for use below.
@@ -43,6 +44,7 @@ var _ = require('underscore');
 // Save the previous value of the `_r` variable.
 var previous_r, root;
 if(typeof window !== 'undefined'){
+  /*global window*/
   var root = window;
   previous_r = root._r;
   root._r = _r;
@@ -58,7 +60,7 @@ _r._ = _;
 // Returns the value if it is a chained transformation, else null
 _r.as = function(value){
   return value instanceof _r ? value : null;
-}
+};
 
 // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
 // previous owner. Returns a reference to the Underscore object.
@@ -71,13 +73,13 @@ _r.noConflict = function() {
 // wrapping the given source
 _r.prototype.withSource = function(obj){
   return _r(obj, this);
-}
+};
 
 // Composes and returns the underlying wrapped functions
 _r.prototype.transducer = _r.prototype.compose = function() {
   var fns = this._wrappedFns;
   return fns.length ? _.compose.apply(null, fns) : _.identity;
-}
+};
 
 
 // OOP
@@ -103,14 +105,14 @@ _r.mixin = function(obj) {
 // when called as a function
 _r.resolveSingleValue = function(self){
   resolveSingleValue(self, true);
-}
+};
 
 // Helper to mark transducer to expect multiple values when
 // resolving. Only valid when chaining, but this should be passed
 // when called as a function.
 _r.resolveMultipleValues = function(self){
   resolveSingleValue(self, false);
-}
+};
 
 function resolveSingleValue(self, single){
   if(_r.as(self)){
@@ -128,7 +130,7 @@ _r.prototype.value = function(){
 
   var ret =  this.into(IGNORE);
   return ret === IGNORE ? undef : ret;
-}
+};
 
 // import libraries
 _.each([

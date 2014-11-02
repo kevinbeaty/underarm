@@ -24,11 +24,11 @@
   "homepage": "http://simplectic.com/projects/underscore-transducer/",
   "dependencies": {
     "underscore": "~1.7.0",
-    "transduce": "0.0.7",
-    "transduce-math": "0.0.2",
-    "transduce-array": "0.0.4",
-    "transduce-push": "0.0.4",
-    "transduce-string": "0.0.5"
+    "transduce": "0.0.9",
+    "transduce-math": "0.0.3",
+    "transduce-array": "0.0.5",
+    "transduce-push": "0.0.5",
+    "transduce-string": "0.0.6"
   },
   "devDependencies": {
     "tape": "~3.0.0",

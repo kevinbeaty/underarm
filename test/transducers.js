@@ -1,3 +1,4 @@
+"use strict";
 var _r = require('../'),
     _ = require('underscore'),
     tp = require('transduce'),
@@ -132,39 +133,44 @@ test('sequence into chained', function(t){
 
   var results = [], items = [];
   trans = _r()
-    .filter(function(num) { return num % 2 == 0; })
-    .tap(function(result, item){results.push(_.clone(result)); items.push(item)})
-    .map(function(num) { return num * num });
+    .filter(function(num) { return num % 2 === 0; })
+    .tap(function(result, item){results.push(_.clone(result)); items.push(item);})
+    .map(function(num) { return num * num;});
   result = _r.into([], trans, [1,2,3,200]);
   t.deepEqual(result, [4, 40000], 'filter and map chained with tap');
   t.deepEqual(results, [[], [4]], 'filter and map chained with tap results');
   t.deepEqual(items, [2, 200], 'filter and map chained with tap items');
 
-  results = [], items = [];
+  results = [];
+  items = [];
   result = _r.sequence(trans, [1,2,3,200]);
   t.deepEqual(result, [4, 40000], 'sequence filter and map chained with tap');
   t.deepEqual(results, [[], [4]], 'sequence filter and map chained with tap results');
   t.deepEqual(items, [2, 200], 'sequence filter and map chained with tap items');
 
-  results = [], items = [];
+  results = [];
+  items = [];
   result = trans.into([], [1,2,3,200]);
   t.deepEqual(result, [4, 40000], 'chained into filter and map chained with tap');
   t.deepEqual(results, [[], [4]], 'chained into filter and map chained with tap results');
   t.deepEqual(items, [2, 200], 'chained into filter and map chained with tap items');
 
-  results = [], items = [];
+  results = [];
+  items = [];
   result = trans.sequence([1,2,3,200]);
   t.deepEqual(result, [4, 40000], 'chained sequence filter and map chained with tap');
   t.deepEqual(results, [[], [4]], 'chained seqeuence filter and map chained with tap results');
   t.deepEqual(items, [2, 200], 'chained seqeuence filter and map chained with tap items');
 
-  results = [], items = [];
+  results = [];
+  items = [];
   result = trans.withSource([1,2,3,200]).into([]);
   t.deepEqual(result, [4, 40000], 'wrap chained into filter and map chained with tap');
   t.deepEqual(results, [[], [4]], 'wrap chained into filter and map chained with tap results');
   t.deepEqual(items, [2, 200], 'wrap chained into filter and map chained with tap items');
 
-  results = [], items = [];
+  results = [];
+  items = [];
   result = trans.withSource([1,2,3,200]).sequence();
   t.deepEqual(result, [4, 40000], 'wrap chained sequence filter and map chained with tap');
   t.deepEqual(results, [[], [4]], 'wrap chained seqeuence filter and map chained with tap results');
@@ -173,7 +179,7 @@ test('sequence into chained', function(t){
 
 test('asCallback', function(t){
   var results = [],
-      trans = _r().filter(isEven).map(inc).take(2).each(appendEach)
+      trans = _r().filter(isEven).map(inc).take(2).each(appendEach),
       cb = trans.asCallback();
 
   _.each([1,1,2,3,4,4,5], cb);
@@ -214,7 +220,7 @@ test('asyncCallback', function(t){
   results = [];
   result = {done: false, error: false};
 
-  _.each([1,1,2,3,4,4,5], function(item){cb(null, item)});
+  _.each([1,1,2,3,4,4,5], function(item){cb(null, item);});
   t.deepEqual(results, [3,5]);
   t.deepEqual(result, {done:true, error:null});
 
@@ -223,7 +229,7 @@ test('asyncCallback', function(t){
   results = [];
   result = {done: false, error: false};
 
-  _.each([1,1,2,3,4,4,5], function(item){cb(item === 3 ? abort : null, item)});
+  _.each([1,1,2,3,4,4,5], function(item){cb(item === 3 ? abort : null, item);});
   t.deepEqual(results, [3]);
   t.deepEqual(result, {done:true, error:abort});
 
@@ -231,7 +237,7 @@ test('asyncCallback', function(t){
   result = {done: false, error: false};
 
   cb = _r().filter(isEven).map(inc).each(appendEach).asyncCallback(continuation);
-  _.each(_.range(1, 10), function(item){cb(null, item)});
+  _.each(_.range(1, 10), function(item){cb(null, item);});
   t.deepEqual(results, [3,5,7,9]);
   t.deepEqual(result, {done:false, error:false});
   cb();
@@ -242,8 +248,8 @@ test('asyncCallback', function(t){
 
   cb = _r()
     .filter(isEven).map(inc).each(appendEach)
-    .each(function(i){if(i===7){throw abort}}).asyncCallback(continuation);
-  _.each(_.range(1, 10), function(item){cb(null, item)});
+    .each(function(i){if(i===7){throw abort;}}).asyncCallback(continuation);
+  _.each(_.range(1, 10), function(item){cb(null, item);});
   t.deepEqual(results, [3,5,7]);
   t.deepEqual(result, {done:true, error:abort});
 
@@ -261,8 +267,6 @@ test('asyncCallback', function(t){
 test('dispatch', function(t){
   t.plan(8);
   function StringBuilder(str){
-    if(!(this instanceof StringBuilder)) return new StringBuilder(str);
-
     if(_.isString(str)){
       this.strings = [str];
     } else if(_.isArray(str)){
@@ -277,11 +281,11 @@ test('dispatch', function(t){
   StringBuilder.prototype.append = function(str){
     this.strings.push(str.toString());
     return this;
-  }
+  };
 
   StringBuilder.prototype.toString = function(){
     return this.strings.join('');
-  }
+  };
 
   StringBuilder.prototype[tp.protocols.iterator] = function(){
     var done = false, self = this;
@@ -294,12 +298,12 @@ test('dispatch', function(t){
           return {done:false, value: self.toString()};
         }
       }
-    }
-  }
+    };
+  };
 
   _r.wrap.register(function(obj){
     if(_.isString(obj)){
-      return StringBuilder(obj);
+      return new StringBuilder(obj);
     }
   });
 
@@ -311,13 +315,13 @@ test('dispatch', function(t){
 
   _r.empty.register(function(obj){
     if(_.isString(obj) || obj instanceof StringBuilder){
-      return StringBuilder();
+      return new StringBuilder();
     }
   });
 
   _r.append.register(function(obj, item){
     if(_.isString(obj)){
-      return StringBuilder(item).append(item);
+      return new StringBuilder(item).append(item);
     } else if(obj instanceof StringBuilder){
       return obj.append(item);
     }
@@ -378,7 +382,7 @@ test('generate', function(t){
       x = y;
       y += prev;
       return prev;
-    }
+    };
   }
 });
 
@@ -386,11 +390,11 @@ test('_riteratee', function(t){
   var value = _r([['foo','bar'],['baz']])
     .map(_r().invoke('toUpperCase'))
     .value();
-  t.deepEqual(value, [['FOO','BAR'],['BAZ']])
+  t.deepEqual(value, [['FOO','BAR'],['BAZ']]);
 
   value = _r([['foo','bar'],['baz','buzz'], ['two']])
     .map(_r().invoke('toUpperCase').first())
     .value();
-  t.deepEqual(value, ['FOO','BAZ','TWO'])
+  t.deepEqual(value, ['FOO','BAZ','TWO']);
   t.end();
 });

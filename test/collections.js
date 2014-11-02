@@ -1,3 +1,4 @@
+"use strict";
 var _r = require('../'),
     _ = require('underscore'),
     test = require('tape');
@@ -80,7 +81,7 @@ test('find', function(t) {
     t.ok(!_r(list).find({c: 1}).value(), 'undefined when not found');
     t.ok(!_r([]).find({c: 1}).value(), 'undefined when searching empty list');
 
-    result = _r([1,2,3]).find(function(num){ return num * 2 === 4; }).value();
+    var result = _r([1,2,3]).find(function(num){ return num * 2 === 4; }).value();
     t.equal(result, 2, 'found the first "2" and broke the loop');
   });
 

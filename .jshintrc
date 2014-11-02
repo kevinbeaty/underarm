@@ -1,1 +1,4 @@
-{"node":true}
+{
+  "node":true,
+  "strict":true
+}

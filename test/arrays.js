@@ -1,3 +1,4 @@
+"use strict";
 var _r = require('../'),
     _ = require('underscore'),
     test = require('tape');
@@ -128,7 +129,7 @@ test('mapcat', function(t) {
 
 test('partitionBy', function(t) {
   t.plan(2);
-  var result = _r.into([], _r.partitionBy(function(x){return x % 2 === 1}), [0,1,1,3,4,6,8,7,7,8]);
+  var result = _r.into([], _r.partitionBy(function(x){return x % 2 === 1;}), [0,1,1,3,4,6,8,7,7,8]);
   t.deepEqual(result, [[0], [1,1,3], [4,6,8], [7,7], [8]]);
   var arr = [1,1,1,2,2,3,3,3];
   result = _r(arr).partitionBy(_.identity).take(2).value();
@@ -139,7 +140,7 @@ test('partitionAll', function(t) {
   t.plan(3);
   var result = _r().partitionAll(2).sequence([0,1,2,3,4,5,6,7,8,9]);
   t.deepEqual(result, [[0,1],[2,3],[4,5],[6,7],[8,9]]);
-  var result = _r([0,1,2,3,4,5,6,7,8]).partitionAll(2).value();
+  result = _r([0,1,2,3,4,5,6,7,8]).partitionAll(2).value();
   t.deepEqual(result, [[0,1],[2,3],[4,5],[6,7],[8]]);
   result = _r([0,1,2,3,4,5,6,7,8,9]).partitionAll(2).take(2).value();
   t.deepEqual(result, [[0,1],[2,3]]);

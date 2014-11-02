@@ -1,3 +1,4 @@
+"use strict";
 var _r = require('../'),
     _ = require('underscore'),
     test = require('tape');
