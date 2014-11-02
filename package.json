@@ -1,11 +1,11 @@
 {
   "name": "underarm",
-  "version": "0.0.2pre",
+  "version": "0.1.1",
   "description": "Underscore meets Reactive Programming",
-  "main": "index.js",
-  "homepage": "http://kevinbeaty.net/projects/underarm",
+  "main": "underarm.js",
+  "homepage": "https://github.com/kevinbeaty/underarm",
   "scripts": {
-    "test": "mocha"
+    "test": "make test"
   },
   "repository": {
     "type": "git",
@@ -14,18 +14,22 @@
   "keywords": [
     "underscore",
     "reactive",
-    "rx"
+    "rx",
+    "transducer",
+    "reducer"
   ],
   "author": "Kevin Beaty",
   "license": "MIT",
   "dependencies": {
-    "when": "1",
-    "through": "2"
+    "underscore-transducer": "~0.1.1",
+    "transduce-async": "0.0.2",
+    "promise": "~6.0.1"
   },
   "devDependencies": {
-      "browserify": "*",
-      "uglify-js": "*",
-      "mocha": "*",
-      "expect.js": "*"
+    "tape": "~3.0.0",
+    "uglify-js": "~2.3.6",
+    "transducers-js": "~0.4.135",
+    "transducers.js": "~0.2.3",
+    "browserify": "~6.1.0"
   }
 }
