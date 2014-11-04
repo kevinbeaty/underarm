@@ -1,0 +1,9 @@
+.git*
+test/
+test-old/
+lib-old/
+build/
+.travis.yml
+.jshintrc
+*.swp
+Makefile

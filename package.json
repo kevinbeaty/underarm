@@ -1,6 +1,6 @@
 {
   "name": "underarm",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "description": "Underscore meets Reactive Programming",
   "main": "underarm.js",
   "homepage": "https://github.com/kevinbeaty/underarm",
@@ -22,8 +22,9 @@
   "license": "MIT",
   "dependencies": {
     "underscore-transducer": "~0.1.1",
-    "transduce-async": "0.0.2",
-    "promise": "~6.0.1"
+    "transduce-async": "0.0.5",
+    "promise": "~6.0.1",
+    "asap": "~1.0.0"
   },
   "devDependencies": {
     "tape": "~3.0.0",
