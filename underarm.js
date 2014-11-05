@@ -19,7 +19,7 @@ var _ = _r._;
 // import libraries
 _.each([
   require('./lib/async'),
-  require('./lib/ratelimit')],
+  require('./lib/sample')],
   function(lib){
     // only import if included in build
     if(_.isFunction(lib)){
