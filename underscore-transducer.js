@@ -1,7 +1,6 @@
 "use strict";
 var undef;
 
-// Create a safe reference to the Underscore object for use below.
 var _r = function(obj, transform) {
   if (_r.as(obj)){
     if(transform === undef){
@@ -10,15 +9,17 @@ var _r = function(obj, transform) {
     var wrappedFns = _.clone(obj._wrappedFns);
     wrappedFns.push(transform);
     var copy = new _r(obj._wrapped, wrappedFns);
-    copy._resolveSingleValue = obj._resolveSingleValue;
+    copy._opts = _.clone(obj._opts);
     return copy;
   }
 
   if (!(_r.as(this))) return new _r(obj, transform);
 
   if(_r.as(transform)){
-    this._resolveSingleValue = transform._resolveSingleValue;
+    this._opts = _.clone(transform._opts);
     transform = transform._wrappedFns;
+  } else {
+    this._opts = {};
   }
 
   if(_.isFunction(transform)){
@@ -32,7 +33,6 @@ var _r = function(obj, transform) {
   this._wrapped = _r.wrap.call(this, obj);
 };
 
-// Current version.
 _r.VERSION = '0.1.1';
 
 var _ = require('underscore');
@@ -72,14 +72,6 @@ _r.prototype.withSource = function(obj){
   return _r(obj, this);
 };
 
-
-// OOP
-// ---------------
-
-// If Underscore is called as a function, it returns a wrapped object that
-// can be used OO-style. This wrapper holds altered versions of all the
-// underscore functions. Wrapped objects may be chained.
-
 // Add your own custom transducers to the Underscore.transducer object.
 _r.mixin = function(obj) {
   _.each(_.functions(obj), function(name) {
@@ -90,26 +82,6 @@ _r.mixin = function(obj) {
     };
   });
 };
-
-// Helper to mark transducer to expect single value when
-// resolving. Only valid when chaining, but this should be passed
-// when called as a function
-_r.resolveSingleValue = function(self){
-  resolveSingleValue(self, true);
-};
-
-// Helper to mark transducer to expect multiple values when
-// resolving. Only valid when chaining, but this should be passed
-// when called as a function.
-_r.resolveMultipleValues = function(self){
-  resolveSingleValue(self, false);
-};
-
-function resolveSingleValue(self, single){
-  if(_r.as(self)){
-    self._resolveSingleValue = single;
-  }
-}
 
 // import libraries
 _.each([
