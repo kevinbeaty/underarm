@@ -35,9 +35,6 @@ var _r = function(obj, transform) {
 // Current version.
 _r.VERSION = '0.1.1';
 
-// sentinel to ignore wrapped objects (maintain only last item)
-var IGNORE = _r.IGNORE = {};
-
 var _ = require('underscore');
 
 // Export for browser or Common-JS
@@ -51,8 +48,8 @@ if(typeof window !== 'undefined'){
   _ = root._;
 } else {
   root = {};
-  module.exports = _r;
 }
+module.exports = _r;
 
 // access to browser or imported underscore object.
 _r._ = _;
@@ -73,12 +70,6 @@ _r.noConflict = function() {
 // wrapping the given source
 _r.prototype.withSource = function(obj){
   return _r(obj, this);
-};
-
-// Composes and returns the underlying wrapped functions
-_r.prototype.transducer = _r.prototype.compose = function() {
-  var fns = this._wrappedFns;
-  return fns.length ? _.compose.apply(null, fns) : _.identity;
 };
 
 
@@ -120,22 +111,9 @@ function resolveSingleValue(self, single){
   }
 }
 
-// Resolves the value of the wrapped object, similar to underscore.
-// Returns an array, or single value (to match underscore API)
-// depending on whether the chained transformation resolves to single value.
-_r.prototype.value = function(){
-  if(!this._resolveSingleValue){
-    return this.into();
-  }
-
-  var ret =  this.into(IGNORE);
-  return ret === IGNORE ? undef : ret;
-};
-
 // import libraries
 _.each([
   require('./lib/dispatch'),
-  require('./lib/transduce'),
   require('./lib/base'),
   require('./lib/array'),
   require('./lib/push'),
