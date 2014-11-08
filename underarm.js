@@ -2,7 +2,7 @@
 
 // Import from browser or Common-JS
 // Save the previous value of the `_r` variable.
-var _r;
+var _r, undef;
 if(typeof window !== 'undefined'){
   /*global window*/
   _r = window._r;
@@ -14,7 +14,7 @@ module.exports = _r;
 // Current version.
 _r.VERSION_R = '0.1.0';
 
-var _ = _r._;
+var _ = _r._, IGNORE = _r.IGNORE;
 
 // import libraries
 _.each([

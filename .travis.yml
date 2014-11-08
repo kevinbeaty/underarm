@@ -3,5 +3,17 @@ node_js:
   - "0.10"
   - "0.11"
 env:
-  - TRANSDUCE_IMPL=transducers-js
-  - TRANSDUCE_IMPL=transducers.js
+  - TRANSDUCE_IMPL=transducers-js PROMISE_IMPL=es6-promise
+  - TRANSDUCE_IMPL=transducers-js PROMISE_IMPL=promise
+  - TRANSDUCE_IMPL=transducers-js PROMISE_IMPL=native-promise-only
+  - TRANSDUCE_IMPL=transducers-js PROMISE_IMPL=bluebird
+  - TRANSDUCE_IMPL=transducers-js PROMISE_IMPL=rsvp
+  - TRANSDUCE_IMPL=transducers-js PROMISE_IMPL=when
+  - TRANSDUCE_IMPL=transducers-js PROMISE_IMPL=q
+  - TRANSDUCE_IMPL=transducers.js PROMISE_IMPL=es6-promise
+  - TRANSDUCE_IMPL=transducers.js PROMISE_IMPL=promise
+  - TRANSDUCE_IMPL=transducers.js PROMISE_IMPL=native-promise-only
+  - TRANSDUCE_IMPL=transducers.js PROMISE_IMPL=bluebird
+  - TRANSDUCE_IMPL=transducers.js PROMISE_IMPL=rsvp
+  - TRANSDUCE_IMPL=transducers.js PROMISE_IMPL=when
+  - TRANSDUCE_IMPL=transducers.js PROMISE_IMPL=q

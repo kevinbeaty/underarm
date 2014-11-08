@@ -21,16 +21,24 @@
   "author": "Kevin Beaty",
   "license": "MIT",
   "dependencies": {
-    "underscore-transducer": "~0.1.1",
-    "transduce-async": "0.0.5",
-    "promise": "~6.0.1",
-    "asap": "~1.0.0"
+    "underscore-transducer": "~0.1.2",
+    "transduce-async": "0.0.6",
+    "asap": "~1.0.0",
+    "any-promise": "0.0.1"
   },
   "devDependencies": {
     "tape": "~3.0.0",
     "uglify-js": "~2.3.6",
     "transducers-js": "~0.4.135",
     "transducers.js": "~0.2.3",
-    "browserify": "~6.1.0"
+    "browserify": "~6.1.0",
+    "transduce-then": "0.0.4",
+    "promise": "~6.0.1",
+    "es6-promise": "~2.0.0",
+    "rsvp": "~3.0.14",
+    "bluebird": "~2.3.10",
+    "when": "~3.5.2",
+    "q": "~1.0.1",
+    "native-promise-only": "~0.7.6-a"
   }
 }
