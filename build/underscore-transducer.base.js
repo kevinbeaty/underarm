@@ -133,15 +133,30 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce":6}],2:[function(require,module,exports){
+},{"transduce":5}],2:[function(require,module,exports){
 "use strict";
-var transduce = require('transduce'), undef;
+var tr = require('transduce'), undef;
 
 module.exports = function(_r){
   var _ = _r._,
-      IGNORE = _r.IGNORE,
-      as = _r.as;
+      as = _r.as,
+      // sentinel to ignore wrapped objects (maintain only last item)
+      IGNORE = _r.IGNORE = {};
 
+  // Transducer Functions
+  // --------------------
+  _r.value = value;
+  _r.resolveSingleValue = resolveSingleValue;
+  _r.resolveMultipleValues = resolveMultipleValues;
+  _r.reduced = tr.reduced;
+  _r.isReduced = tr.isReduced;
+  _r.reduce = reduce;
+  _r.foldl = reduce;
+  _r.inject = reduce;
+  _r.transduce = transduce;
+  _r.transducer = transducer;
+  _r.into = into;
+  _r.sequence = sequence;
   _r.wrap = wrap;
   _r.unwrap = unwrap;
   _r.deref = unwrap;
@@ -156,7 +171,8 @@ module.exports = function(_r){
   // Dispatchers
   // -----------
   var dispatch = _.reduce(
-        ['iterator', 'iteratee', 'empty', 'append', 'wrap', 'unwrap'],
+        ['value', 'reduce', 'transduce', 'into', 'sequence', 'transducer',
+         'iterator', 'iteratee', 'empty', 'append', 'wrap', 'unwrap'],
         function(memo, item){
 
         var d = function(){
@@ -179,6 +195,182 @@ module.exports = function(_r){
         memo[item] = d;
         return memo;
       }, {});
+
+  // Resolves the value of the wrapped object, similar to underscore.
+  // Returns an array, or single value (to match underscore API)
+  // depending on whether the chained transformation resolves to single value.
+  function value(r){
+    return dispatch.value(r);
+  }
+
+  value.register = function(fn){
+    return dispatch.value.register(fn);
+  };
+
+  value.register(function(self){
+    if(!self._opts.resolveSingleValue){
+      return self.into();
+    }
+
+    var ret =  self.into(IGNORE);
+    return ret === IGNORE ? undef : ret;
+  });
+
+  _r.prototype.value = function(){
+    return value(this);
+  };
+
+  // Helper to mark transducer to expect single value when
+  // resolving. Only valid when chaining, but this should be passed
+  // when called as a function
+  function resolveSingleValue(self){
+    _resolveSingleValue(self, true);
+  }
+
+  // Helper to mark transducer to expect multiple values when
+  // resolving. Only valid when chaining, but this should be passed
+  // when called as a function.
+  function resolveMultipleValues(self){
+    _resolveSingleValue(self, false);
+  }
+
+  function _resolveSingleValue(self, single){
+    if(_r.as(self)){
+      self._opts.resolveSingleValue = single;
+    }
+  }
+
+  // Composes and returns the underlying wrapped functions for give chained object
+  function transducer(r){
+    return dispatch.transducer(r);
+  }
+
+  transducer.register = function(fn){
+    return dispatch.transducer.register(fn);
+  };
+
+  transducer.register(function(self){
+    var fns = self._wrappedFns;
+    return fns.length ? _.compose.apply(null, fns) : _.identity;
+  });
+
+  _r.prototype.transducer = _r.prototype.compose = function() {
+    return transducer(this);
+  };
+
+  function reduce(xf, init, coll){
+    return dispatch.reduce(xf, init, coll);
+  }
+
+  reduce.register = function(fn){
+    return dispatch.reduce.register(fn);
+  };
+
+  reduce.register(function(xf, init, coll) {
+    if(_r.as(xf)){
+      xf = transducer(xf);
+    }
+
+    if (coll === null || coll === undef) coll = empty(coll);
+    return tr.reduce(xf, init, coll);
+  });
+
+  // Calls transduce using the chained transformation if function not passed
+  _r.prototype.reduce = function(init, coll){
+    if(coll === undef){
+      coll = this._wrapped;
+    }
+    return reduce(this, init, coll);
+  };
+
+  function transduce(xf, f, init, coll){
+    return dispatch.transduce(xf, f, init, coll);
+  }
+
+  transduce.register = function(fn){
+    return dispatch.transduce.register(fn);
+  };
+
+  transduce.register(function(xf, f, init, coll){
+    if(_r.as(xf)){
+      xf = transducer(xf);
+    }
+
+    return _r.unwrap(tr.transduce(xf, f, init, coll));
+  });
+
+  // Calls transduce using the chained transformation
+  _r.prototype.transduce = function(f, init, coll){
+    if(coll === undef){
+      coll = this._wrapped;
+    }
+    return transduce(this, f, init, coll);
+  };
+
+
+  function into(to, xf, from){
+    return dispatch.into(to, xf, from);
+  }
+
+  into.register = function(fn){
+    return dispatch.into.register(fn);
+  };
+
+  // Returns a new coll consisting of to-coll with all of the items of
+  // from-coll conjoined. A transducer (step function) may be supplied.
+  into.register(function(to, xf, from){
+    if(from === undef){
+      from = xf;
+      xf = undef;
+    }
+
+    if(from === undef){
+      from = empty();
+    }
+
+    if(as(xf)){
+      xf = transducer(xf);
+    }
+
+    if(to === undef){
+      to = empty(from);
+    }
+
+    if(xf === undef){
+      return reduce(append, to, from);
+    }
+
+    return transduce(xf, append, to, from);
+  });
+
+  // Calls into using the chained transformation
+  _r.prototype.into = function(to, from){
+    if(from === undef){
+      from = this._wrapped;
+    }
+    return into(to, this, from);
+  };
+
+  function sequence(xf, from){
+    return dispatch.sequence(xf, from);
+  }
+
+  sequence.register = function(fn){
+    return dispatch.sequence.register(fn);
+  };
+
+  // Returns a new collection of the empty value of the from collection
+  sequence.register(function(xf, from){
+    return into(empty(from), xf, from);
+  });
+
+  // calls sequence with chained transformation and optional wrapped object
+  _r.prototype.sequence = function(from){
+    if(from == undef){
+      from = this._wrapped;
+    }
+    return sequence(this, from);
+  };
 
   // Wraps a value used as source for use during chained transformation. 
   //
@@ -223,7 +415,7 @@ module.exports = function(_r){
     if(as(value)){
       return value.value();
     }
-    return transduce.unreduced(value);
+    return tr.unreduced(value);
   });
 
   // Returns an iterator that has next function
@@ -244,7 +436,7 @@ module.exports = function(_r){
     return dispatch.iterator.register(fn);
   };
 
-  iterator.register(transduce.iterator);
+  iterator.register(tr.iterator);
 
   // Mostly internal function that generates a callback from the given value.
   // For use with generating callbacks for map, filter, find, etc.
@@ -343,101 +535,9 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce":6}],3:[function(require,module,exports){
-"use strict";
-var tr = require('transduce'), undef;
+},{"transduce":5}],3:[function(require,module,exports){
 
-module.exports = function(_r){
-  // Transducer Functions
-  // --------------------
-  var as = _r.as,
-      _ = _r._,
-      empty = _r.empty,
-      append = _r.append;
-
-  _r.reduced = tr.reduced;
-  _r.isReduced = tr.isReduced;
-  _r.reduce = reduce;
-  _r.foldl = reduce;
-  _r.inject = reduce;
-  _r.transduce = transduce;
-  _r.into = into;
-
-  function reduce(xf, init, coll) {
-    if (coll === null || coll === undef) coll = empty(coll);
-    return tr.reduce(xf, init, coll);
-  }
-
-  function transduce(xf, f, init, coll){
-    if(_r.as(xf)){
-      xf = xf.compose();
-    }
-
-    return _r.unwrap(tr.transduce(xf, f, init, coll));
-  }
-
-  // Calls transduce using the chained transformation
-  _r.prototype.transduce = function(f, init, coll){
-    if(coll === undef){
-      coll = this._wrapped;
-    }
-    return transduce(this, f, init, coll);
-  };
-
-  // Returns a new coll consisting of to-coll with all of the items of
-  // from-coll conjoined. A transducer (step function) may be supplied.
-  function into(to, xf, from){
-    if(from === undef){
-      from = xf;
-      xf = undef;
-    }
-
-    if(from === undef){
-      from = empty();
-    }
-
-    if(as(xf)){
-      xf = xf.compose();
-    }
-
-    if(xf === undef){
-      return reduce(append, to, from);
-    }
-
-    return transduce(xf, append, to, from);
-  }
-
-  // Calls into using the chained transformation
-  _r.prototype.into = function(to, from){
-    if(from === undef){
-      from = this._wrapped;
-    }
-
-    if(from === undef){
-      from = empty();
-    }
-
-    if(to === undef){
-      to = empty(from);
-    }
-
-    return into(to, this, from);
-  };
-
-  // Returns a new collection of the empty value of the from collection
-  _r.sequence = function(xf, from){
-    return into(empty(from), xf, from);
-  };
-
-  // calls sequence with chained transformation and optional wrapped object
-  _r.prototype.sequence = function(from){
-    return this.into(empty(from), from);
-  };
-};
-
-},{"transduce":6}],4:[function(require,module,exports){
-
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 "use strict";
 /* global Symbol */
 var undef,
@@ -569,7 +669,7 @@ FunctionTransformer.prototype.result = function(result){
   return result;
 };
 
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 var protocol = require('transduce-protocol'),
     implFns = [
@@ -657,11 +757,10 @@ function loadFromBrowser(){
 
 load();
 
-},{"transduce-protocol":5,"transducers-js":4,"transducers.js":4}],7:[function(require,module,exports){
+},{"transduce-protocol":4,"transducers-js":3,"transducers.js":3}],6:[function(require,module,exports){
 "use strict";
 var undef;
 
-// Create a safe reference to the Underscore object for use below.
 var _r = function(obj, transform) {
   if (_r.as(obj)){
     if(transform === undef){
@@ -670,15 +769,17 @@ var _r = function(obj, transform) {
     var wrappedFns = _.clone(obj._wrappedFns);
     wrappedFns.push(transform);
     var copy = new _r(obj._wrapped, wrappedFns);
-    copy._resolveSingleValue = obj._resolveSingleValue;
+    copy._opts = _.clone(obj._opts);
     return copy;
   }
 
   if (!(_r.as(this))) return new _r(obj, transform);
 
   if(_r.as(transform)){
-    this._resolveSingleValue = transform._resolveSingleValue;
+    this._opts = _.clone(transform._opts);
     transform = transform._wrappedFns;
+  } else {
+    this._opts = {};
   }
 
   if(_.isFunction(transform)){
@@ -692,11 +793,7 @@ var _r = function(obj, transform) {
   this._wrapped = _r.wrap.call(this, obj);
 };
 
-// Current version.
-_r.VERSION = '0.1.1';
-
-// sentinel to ignore wrapped objects (maintain only last item)
-var IGNORE = _r.IGNORE = {};
+_r.VERSION = '0.1.2';
 
 var _ = require('underscore');
 
@@ -711,8 +808,8 @@ if(typeof window !== 'undefined'){
   _ = root._;
 } else {
   root = {};
-  module.exports = _r;
 }
+module.exports = _r;
 
 // access to browser or imported underscore object.
 _r._ = _;
@@ -735,20 +832,6 @@ _r.prototype.withSource = function(obj){
   return _r(obj, this);
 };
 
-// Composes and returns the underlying wrapped functions
-_r.prototype.transducer = _r.prototype.compose = function() {
-  var fns = this._wrappedFns;
-  return fns.length ? _.compose.apply(null, fns) : _.identity;
-};
-
-
-// OOP
-// ---------------
-
-// If Underscore is called as a function, it returns a wrapped object that
-// can be used OO-style. This wrapper holds altered versions of all the
-// underscore functions. Wrapped objects may be chained.
-
 // Add your own custom transducers to the Underscore.transducer object.
 _r.mixin = function(obj) {
   _.each(_.functions(obj), function(name) {
@@ -760,42 +843,9 @@ _r.mixin = function(obj) {
   });
 };
 
-// Helper to mark transducer to expect single value when
-// resolving. Only valid when chaining, but this should be passed
-// when called as a function
-_r.resolveSingleValue = function(self){
-  resolveSingleValue(self, true);
-};
-
-// Helper to mark transducer to expect multiple values when
-// resolving. Only valid when chaining, but this should be passed
-// when called as a function.
-_r.resolveMultipleValues = function(self){
-  resolveSingleValue(self, false);
-};
-
-function resolveSingleValue(self, single){
-  if(_r.as(self)){
-    self._resolveSingleValue = single;
-  }
-}
-
-// Resolves the value of the wrapped object, similar to underscore.
-// Returns an array, or single value (to match underscore API)
-// depending on whether the chained transformation resolves to single value.
-_r.prototype.value = function(){
-  if(!this._resolveSingleValue){
-    return this.into();
-  }
-
-  var ret =  this.into(IGNORE);
-  return ret === IGNORE ? undef : ret;
-};
-
 // import libraries
 _.each([
   require('./lib/dispatch'),
-  require('./lib/transduce'),
   require('./lib/base'),
   require('./lib/array'),
   require('./lib/push'),
@@ -809,4 +859,4 @@ _.each([
     }
   });
 
-},{"./lib/array":4,"./lib/base":1,"./lib/dispatch":2,"./lib/iterator":4,"./lib/math":4,"./lib/push":4,"./lib/string":4,"./lib/transduce":3,"underscore":4}]},{},[7]);
+},{"./lib/array":3,"./lib/base":1,"./lib/dispatch":2,"./lib/iterator":3,"./lib/math":3,"./lib/push":3,"./lib/string":3,"underscore":3}]},{},[6]);

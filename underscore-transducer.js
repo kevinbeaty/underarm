@@ -33,7 +33,7 @@ var _r = function(obj, transform) {
   this._wrapped = _r.wrap.call(this, obj);
 };
 
-_r.VERSION = '0.1.1';
+_r.VERSION = '0.1.2';
 
 var _ = require('underscore');
 
