@@ -23,10 +23,10 @@ node_modules:
 js: $(BUILD).js $(BUILD).min.js $(BUILD).base.js $(BUILD).base.min.js
 
 $(BUILD).js: $(PROJECT).js | build
-	`npm bin`/browserify --dg false -i underscore -i transducers.js -i transducers-js $< > $@
+	`npm bin`/browserify -i underscore $< > $@
 
 $(BUILD).base.js: $(PROJECT).js | build
-	`npm bin`/browserify --dg false -i underscore -i transducers.js -i transducers-js \
+	`npm bin`/browserify -i underscore \
 		-i './lib/array.js' -i './lib/math.js' -i './lib/push.js' -i './lib/string.js' \
 		-i './lib/iterator.js' $< > $@
 

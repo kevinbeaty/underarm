@@ -133,7 +133,7 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce":5}],2:[function(require,module,exports){
+},{"transduce":6}],2:[function(require,module,exports){
 "use strict";
 var tr = require('transduce'), undef;
 
@@ -535,74 +535,118 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce":5}],3:[function(require,module,exports){
+},{"transduce":6}],3:[function(require,module,exports){
 
 },{}],4:[function(require,module,exports){
+"use strict";
+/*global transducers */
+var libs = ['transducers-js', 'transducers.js'];
+
+function load(lib){
+  return transducers;
+}
+
+module.exports = {
+  load: load,
+  libs: libs
+};
+
+},{}],5:[function(require,module,exports){
 "use strict";
 /* global Symbol */
 var undef,
     symbolExists = typeof Symbol !== 'undefined',
     /* jshint newcap:false */
+    symIterator = symbolExists ? Symbol.iterator : '@@iterator',
+    symTransformer = symbolExists ? Symbol('transformer') : '@@transformer',
     protocols = {
-      iterator: symbolExists ? Symbol.iterator : '@@iterator',
-      transformer: symbolExists ? Symbol('transformer') : '@@transformer'
-    };
+      iterator: symIterator,
+      transformer: symTransformer
+    },
+    Arr = Array,
+    ArrProto = Arr.prototype,
+    slice = ArrProto.slice,
+    isArray = (isFunction(Arr.isArray) ? Arr.isArray : _isArray),
+    Obj = Object,
+    ObjProto = Obj.prototype,
+    toString = ObjProto.toString;
 
 module.exports = {
   protocols: protocols,
+  isIterable: isIterable,
   isIterator: isIterator,
+  iterable: iterable,
   iterator: iterator,
   isTransformer: isTransformer,
   transformer: transformer,
   isReduced: isReduced,
   reduced: reduced,
   unreduced: unreduced,
+  deref: unreduced,
   compose: compose,
   isFunction: isFunction,
-  isArray: (isFunction(Array.isArray) ? Array.isArray : isArray)
+  isArray: isArray,
+  arrayPush: push,
+  identity: identity,
+  transduceToArray: toArray
 };
-
-var toString = Object.prototype.toString;
 
 function isFunction(value){
   return typeof value === 'function';
 }
 
-function isArray(value){
+function _isArray(value){
   return toString.call(value) === '[object Array]';
 }
 
+function isIterable(value){
+  return (value[symIterator] !== undef);
+}
+
 function isIterator(value){
-  return (value[protocols.iterator] !== undef) ||
+  return isIterable(value) || 
     (isFunction(value.next));
 }
 
-function iterator(value){
+function iterable(value){
   var it;
-  if(value[protocols.iterator]){
-    it = value[protocols.iterator]();
-  } else if(isFunction(value.next)){
+  if(isIterable(value)){
     it = value;
   } else if(isArray(value)){
-    it = new ArrayIterator(value);
+    it = new ArrayIterable(value);
+  } else if(isFunction(value)){
+    it = new FunctionIterable(value);
+  }
+  return it;
+}
+
+function iterator(value){
+  var it = iterable(value);
+  if(it !== undef){
+    it = it[symIterator]();
+  } else if(isFunction(value.next)){
+    // handle non-well-formed iterators that only have a next method
+    it = value;
   }
   return it;
 }
 
 function isTransformer(value){
-  return (value[protocols.transformer] !== undef) ||
-    (isFunction(value.init) && isFunction(value.step) && isFunction(value.result));
+  return (value[symTransformer] !== undef) ||
+    (isFunction(value.step) && isFunction(value.result));
 }
 
 function transformer(value){
   var xf;
   if(isTransformer(value)){
-    xf = value[protocols.transformer];
+    xf = value[symTransformer];
     if(xf === undef){
       xf = value;
     }
   } else if(isFunction(value)){
     xf = new FunctionTransformer(value);
+  } else if(isArray(value)){
+    xf = new ArrayTransformer(value);
   }
   return xf;
 }
@@ -641,6 +685,33 @@ function compose(){
   };
 }
 
+function toArray(impl){
+  return function(xf, coll){
+    var init = [];
+    if(coll === undef){
+      return impl.reduce(push, init, xf);
+    }
+    return impl.transduce(xf, push, init, coll);
+  };
+}
+
+function push(result, input){
+  result.push(input);
+  return result;
+}
+
+function identity(result){
+  return result;
+}
+
+// Wrap an Array into an iterable
+function ArrayIterable(arr){
+  this.arr = arr;
+}
+ArrayIterable.prototype[symIterator] = function(){
+  return new ArrayIterator(this.arr);
+};
+
 // Turns an Array into an iterator
 function ArrayIterator(arr){
   this.arr = arr;
@@ -654,6 +725,35 @@ ArrayIterator.prototype.next = function(){
   return {done: false, value: this.arr[this.idx++]};
 };
 
+// Wrap an function into an iterable that calls function on every next
+function FunctionIterable(fn){
+  this.fn = fn;
+}
+FunctionIterable.prototype[symIterator] = function(){
+  return new FunctionIterator(this.fn);
+};
+
+// Turns a function into an infinite iterator that calls function on every next
+function FunctionIterator(fn){
+  this.fn = fn;
+}
+FunctionIterator.prototype.next = function(){
+  return {done: false, value: this.fn()};
+};
+
+// Pushes value on array, using optional constructor arg as default, or [] if not provided
+// init will clone the default
+// step will push input onto array and return result
+// result is identity
+function ArrayTransformer(arr){
+  this.arrDefault = arr === undef ? [] : arr;
+}
+ArrayTransformer.prototype.init = function(){
+  return slice.call(this.arrDefault);
+};
+ArrayTransformer.prototype.step = push;
+ArrayTransformer.prototype.result = identity;
+
 // Turns a step function into a transfomer with init, step, result (init not supported and will error)
 // Like transducers-js Wrap
 function FunctionTransformer(step){
@@ -665,19 +765,26 @@ FunctionTransformer.prototype.init = function(){
 FunctionTransformer.prototype.step = function(result, input){
   return this.step(result, input);
 };
-FunctionTransformer.prototype.result = function(result){
-  return result;
-};
+FunctionTransformer.prototype.result = identity;
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 var protocol = require('transduce-protocol'),
+    lib = require('./load'),
+    loadLib = lib.load,
+    libs = lib.libs,
+    transformer = protocol.transformer,
+    transduceToArray = protocol.transduceToArray,
     implFns = [
-      'into', 'transduce', 'reduce', 'map', 'filter', 'remove', 'take', 'takeWhile',
+      'into', 'transduce', 'reduce', 'toArray',
+      'map', 'filter', 'remove', 'take', 'takeWhile',
       'drop', 'dropWhile', 'cat', 'mapcat', 'partitionAll', 'partitionBy'],
     protocolFns = [
-      'protocols', 'isIterator', 'iterator', 'isTransformer', 'transformer',
-      'isReduced', 'reduced', 'unreduced', 'compose'];
+      'protocols', 'compose',
+      'isIterable', 'isIterator', 'iterable', 'iterator',
+      'isTransformer', 'transformer',
+      'isReduced', 'reduced', 'unreduced', 'deref',
+      'isFunction', 'isArray', 'arrayPush', 'identity'];
 
 function exportImpl(impl, overrides){
   var i = 0, len = implFns.length, fn;
@@ -685,6 +792,7 @@ function exportImpl(impl, overrides){
     fn = implFns[i];
     exports[fn] = ((fn in overrides) ? overrides : impl)[fn];
   }
+  exports.toArray = transduceToArray(exports);
 }
 
 function exportProtocol(){
@@ -697,10 +805,6 @@ function exportProtocol(){
 
 function load(){
   exportProtocol();
-  var libs = ['transducers-js', 'transducers.js'], impl;
-  if(typeof process !== 'undefined' && process.env && process.env.TRANSDUCE_IMPL){
-    libs = [process.env.TRANSDUCE_IMPL];
-  }
   var i = 0, len = libs.length;
   for(; i < len; i++){
     try {
@@ -714,14 +818,9 @@ function load(){
 
 var undef, loader = {
   'transducers-js': function(){
-    var impl = loadFromBrowser(),
-        loaded = true;
-    if(impl){
-      // if no Wrap exported, probably transducers.js
-      loaded = !!impl.Wrap;
-    } else {
-      impl = require('transducers-js');
-    }
+    var impl = loadLib('transducers-js'),
+        // if no Wrap exported, probably transducers.js
+        loaded =  !!impl.Wrap;
     if(loaded){
       exportImpl(impl, {});
     }
@@ -729,17 +828,15 @@ var undef, loader = {
   },
   'transducers.js': function(){
     //adapt methods to match transducers-js API
-    var impl = loadFromBrowser();
-    if(!impl){
-      impl = require('transducers.js');
-    }
+    var impl = loadLib('transducers.js');
+
     exportImpl(impl, {
       transduce: function(xf, f, init, coll){
-        f = protocol.transformer(f);
+        f = transformer(f);
         return impl.transduce(coll, xf, f, init);
       },
       reduce: function(f, init, coll){
-        f = protocol.transformer(f);
+        f = transformer(f);
         return impl.reduce(coll, f, init);
       },
       partitionAll: impl.partition
@@ -748,16 +845,9 @@ var undef, loader = {
   }
 };
 
-function loadFromBrowser(){
-  if(typeof window !== 'undefined'){
-    /* global window */
-    return window.transducers;
-  }
-}
-
 load();
 
-},{"transduce-protocol":4,"transducers-js":3,"transducers.js":3}],6:[function(require,module,exports){
+},{"./load":4,"transduce-protocol":5}],7:[function(require,module,exports){
 "use strict";
 var undef;
 
@@ -793,7 +883,7 @@ var _r = function(obj, transform) {
   this._wrapped = _r.wrap.call(this, obj);
 };
 
-_r.VERSION = '0.1.2';
+_r.VERSION = '0.1.3';
 
 var _ = require('underscore');
 
@@ -859,4 +949,4 @@ _.each([
     }
   });
 
-},{"./lib/array":3,"./lib/base":1,"./lib/dispatch":2,"./lib/iterator":3,"./lib/math":3,"./lib/push":3,"./lib/string":3,"underscore":3}]},{},[6]);
+},{"./lib/array":3,"./lib/base":1,"./lib/dispatch":2,"./lib/iterator":3,"./lib/math":3,"./lib/push":3,"./lib/string":3,"underscore":3}]},{},[7]);
