@@ -16,12 +16,12 @@ node_modules:
 	npm install
 
 %.min.js: %.js | node_modules
-	`npm bin`/uglifyjs $< > $@
+	`npm bin`/uglifyjs $< > $@ -c -m
 
 js: $(JS_TARGET) $(JS_TARGET:.js=.min.js)
 
 $(JS_TARGET): $(PROJECT).js lib/*.js | build
-	`npm bin`/browserify --dg false -i underscore-transducer $< > $@
+	`npm bin`/browserify -i underscore $< > $@
 
 build: 
 	mkdir -p build

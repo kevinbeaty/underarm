@@ -1,20 +1,10 @@
 "use strict";
-
-// Import from browser or Common-JS
-// Save the previous value of the `_r` variable.
-var _r, undef;
-if(typeof window !== 'undefined'){
-  /*global window*/
-  _r = window._r;
-} else {
-  _r = require('underscore-transducer');
-}
+var _r = require('underscore-transducer');
 module.exports = _r;
 
-// Current version.
-_r.VERSION_R = '0.1.0';
+_r.UNDERARM_VERSION = '0.1.0';
 
-var _ = _r._, IGNORE = _r.IGNORE;
+var _ = _r._;
 
 // import libraries
 _.each([

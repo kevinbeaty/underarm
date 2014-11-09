@@ -1,0 +1,31 @@
+{
+  "name": "underarm",
+  "main": "build/underarm.min.js",
+  "version": "0.1.0",
+  "homepage": "https://github.com/kevinbeaty/underarm",
+  "authors": [
+    "Kevin Beaty <kevin@simplectic.com>"
+  ],
+  "description": "Async Reactive Transducers for JavaScript with Underscore API",
+  "moduleType": [
+    "amd",
+    "globals"
+  ],
+  "keywords": [
+    "transducer",
+    "underscore",
+    "reactive",
+    "reducer",
+    "async",
+    "promise"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    "*-old"
+  ]
+}
