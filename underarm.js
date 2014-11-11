@@ -2,7 +2,7 @@
 var _r = require('underscore-transducer');
 module.exports = _r;
 
-_r.UNDERARM_VERSION = '0.1.0';
+_r.UNDERARM_VERSION = '0.1.1';
 
 var _ = _r._;
 
