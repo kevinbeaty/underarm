@@ -28,7 +28,8 @@
     "transduce-math": "0.0.3",
     "transduce-array": "0.0.6",
     "transduce-push": "0.0.6",
-    "transduce-string": "0.0.7"
+    "transduce-string": "0.0.7",
+    "redispatch": "0.0.1"
   },
   "devDependencies": {
     "tape": "~3.0.0",
