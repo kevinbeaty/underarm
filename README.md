@@ -246,6 +246,16 @@ Passes all items straight through until the result is requested.  Once completed
 ##### unshift(...args)
 Before stepping the first item, steps all arguments through the pipeline, then passes every item through unchanged.  This effectively unshifts values onto the beginning of the stream.
 
+##### at(index)
+Retrieves the value at the given index. Similar to indexing into an array.
+
+Resolves as single value.
+
+##### slice(begin? end?)
+Like array slice, but with transducers.  Steps items between `begin` (inclusive) and `end` (exclusive).  If either index is negative, indexes from end of transformation.  If `end` is undefined, steps until result of transformation. If `begin` is undefined, begins at 0.
+
+Note that if either index is negative, items will be buffered until completion.
+
 ##### initial(n?)
 Steps everything but the last entry. Passing `n` will step all values excluding the last N.
 

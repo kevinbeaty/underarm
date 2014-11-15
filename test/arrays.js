@@ -77,6 +77,48 @@ test('last', function(t) {
   t.strictEqual(_r([1, 2, 3]).last(-1).value().length, 0);
 });
 
+test('at', function(t) {
+  t.deepEqual(_r([1, 2, 3, 4, 5]).at(0).value(), 1, 'working at(0)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).at(2).value(), 3, 'working at(2)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).at(4).value(), 5, 'working at(4)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).at(5).value(), undefined, 'working at() past index');
+  t.end();
+});
+
+test('slice', function(t) {
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(0, 5).value(), [1, 2, 3, 4, 5], 'working slice(0,5)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(5).value(), [], 'working slice(5)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(0, 4).value(), [1, 2, 3, 4], 'working slice(0,4)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(4).value(), [5], 'working slice(4)');
+
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(1, 5).value(), [2, 3, 4, 5], 'working slice(1,5)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(1, 4).value(), [2, 3, 4], 'working slice(1,4)');
+
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(0, -1).value(), [1, 2, 3, 4], 'working slice(0,-1)');
+  t.deepEqual(_r([1, 2, 3, 4]).slice(0, -2).value(), [1, 2], 'slice can take an index');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(1, -2).value(), [2, 3], 'slice(1, -2)');
+  t.deepEqual(_r([1, 2, 3, 4]).slice(0, -6).value(), [], 'slice can take a large index');
+
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(1, -1).value(), [2, 3, 4], 'working slice(1,-1)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(2, -1).value(), [3, 4], 'working slice(2,-1)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(1, -2).value(), [2, 3], 'slice can take an index');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(1, -6).value(), [], 'slice can take a large index');
+
+  t.deepEqual(_r([1, 2, 3]).slice(-1).value(), [3], 'can pull out the last element of an array');
+  t.deepEqual(_r([1, 2, 3]).slice(-2).value(), [2, 3], 'can pass an index to last');
+  t.deepEqual(_r([1, 2, 3]).slice(-5).value(), [1, 2, 3], 'can pass an index to last');
+
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(-3, -1).value(), [3, 4], 'working slice(-3,-1)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(-3, 4).value(), [3, 4], 'working slice(-3,4)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(-3, -2).value(), [3], 'working slice(-3,-2)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(-3, 3).value(), [3], 'working slice(-3,3)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(-3, -3).value(), [], 'working slice(-3,-3)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(-3, -4).value(), [], 'working slice(-3,-4)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(-2, -1).value(), [4], 'working slice(-2,-1)');
+  t.deepEqual(_r([1, 2, 3, 4, 5]).slice(-1, -1).value(), [], 'working slice(-1,-1)');
+  t.end();
+});
+
 test('compact', function(t) {
   t.plan(1);
   t.equal(_r([0, 1, false, 2, false, 3]).compact().value().length, 3, 'can trim out all falsy values');
