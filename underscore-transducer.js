@@ -88,6 +88,7 @@ _.each([
   require('./lib/dispatch'),
   require('./lib/base'),
   require('./lib/array'),
+  require('./lib/unique'),
   require('./lib/push'),
   require('./lib/iterator'),
   require('./lib/math'),

@@ -27,8 +27,8 @@ $(BUILD).js: $(PROJECT).js | build
 
 $(BUILD).base.js: $(PROJECT).js | build
 	`npm bin`/browserify -i underscore \
-		-i './lib/array.js' -i './lib/math.js' -i './lib/push.js' -i './lib/string.js' \
-		-i './lib/iterator.js' $< > $@
+		-i './lib/array.js' -i './lib/unique.js' -i './lib/math.js' \
+		-i './lib/push.js' -i './lib/string.js' -i './lib/iterator.js' $< > $@
 
 build:
 	mkdir -p build
