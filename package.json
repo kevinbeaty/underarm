@@ -23,20 +23,21 @@
   },
   "homepage": "http://simplectic.com/projects/underscore-transducer/",
   "dependencies": {
-    "underscore": "~1.7.0",
     "transduce": "0.0.11",
     "transduce-math": "0.0.3",
     "transduce-array": "0.0.7",
     "transduce-push": "0.0.6",
     "transduce-string": "0.0.7",
     "redispatch": "0.0.1",
-    "transduce-unique": "0.0.1"
+    "transduce-unique": "0.0.1",
+    "lodash-node": "~2.4.1"
   },
   "devDependencies": {
     "tape": "~3.0.0",
     "uglify-js": "~2.3.6",
     "transducers-js": "~0.4.135",
     "transducers.js": "~0.2.3",
-    "browserify": "~6.1.0"
+    "browserify": "~6.1.0",
+    "tap-bail": "0.0.0"
   }
 }

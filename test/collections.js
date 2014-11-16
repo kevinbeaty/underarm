@@ -93,7 +93,7 @@ test('find', function(t) {
 
 test('filter', function(t) {
   t.test('filter ops', function(t){
-    t.plan(6);
+    t.plan(4);
 
     var evenArray = [1, 2, 3, 4, 5, 6];
     var evenObject = {one: 1, two: 2, three: 3};
@@ -106,8 +106,6 @@ test('filter', function(t) {
     var list = [{a: 1, b: 2}, {a: 2, b: 2}, {a: 1, b: 3}, {a: 1, b: 4}];
     t.deepEqual(_r(list).filter({a: 1}).value(), [{a: 1, b: 2}, {a: 1, b: 3}, {a: 1, b: 4}]);
     t.deepEqual(_r(list).filter({b: 2}).value(), [{a: 1, b: 2}, {a: 2, b: 2}]);
-    t.deepEqual(_r(list).filter({}).value(), list, 'Empty object accepts all items');
-    t.deepEqual(_r(list).filter({}).value(), list, 'OO-filter');
   });
 
   t.test('select', function(t) {
@@ -118,7 +116,7 @@ test('filter', function(t) {
 
 test('reject', function(t) {
   t.test('reject ops', function(t){
-    t.plan(6);
+    t.plan(4);
 
     var odds = _r([1, 2, 3, 4, 5, 6]).reject(function(num){ return num % 2 === 0; }).value();
     t.deepEqual(odds, [1, 3, 5], 'rejected each even number');
@@ -128,8 +126,6 @@ test('reject', function(t) {
     var list = [{a: 1, b: 2}, {a: 2, b: 2}, {a: 1, b: 3}, {a: 1, b: 4}];
     t.deepEqual(_r(list).reject({a: 1}).value(), [{a: 2, b: 2}]);
     t.deepEqual(_r(list).reject({b: 2}).value(), [{a: 1, b: 3}, {a: 1, b: 4}]);
-    t.deepEqual(_r(list).reject({}).value(), [], 'Returns empty list given empty object');
-    t.deepEqual(_r(list).reject([]).value(), [], 'Returns empty list given empty array');
   });
 });
 
@@ -221,7 +217,7 @@ test('pluck', function(t) {
 });
 
 test('where', function(t) {
-  t.plan(5);
+  t.plan(4);
 
   var list = [{a: 1, b: 2}, {a: 2, b: 2}, {a: 1, b: 3}, {a: 1, b: 4}];
 
@@ -232,9 +228,6 @@ test('where', function(t) {
   result = _r(list).where({b: 2}).value();
   t.equal(result.length, 2);
   t.equal(result[0].a, 1);
-
-  result = _r(list).where({}).value();
-  t.equal(result.length, list.length);
 });
 
 test('findWhere', function(t) {

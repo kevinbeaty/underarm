@@ -35,7 +35,7 @@ var _r = function(obj, transform) {
 
 _r.VERSION = '0.1.3';
 
-var _ = require('underscore');
+var _ = require('./lib/lodash');
 
 // Export for browser or Common-JS
 // Save the previous value of the `_r` variable.
