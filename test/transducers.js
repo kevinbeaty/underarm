@@ -1,6 +1,6 @@
 "use strict";
 var _r = require('../'),
-    _ = require('underscore'),
+    _ = require('lodash-node'),
     tp = require('transduce'),
     test = require('tape');
 
