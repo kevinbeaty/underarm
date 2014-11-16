@@ -133,9 +133,11 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce":6}],2:[function(require,module,exports){
+},{"transduce":38}],2:[function(require,module,exports){
 "use strict";
-var tr = require('transduce'), undef;
+var tr = require('transduce'),
+    dispatcher = require('redispatch'),
+    undef;
 
 module.exports = function(_r){
   var _ = _r._,
@@ -145,68 +147,35 @@ module.exports = function(_r){
 
   // Transducer Functions
   // --------------------
-  _r.value = value;
+  var value = _r.value = dispatcher(),
+      wrap = _r.wrap = dispatcher(),
+      unwrap = _r.unwrap = dispatcher(),
+      empty = _r.empty = dispatcher(),
+      append = _r.append = dispatcher(),
+      reduce = _r.reduce = dispatcher(),
+      transduce = _r.transduce = dispatcher(),
+      into = _r.into = dispatcher(),
+      transducer = _r.transducer = dispatcher(),
+      iterator = _r.iterator = dispatcher(),
+      sequence = _r.sequence = dispatcher(),
+      iteratee = _r.iteratee = dispatcher();
   _r.resolveSingleValue = resolveSingleValue;
   _r.resolveMultipleValues = resolveMultipleValues;
   _r.reduced = tr.reduced;
   _r.isReduced = tr.isReduced;
-  _r.reduce = reduce;
   _r.foldl = reduce;
   _r.inject = reduce;
-  _r.transduce = transduce;
-  _r.transducer = transducer;
-  _r.into = into;
-  _r.sequence = sequence;
-  _r.wrap = wrap;
-  _r.unwrap = unwrap;
   _r.deref = unwrap;
-  _r.iterator = iterator;
-  _r.iteratee = iteratee;
-  _r.empty = empty;
-  _r.append = append;
   _r.conj = append;
   _r.conjoin = append;
-  _r.dispatch = dispatchXf;
+  _r.dispatch = dispatch;
 
   // Dispatchers
   // -----------
-  var dispatch = _.reduce(
-        ['value', 'reduce', 'transduce', 'into', 'sequence', 'transducer',
-         'iterator', 'iteratee', 'empty', 'append', 'wrap', 'unwrap'],
-        function(memo, item){
-
-        var d = function(){
-          var args = arguments, fns = d._fns, i = fns.length, result,
-              self = as(this);
-          for(; i-- ;){
-            result = fns[i].apply(self, args);
-            if(result !== undef){
-              return result;
-            }
-          }
-        };
-
-        d._fns = [];
-
-        d.register = function(fn){
-          d._fns.push(fn);
-        };
-
-        memo[item] = d;
-        return memo;
-      }, {});
 
   // Resolves the value of the wrapped object, similar to underscore.
   // Returns an array, or single value (to match underscore API)
   // depending on whether the chained transformation resolves to single value.
-  function value(r){
-    return dispatch.value(r);
-  }
-
-  value.register = function(fn){
-    return dispatch.value.register(fn);
-  };
-
   value.register(function(self){
     if(!self._opts.resolveSingleValue){
       return self.into();
@@ -235,39 +204,23 @@ module.exports = function(_r){
   }
 
   function _resolveSingleValue(self, single){
-    if(_r.as(self)){
+    if(as(self)){
       self._opts.resolveSingleValue = single;
     }
   }
 
   // Composes and returns the underlying wrapped functions for give chained object
-  function transducer(r){
-    return dispatch.transducer(r);
-  }
-
-  transducer.register = function(fn){
-    return dispatch.transducer.register(fn);
-  };
-
   transducer.register(function(self){
     var fns = self._wrappedFns;
-    return fns.length ? _.compose.apply(null, fns) : _.identity;
+    return fns.length ? tr.compose.apply(null, fns) : tr.identity;
   });
 
   _r.prototype.transducer = _r.prototype.compose = function() {
     return transducer(this);
   };
 
-  function reduce(xf, init, coll){
-    return dispatch.reduce(xf, init, coll);
-  }
-
-  reduce.register = function(fn){
-    return dispatch.reduce.register(fn);
-  };
-
   reduce.register(function(xf, init, coll) {
-    if(_r.as(xf)){
+    if(as(xf)){
       xf = transducer(xf);
     }
 
@@ -283,20 +236,12 @@ module.exports = function(_r){
     return reduce(this, init, coll);
   };
 
-  function transduce(xf, f, init, coll){
-    return dispatch.transduce(xf, f, init, coll);
-  }
-
-  transduce.register = function(fn){
-    return dispatch.transduce.register(fn);
-  };
-
   transduce.register(function(xf, f, init, coll){
-    if(_r.as(xf)){
+    if(as(xf)){
       xf = transducer(xf);
     }
 
-    return _r.unwrap(tr.transduce(xf, f, init, coll));
+    return unwrap(tr.transduce(xf, f, init, coll));
   });
 
   // Calls transduce using the chained transformation
@@ -307,14 +252,6 @@ module.exports = function(_r){
     return transduce(this, f, init, coll);
   };
 
-
-  function into(to, xf, from){
-    return dispatch.into(to, xf, from);
-  }
-
-  into.register = function(fn){
-    return dispatch.into.register(fn);
-  };
 
   // Returns a new coll consisting of to-coll with all of the items of
   // from-coll conjoined. A transducer (step function) may be supplied.
@@ -351,14 +288,6 @@ module.exports = function(_r){
     return into(to, this, from);
   };
 
-  function sequence(xf, from){
-    return dispatch.sequence(xf, from);
-  }
-
-  sequence.register = function(fn){
-    return dispatch.sequence.register(fn);
-  };
-
   // Returns a new collection of the empty value of the from collection
   sequence.register(function(xf, from){
     return into(empty(from), xf, from);
@@ -378,15 +307,6 @@ module.exports = function(_r){
   //
   // Dispatch function. To support different types,
   // call _r.unwrap.register
-  function wrap(value){
-    /*jshint validthis:true*/
-    return dispatch.wrap.call(this, value);
-  }
-
-  wrap.register = function(fn){
-    return dispatch.wrap.register(fn);
-  };
-
   wrap.register(function(value){
     if(_.isString(value)){
       value = [value];
@@ -403,14 +323,6 @@ module.exports = function(_r){
   //
   // Dispatch function. To support different types,
   // call _r.unwrap.register
-  function unwrap(value){
-    return dispatch.unwrap(value);
-  }
-
-  unwrap.register = function(fn){
-    return dispatch.unwrap.register(fn);
-  };
-
   unwrap.register(function(value){
     if(as(value)){
       return value.value();
@@ -428,14 +340,6 @@ module.exports = function(_r){
   // an iterator after checking the input using appropriate
   // predicates. Return undefined if not supported, so other
   // dispatched functions can be checked
-  function iterator(obj){
-    return dispatch.iterator(obj);
-  }
-
-  iterator.register = function(fn){
-    return dispatch.iterator.register(fn);
-  };
-
   iterator.register(tr.iterator);
 
   // Mostly internal function that generates a callback from the given value.
@@ -448,14 +352,6 @@ module.exports = function(_r){
   // a callback after checking the input using appropriate
   // predicates. Return undefined if not supported, so other
   // dispatched functions can be checked
-  function iteratee(value){
-    return dispatch.iteratee(value);
-  }
-
-  iteratee.register = function(fn){
-    return dispatch.iteratee.register(fn);
-  };
-
   iteratee.register(function(value){
     if(as(value)){
       return _riteratee(value);
@@ -478,14 +374,6 @@ module.exports = function(_r){
   // an empty object after checking the input using appropriate
   // predicates. Return undefined if not supported, so other
   // dispatched functions can be checked
-  function empty(obj){
-    return obj === IGNORE ? IGNORE : dispatch.empty(obj);
-  }
-
-  empty.register = function(fn){
-    return dispatch.empty.register(fn);
-  };
-
   empty.register(function(obj){
     if(obj === undef || _.isArray(obj) || iterator(obj)){
       return []; // array if not specified or from array
@@ -505,15 +393,6 @@ module.exports = function(_r){
   // using appropriate predicates.
   //
   // Return undefined if not supported, so other dispatched functions can be checked
-  function append(obj, item){
-    // valid object and item, dispatch
-    return dispatch.append(obj, item);
-  }
-
-  append.register = function(fn){
-    return dispatch.append.register(fn);
-  };
-
   append.register(function(obj, item){
     if(_.isArray(obj)){
       obj.push(item);
@@ -530,14 +409,1462 @@ module.exports = function(_r){
   Dispatch.prototype.result = unwrap;
   Dispatch.prototype.step = append;
 
-  function dispatchXf(){
+  function dispatch(){
     return new Dispatch();
   }
 };
 
-},{"transduce":6}],3:[function(require,module,exports){
+},{"redispatch":33,"transduce":38}],3:[function(require,module,exports){
+var _ = {};
 
-},{}],4:[function(require,module,exports){
+module.exports = _;
+
+_.clone = require('lodash-node/underscore/objects/clone');
+_.each = require('lodash-node/underscore/collections/forEach.js');
+_.filter = require('lodash-node/underscore/collections/filter.js');
+_.functions = require('lodash-node/underscore/objects/functions');
+_.isArray = require('lodash-node/underscore/objects/isArray');
+_.isBoolean = require('lodash-node/underscore/objects/isBoolean');
+_.isFunction = require('lodash-node/underscore/objects/isFunction');
+_.isString = require('lodash-node/underscore/objects/isString');
+_.iteratee = require('lodash-node/underscore/functions/createCallback');
+_.matches = _.iteratee;
+_.property = require('lodash-node/underscore/utilities/property');
+
+},{"lodash-node/underscore/collections/filter.js":5,"lodash-node/underscore/collections/forEach.js":6,"lodash-node/underscore/functions/createCallback":8,"lodash-node/underscore/objects/clone":20,"lodash-node/underscore/objects/functions":23,"lodash-node/underscore/objects/isArray":24,"lodash-node/underscore/objects/isBoolean":25,"lodash-node/underscore/objects/isFunction":26,"lodash-node/underscore/objects/isString":28,"lodash-node/underscore/utilities/property":32}],4:[function(require,module,exports){
+
+},{}],5:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var createCallback = require('../functions/createCallback'),
+    forOwn = require('../objects/forOwn');
+
+/**
+ * Iterates over elements of a collection, returning an array of all elements
+ * the callback returns truey for. The callback is bound to `thisArg` and
+ * invoked with three arguments; (value, index|key, collection).
+ *
+ * If a property name is provided for `callback` the created "_.pluck" style
+ * callback will return the property value of the given element.
+ *
+ * If an object is provided for `callback` the created "_.where" style callback
+ * will return `true` for elements that have the properties of the given object,
+ * else `false`.
+ *
+ * @static
+ * @memberOf _
+ * @alias select
+ * @category Collections
+ * @param {Array|Object|string} collection The collection to iterate over.
+ * @param {Function|Object|string} [callback=identity] The function called
+ *  per iteration. If a property name or object is provided it will be used
+ *  to create a "_.pluck" or "_.where" style callback, respectively.
+ * @param {*} [thisArg] The `this` binding of `callback`.
+ * @returns {Array} Returns a new array of elements that passed the callback check.
+ * @example
+ *
+ * var evens = _.filter([1, 2, 3, 4, 5, 6], function(num) { return num % 2 == 0; });
+ * // => [2, 4, 6]
+ *
+ * var characters = [
+ *   { 'name': 'barney', 'age': 36, 'blocked': false },
+ *   { 'name': 'fred',   'age': 40, 'blocked': true }
+ * ];
+ *
+ * // using "_.pluck" callback shorthand
+ * _.filter(characters, 'blocked');
+ * // => [{ 'name': 'fred', 'age': 40, 'blocked': true }]
+ *
+ * // using "_.where" callback shorthand
+ * _.filter(characters, { 'age': 36 });
+ * // => [{ 'name': 'barney', 'age': 36, 'blocked': false }]
+ */
+function filter(collection, callback, thisArg) {
+  var result = [];
+  callback = createCallback(callback, thisArg, 3);
+
+  var index = -1,
+      length = collection ? collection.length : 0;
+
+  if (typeof length == 'number') {
+    while (++index < length) {
+      var value = collection[index];
+      if (callback(value, index, collection)) {
+        result.push(value);
+      }
+    }
+  } else {
+    forOwn(collection, function(value, index, collection) {
+      if (callback(value, index, collection)) {
+        result.push(value);
+      }
+    });
+  }
+  return result;
+}
+
+module.exports = filter;
+
+},{"../functions/createCallback":8,"../objects/forOwn":22}],6:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var baseCreateCallback = require('../internals/baseCreateCallback'),
+    forOwn = require('../objects/forOwn'),
+    indicatorObject = require('../internals/indicatorObject');
+
+/**
+ * Iterates over elements of a collection, executing the callback for each
+ * element. The callback is bound to `thisArg` and invoked with three arguments;
+ * (value, index|key, collection). Callbacks may exit iteration early by
+ * explicitly returning `false`.
+ *
+ * Note: As with other "Collections" methods, objects with a `length` property
+ * are iterated like arrays. To avoid this behavior `_.forIn` or `_.forOwn`
+ * may be used for object iteration.
+ *
+ * @static
+ * @memberOf _
+ * @alias each
+ * @category Collections
+ * @param {Array|Object|string} collection The collection to iterate over.
+ * @param {Function} [callback=identity] The function called per iteration.
+ * @param {*} [thisArg] The `this` binding of `callback`.
+ * @returns {Array|Object|string} Returns `collection`.
+ * @example
+ *
+ * _([1, 2, 3]).forEach(function(num) { console.log(num); }).join(',');
+ * // => logs each number and returns '1,2,3'
+ *
+ * _.forEach({ 'one': 1, 'two': 2, 'three': 3 }, function(num) { console.log(num); });
+ * // => logs each number and returns the object (property order is not guaranteed across environments)
+ */
+function forEach(collection, callback, thisArg) {
+  var index = -1,
+      length = collection ? collection.length : 0;
+
+  callback = callback && typeof thisArg == 'undefined' ? callback : baseCreateCallback(callback, thisArg, 3);
+  if (typeof length == 'number') {
+    while (++index < length) {
+      if (callback(collection[index], index, collection) === indicatorObject) {
+        break;
+      }
+    }
+  } else {
+    forOwn(collection, callback);
+  }
+}
+
+module.exports = forEach;
+
+},{"../internals/baseCreateCallback":11,"../internals/indicatorObject":14,"../objects/forOwn":22}],7:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var createWrapper = require('../internals/createWrapper'),
+    slice = require('../internals/slice');
+
+/**
+ * Creates a function that, when called, invokes `func` with the `this`
+ * binding of `thisArg` and prepends any additional `bind` arguments to those
+ * provided to the bound function.
+ *
+ * @static
+ * @memberOf _
+ * @category Functions
+ * @param {Function} func The function to bind.
+ * @param {*} [thisArg] The `this` binding of `func`.
+ * @param {...*} [arg] Arguments to be partially applied.
+ * @returns {Function} Returns the new bound function.
+ * @example
+ *
+ * var func = function(greeting) {
+ *   return greeting + ' ' + this.name;
+ * };
+ *
+ * func = _.bind(func, { 'name': 'fred' }, 'hi');
+ * func();
+ * // => 'hi fred'
+ */
+function bind(func, thisArg) {
+  return arguments.length > 2
+    ? createWrapper(func, 17, slice(arguments, 2), null, thisArg)
+    : createWrapper(func, 1, null, null, thisArg);
+}
+
+module.exports = bind;
+
+},{"../internals/createWrapper":13,"../internals/slice":18}],8:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var baseCreateCallback = require('../internals/baseCreateCallback'),
+    keys = require('../objects/keys'),
+    property = require('../utilities/property');
+
+/**
+ * Produces a callback bound to an optional `thisArg`. If `func` is a property
+ * name the created callback will return the property value for a given element.
+ * If `func` is an object the created callback will return `true` for elements
+ * that contain the equivalent object properties, otherwise it will return `false`.
+ *
+ * @static
+ * @memberOf _
+ * @category Utilities
+ * @param {*} [func=identity] The value to convert to a callback.
+ * @param {*} [thisArg] The `this` binding of the created callback.
+ * @param {number} [argCount] The number of arguments the callback accepts.
+ * @returns {Function} Returns a callback function.
+ * @example
+ *
+ * var characters = [
+ *   { 'name': 'barney', 'age': 36 },
+ *   { 'name': 'fred',   'age': 40 }
+ * ];
+ *
+ * // wrap to create custom callback shorthands
+ * _.createCallback = _.wrap(_.createCallback, function(func, callback, thisArg) {
+ *   var match = /^(.+?)__([gl]t)(.+)$/.exec(callback);
+ *   return !match ? func(callback, thisArg) : function(object) {
+ *     return match[2] == 'gt' ? object[match[1]] > match[3] : object[match[1]] < match[3];
+ *   };
+ * });
+ *
+ * _.filter(characters, 'age__gt38');
+ * // => [{ 'name': 'fred', 'age': 40 }]
+ */
+function createCallback(func, thisArg, argCount) {
+  var type = typeof func;
+  if (func == null || type == 'function') {
+    return baseCreateCallback(func, thisArg, argCount);
+  }
+  // handle "_.pluck" style callback shorthands
+  if (type != 'object') {
+    return property(func);
+  }
+  var props = keys(func);
+  return function(object) {
+    var length = props.length,
+        result = false;
+
+    while (length--) {
+      if (!(result = object[props[length]] === func[props[length]])) {
+        break;
+      }
+    }
+    return result;
+  };
+}
+
+module.exports = createCallback;
+
+},{"../internals/baseCreateCallback":11,"../objects/keys":29,"../utilities/property":32}],9:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var baseCreate = require('./baseCreate'),
+    isObject = require('../objects/isObject'),
+    slice = require('./slice');
+
+/**
+ * Used for `Array` method references.
+ *
+ * Normally `Array.prototype` would suffice, however, using an array literal
+ * avoids issues in Narwhal.
+ */
+var arrayRef = [];
+
+/** Native method shortcuts */
+var push = arrayRef.push;
+
+/**
+ * The base implementation of `_.bind` that creates the bound function and
+ * sets its meta data.
+ *
+ * @private
+ * @param {Array} bindData The bind data array.
+ * @returns {Function} Returns the new bound function.
+ */
+function baseBind(bindData) {
+  var func = bindData[0],
+      partialArgs = bindData[2],
+      thisArg = bindData[4];
+
+  function bound() {
+    // `Function#bind` spec
+    // http://es5.github.io/#x15.3.4.5
+    if (partialArgs) {
+      // avoid `arguments` object deoptimizations by using `slice` instead
+      // of `Array.prototype.slice.call` and not assigning `arguments` to a
+      // variable as a ternary expression
+      var args = slice(partialArgs);
+      push.apply(args, arguments);
+    }
+    // mimic the constructor's `return` behavior
+    // http://es5.github.io/#x13.2.2
+    if (this instanceof bound) {
+      // ensure `new bound` is an instance of `func`
+      var thisBinding = baseCreate(func.prototype),
+          result = func.apply(thisBinding, args || arguments);
+      return isObject(result) ? result : thisBinding;
+    }
+    return func.apply(thisArg, args || arguments);
+  }
+  return bound;
+}
+
+module.exports = baseBind;
+
+},{"../objects/isObject":27,"./baseCreate":10,"./slice":18}],10:[function(require,module,exports){
+(function (global){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var isNative = require('./isNative'),
+    isObject = require('../objects/isObject'),
+    noop = require('../utilities/noop');
+
+/* Native method shortcuts for methods with the same name as other `lodash` methods */
+var nativeCreate = isNative(nativeCreate = Object.create) && nativeCreate;
+
+/**
+ * The base implementation of `_.create` without support for assigning
+ * properties to the created object.
+ *
+ * @private
+ * @param {Object} prototype The object to inherit from.
+ * @returns {Object} Returns the new object.
+ */
+function baseCreate(prototype, properties) {
+  return isObject(prototype) ? nativeCreate(prototype) : {};
+}
+// fallback for browsers without `Object.create`
+if (!nativeCreate) {
+  baseCreate = (function() {
+    function Object() {}
+    return function(prototype) {
+      if (isObject(prototype)) {
+        Object.prototype = prototype;
+        var result = new Object;
+        Object.prototype = null;
+      }
+      return result || global.Object();
+    };
+  }());
+}
+
+module.exports = baseCreate;
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../objects/isObject":27,"../utilities/noop":31,"./isNative":15}],11:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var bind = require('../functions/bind'),
+    identity = require('../utilities/identity');
+
+/**
+ * The base implementation of `_.createCallback` without support for creating
+ * "_.pluck" or "_.where" style callbacks.
+ *
+ * @private
+ * @param {*} [func=identity] The value to convert to a callback.
+ * @param {*} [thisArg] The `this` binding of the created callback.
+ * @param {number} [argCount] The number of arguments the callback accepts.
+ * @returns {Function} Returns a callback function.
+ */
+function baseCreateCallback(func, thisArg, argCount) {
+  if (typeof func != 'function') {
+    return identity;
+  }
+  // exit early for no `thisArg` or already bound by `Function#bind`
+  if (typeof thisArg == 'undefined' || !('prototype' in func)) {
+    return func;
+  }
+  switch (argCount) {
+    case 1: return function(value) {
+      return func.call(thisArg, value);
+    };
+    case 2: return function(a, b) {
+      return func.call(thisArg, a, b);
+    };
+    case 3: return function(value, index, collection) {
+      return func.call(thisArg, value, index, collection);
+    };
+    case 4: return function(accumulator, value, index, collection) {
+      return func.call(thisArg, accumulator, value, index, collection);
+    };
+  }
+  return bind(func, thisArg);
+}
+
+module.exports = baseCreateCallback;
+
+},{"../functions/bind":7,"../utilities/identity":30}],12:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var baseCreate = require('./baseCreate'),
+    isObject = require('../objects/isObject'),
+    slice = require('./slice');
+
+/**
+ * Used for `Array` method references.
+ *
+ * Normally `Array.prototype` would suffice, however, using an array literal
+ * avoids issues in Narwhal.
+ */
+var arrayRef = [];
+
+/** Native method shortcuts */
+var push = arrayRef.push;
+
+/**
+ * The base implementation of `createWrapper` that creates the wrapper and
+ * sets its meta data.
+ *
+ * @private
+ * @param {Array} bindData The bind data array.
+ * @returns {Function} Returns the new function.
+ */
+function baseCreateWrapper(bindData) {
+  var func = bindData[0],
+      bitmask = bindData[1],
+      partialArgs = bindData[2],
+      partialRightArgs = bindData[3],
+      thisArg = bindData[4],
+      arity = bindData[5];
+
+  var isBind = bitmask & 1,
+      isBindKey = bitmask & 2,
+      isCurry = bitmask & 4,
+      isCurryBound = bitmask & 8,
+      key = func;
+
+  function bound() {
+    var thisBinding = isBind ? thisArg : this;
+    if (partialArgs) {
+      var args = slice(partialArgs);
+      push.apply(args, arguments);
+    }
+    if (partialRightArgs || isCurry) {
+      args || (args = slice(arguments));
+      if (partialRightArgs) {
+        push.apply(args, partialRightArgs);
+      }
+      if (isCurry && args.length < arity) {
+        bitmask |= 16 & ~32;
+        return baseCreateWrapper([func, (isCurryBound ? bitmask : bitmask & ~3), args, null, thisArg, arity]);
+      }
+    }
+    args || (args = arguments);
+    if (isBindKey) {
+      func = thisBinding[key];
+    }
+    if (this instanceof bound) {
+      thisBinding = baseCreate(func.prototype);
+      var result = func.apply(thisBinding, args);
+      return isObject(result) ? result : thisBinding;
+    }
+    return func.apply(thisBinding, args);
+  }
+  return bound;
+}
+
+module.exports = baseCreateWrapper;
+
+},{"../objects/isObject":27,"./baseCreate":10,"./slice":18}],13:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var baseBind = require('./baseBind'),
+    baseCreateWrapper = require('./baseCreateWrapper'),
+    isFunction = require('../objects/isFunction'),
+    slice = require('./slice');
+
+/**
+ * Creates a function that, when called, either curries or invokes `func`
+ * with an optional `this` binding and partially applied arguments.
+ *
+ * @private
+ * @param {Function|string} func The function or method name to reference.
+ * @param {number} bitmask The bitmask of method flags to compose.
+ *  The bitmask may be composed of the following flags:
+ *  1 - `_.bind`
+ *  2 - `_.bindKey`
+ *  4 - `_.curry`
+ *  8 - `_.curry` (bound)
+ *  16 - `_.partial`
+ *  32 - `_.partialRight`
+ * @param {Array} [partialArgs] An array of arguments to prepend to those
+ *  provided to the new function.
+ * @param {Array} [partialRightArgs] An array of arguments to append to those
+ *  provided to the new function.
+ * @param {*} [thisArg] The `this` binding of `func`.
+ * @param {number} [arity] The arity of `func`.
+ * @returns {Function} Returns the new function.
+ */
+function createWrapper(func, bitmask, partialArgs, partialRightArgs, thisArg, arity) {
+  var isBind = bitmask & 1,
+      isBindKey = bitmask & 2,
+      isCurry = bitmask & 4,
+      isCurryBound = bitmask & 8,
+      isPartial = bitmask & 16,
+      isPartialRight = bitmask & 32;
+
+  if (!isBindKey && !isFunction(func)) {
+    throw new TypeError;
+  }
+  if (isPartial && !partialArgs.length) {
+    bitmask &= ~16;
+    isPartial = partialArgs = false;
+  }
+  if (isPartialRight && !partialRightArgs.length) {
+    bitmask &= ~32;
+    isPartialRight = partialRightArgs = false;
+  }
+  // fast path for `_.bind`
+  var creater = (bitmask == 1 || bitmask === 17) ? baseBind : baseCreateWrapper;
+  return creater([func, bitmask, partialArgs, partialRightArgs, thisArg, arity]);
+}
+
+module.exports = createWrapper;
+
+},{"../objects/isFunction":26,"./baseBind":9,"./baseCreateWrapper":12,"./slice":18}],14:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+
+/** Used internally to indicate various things */
+var indicatorObject = {};
+
+module.exports = indicatorObject;
+
+},{}],15:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+
+/** Used for native method references */
+var objectProto = Object.prototype;
+
+/** Used to resolve the internal [[Class]] of values */
+var toString = objectProto.toString;
+
+/** Used to detect if a method is native */
+var reNative = RegExp('^' +
+  String(toString)
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/toString| for [^\]]+/g, '.*?') + '$'
+);
+
+/**
+ * Checks if `value` is a native function.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if the `value` is a native function, else `false`.
+ */
+function isNative(value) {
+  return typeof value == 'function' && reNative.test(value);
+}
+
+module.exports = isNative;
+
+},{}],16:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+
+/** Used to determine if values are of the language type Object */
+var objectTypes = {
+  'boolean': false,
+  'function': true,
+  'object': true,
+  'number': false,
+  'string': false,
+  'undefined': false
+};
+
+module.exports = objectTypes;
+
+},{}],17:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var objectTypes = require('./objectTypes');
+
+/** Used for native method references */
+var objectProto = Object.prototype;
+
+/** Native method shortcuts */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * A fallback implementation of `Object.keys` which produces an array of the
+ * given object's own enumerable property names.
+ *
+ * @private
+ * @type Function
+ * @param {Object} object The object to inspect.
+ * @returns {Array} Returns an array of property names.
+ */
+var shimKeys = function(object) {
+  var index, iterable = object, result = [];
+  if (!iterable) return result;
+  if (!(objectTypes[typeof object])) return result;
+    for (index in iterable) {
+      if (hasOwnProperty.call(iterable, index)) {
+        result.push(index);
+      }
+    }
+  return result
+};
+
+module.exports = shimKeys;
+
+},{"./objectTypes":16}],18:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+
+/**
+ * Slices the `collection` from the `start` index up to, but not including,
+ * the `end` index.
+ *
+ * Note: This function is used instead of `Array#slice` to support node lists
+ * in IE < 9 and to ensure dense arrays are returned.
+ *
+ * @private
+ * @param {Array|Object|string} collection The collection to slice.
+ * @param {number} start The start index.
+ * @param {number} end The end index.
+ * @returns {Array} Returns the new array.
+ */
+function slice(array, start, end) {
+  start || (start = 0);
+  if (typeof end == 'undefined') {
+    end = array ? array.length : 0;
+  }
+  var index = -1,
+      length = end - start || 0,
+      result = Array(length < 0 ? 0 : length);
+
+  while (++index < length) {
+    result[index] = array[start + index];
+  }
+  return result;
+}
+
+module.exports = slice;
+
+},{}],19:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var baseCreateCallback = require('../internals/baseCreateCallback'),
+    keys = require('./keys'),
+    objectTypes = require('../internals/objectTypes');
+
+/**
+ * Assigns own enumerable properties of source object(s) to the destination
+ * object. Subsequent sources will overwrite property assignments of previous
+ * sources. If a callback is provided it will be executed to produce the
+ * assigned values. The callback is bound to `thisArg` and invoked with two
+ * arguments; (objectValue, sourceValue).
+ *
+ * @static
+ * @memberOf _
+ * @type Function
+ * @alias extend
+ * @category Objects
+ * @param {Object} object The destination object.
+ * @param {...Object} [source] The source objects.
+ * @param {Function} [callback] The function to customize assigning values.
+ * @param {*} [thisArg] The `this` binding of `callback`.
+ * @returns {Object} Returns the destination object.
+ * @example
+ *
+ * _.assign({ 'name': 'fred' }, { 'employer': 'slate' });
+ * // => { 'name': 'fred', 'employer': 'slate' }
+ *
+ * var defaults = _.partialRight(_.assign, function(a, b) {
+ *   return typeof a == 'undefined' ? b : a;
+ * });
+ *
+ * var object = { 'name': 'barney' };
+ * defaults(object, { 'name': 'fred', 'employer': 'slate' });
+ * // => { 'name': 'barney', 'employer': 'slate' }
+ */
+function assign(object) {
+  if (!object) {
+    return object;
+  }
+  for (var argsIndex = 1, argsLength = arguments.length; argsIndex < argsLength; argsIndex++) {
+    var iterable = arguments[argsIndex];
+    if (iterable) {
+      for (var key in iterable) {
+        object[key] = iterable[key];
+      }
+    }
+  }
+  return object;
+}
+
+module.exports = assign;
+
+},{"../internals/baseCreateCallback":11,"../internals/objectTypes":16,"./keys":29}],20:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var assign = require('./assign'),
+    baseCreateCallback = require('../internals/baseCreateCallback'),
+    isArray = require('./isArray'),
+    isObject = require('./isObject'),
+    slice = require('../internals/slice');
+
+/**
+ * Creates a clone of `value`. If `isDeep` is `true` nested objects will also
+ * be cloned, otherwise they will be assigned by reference. If a callback
+ * is provided it will be executed to produce the cloned values. If the
+ * callback returns `undefined` cloning will be handled by the method instead.
+ * The callback is bound to `thisArg` and invoked with one argument; (value).
+ *
+ * @static
+ * @memberOf _
+ * @category Objects
+ * @param {*} value The value to clone.
+ * @param {boolean} [isDeep=false] Specify a deep clone.
+ * @param {Function} [callback] The function to customize cloning values.
+ * @param {*} [thisArg] The `this` binding of `callback`.
+ * @returns {*} Returns the cloned value.
+ * @example
+ *
+ * var characters = [
+ *   { 'name': 'barney', 'age': 36 },
+ *   { 'name': 'fred',   'age': 40 }
+ * ];
+ *
+ * var shallow = _.clone(characters);
+ * shallow[0] === characters[0];
+ * // => true
+ *
+ * var deep = _.clone(characters, true);
+ * deep[0] === characters[0];
+ * // => false
+ *
+ * _.mixin({
+ *   'clone': _.partialRight(_.clone, function(value) {
+ *     return _.isElement(value) ? value.cloneNode(false) : undefined;
+ *   })
+ * });
+ *
+ * var clone = _.clone(document.body);
+ * clone.childNodes.length;
+ * // => 0
+ */
+function clone(value) {
+  return isObject(value)
+    ? (isArray(value) ? slice(value) : assign({}, value))
+    : value;
+}
+
+module.exports = clone;
+
+},{"../internals/baseCreateCallback":11,"../internals/slice":18,"./assign":19,"./isArray":24,"./isObject":27}],21:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var baseCreateCallback = require('../internals/baseCreateCallback'),
+    indicatorObject = require('../internals/indicatorObject'),
+    objectTypes = require('../internals/objectTypes');
+
+/**
+ * Iterates over own and inherited enumerable properties of an object,
+ * executing the callback for each property. The callback is bound to `thisArg`
+ * and invoked with three arguments; (value, key, object). Callbacks may exit
+ * iteration early by explicitly returning `false`.
+ *
+ * @static
+ * @memberOf _
+ * @type Function
+ * @category Objects
+ * @param {Object} object The object to iterate over.
+ * @param {Function} [callback=identity] The function called per iteration.
+ * @param {*} [thisArg] The `this` binding of `callback`.
+ * @returns {Object} Returns `object`.
+ * @example
+ *
+ * function Shape() {
+ *   this.x = 0;
+ *   this.y = 0;
+ * }
+ *
+ * Shape.prototype.move = function(x, y) {
+ *   this.x += x;
+ *   this.y += y;
+ * };
+ *
+ * _.forIn(new Shape, function(value, key) {
+ *   console.log(key);
+ * });
+ * // => logs 'x', 'y', and 'move' (property order is not guaranteed across environments)
+ */
+var forIn = function(collection, callback) {
+  var index, iterable = collection, result = iterable;
+  if (!iterable) return result;
+  if (!objectTypes[typeof iterable]) return result;
+    for (index in iterable) {
+      if (callback(iterable[index], index, collection) === indicatorObject) return result;
+    }
+  return result
+};
+
+module.exports = forIn;
+
+},{"../internals/baseCreateCallback":11,"../internals/indicatorObject":14,"../internals/objectTypes":16}],22:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var baseCreateCallback = require('../internals/baseCreateCallback'),
+    indicatorObject = require('../internals/indicatorObject'),
+    keys = require('./keys'),
+    objectTypes = require('../internals/objectTypes');
+
+/** Used for native method references */
+var objectProto = Object.prototype;
+
+/** Native method shortcuts */
+var hasOwnProperty = objectProto.hasOwnProperty;
+
+/**
+ * Iterates over own enumerable properties of an object, executing the callback
+ * for each property. The callback is bound to `thisArg` and invoked with three
+ * arguments; (value, key, object). Callbacks may exit iteration early by
+ * explicitly returning `false`.
+ *
+ * @static
+ * @memberOf _
+ * @type Function
+ * @category Objects
+ * @param {Object} object The object to iterate over.
+ * @param {Function} [callback=identity] The function called per iteration.
+ * @param {*} [thisArg] The `this` binding of `callback`.
+ * @returns {Object} Returns `object`.
+ * @example
+ *
+ * _.forOwn({ '0': 'zero', '1': 'one', 'length': 2 }, function(num, key) {
+ *   console.log(key);
+ * });
+ * // => logs '0', '1', and 'length' (property order is not guaranteed across environments)
+ */
+var forOwn = function(collection, callback) {
+  var index, iterable = collection, result = iterable;
+  if (!iterable) return result;
+  if (!objectTypes[typeof iterable]) return result;
+    for (index in iterable) {
+      if (hasOwnProperty.call(iterable, index)) {
+        if (callback(iterable[index], index, collection) === indicatorObject) return result;
+      }
+    }
+  return result
+};
+
+module.exports = forOwn;
+
+},{"../internals/baseCreateCallback":11,"../internals/indicatorObject":14,"../internals/objectTypes":16,"./keys":29}],23:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var forIn = require('./forIn'),
+    isFunction = require('./isFunction');
+
+/**
+ * Creates a sorted array of property names of all enumerable properties,
+ * own and inherited, of `object` that have function values.
+ *
+ * @static
+ * @memberOf _
+ * @alias methods
+ * @category Objects
+ * @param {Object} object The object to inspect.
+ * @returns {Array} Returns an array of property names that have function values.
+ * @example
+ *
+ * _.functions(_);
+ * // => ['all', 'any', 'bind', 'bindAll', 'clone', 'compact', 'compose', ...]
+ */
+function functions(object) {
+  var result = [];
+  forIn(object, function(value, key) {
+    if (isFunction(value)) {
+      result.push(key);
+    }
+  });
+  return result.sort();
+}
+
+module.exports = functions;
+
+},{"./forIn":21,"./isFunction":26}],24:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var isNative = require('../internals/isNative');
+
+/** `Object#toString` result shortcuts */
+var arrayClass = '[object Array]';
+
+/** Used for native method references */
+var objectProto = Object.prototype;
+
+/** Used to resolve the internal [[Class]] of values */
+var toString = objectProto.toString;
+
+/* Native method shortcuts for methods with the same name as other `lodash` methods */
+var nativeIsArray = isNative(nativeIsArray = Array.isArray) && nativeIsArray;
+
+/**
+ * Checks if `value` is an array.
+ *
+ * @static
+ * @memberOf _
+ * @type Function
+ * @category Objects
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if the `value` is an array, else `false`.
+ * @example
+ *
+ * (function() { return _.isArray(arguments); })();
+ * // => false
+ *
+ * _.isArray([1, 2, 3]);
+ * // => true
+ */
+var isArray = nativeIsArray || function(value) {
+  return value && typeof value == 'object' && typeof value.length == 'number' &&
+    toString.call(value) == arrayClass || false;
+};
+
+module.exports = isArray;
+
+},{"../internals/isNative":15}],25:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+
+/** `Object#toString` result shortcuts */
+var boolClass = '[object Boolean]';
+
+/** Used for native method references */
+var objectProto = Object.prototype;
+
+/** Used to resolve the internal [[Class]] of values */
+var toString = objectProto.toString;
+
+/**
+ * Checks if `value` is a boolean value.
+ *
+ * @static
+ * @memberOf _
+ * @category Objects
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if the `value` is a boolean value, else `false`.
+ * @example
+ *
+ * _.isBoolean(null);
+ * // => false
+ */
+function isBoolean(value) {
+  return value === true || value === false ||
+    value && typeof value == 'object' && toString.call(value) == boolClass || false;
+}
+
+module.exports = isBoolean;
+
+},{}],26:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+
+/** `Object#toString` result shortcuts */
+var funcClass = '[object Function]';
+
+/** Used for native method references */
+var objectProto = Object.prototype;
+
+/** Used to resolve the internal [[Class]] of values */
+var toString = objectProto.toString;
+
+/**
+ * Checks if `value` is a function.
+ *
+ * @static
+ * @memberOf _
+ * @category Objects
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if the `value` is a function, else `false`.
+ * @example
+ *
+ * _.isFunction(_);
+ * // => true
+ */
+function isFunction(value) {
+  return typeof value == 'function';
+}
+// fallback for older versions of Chrome and Safari
+if (isFunction(/x/)) {
+  isFunction = function(value) {
+    return typeof value == 'function' && toString.call(value) == funcClass;
+  };
+}
+
+module.exports = isFunction;
+
+},{}],27:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var objectTypes = require('../internals/objectTypes');
+
+/**
+ * Checks if `value` is the language type of Object.
+ * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+ *
+ * @static
+ * @memberOf _
+ * @category Objects
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if the `value` is an object, else `false`.
+ * @example
+ *
+ * _.isObject({});
+ * // => true
+ *
+ * _.isObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isObject(1);
+ * // => false
+ */
+function isObject(value) {
+  // check if the value is the ECMAScript language type of Object
+  // http://es5.github.io/#x8
+  // and avoid a V8 bug
+  // http://code.google.com/p/v8/issues/detail?id=2291
+  return !!(value && objectTypes[typeof value]);
+}
+
+module.exports = isObject;
+
+},{"../internals/objectTypes":16}],28:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+
+/** `Object#toString` result shortcuts */
+var stringClass = '[object String]';
+
+/** Used for native method references */
+var objectProto = Object.prototype;
+
+/** Used to resolve the internal [[Class]] of values */
+var toString = objectProto.toString;
+
+/**
+ * Checks if `value` is a string.
+ *
+ * @static
+ * @memberOf _
+ * @category Objects
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if the `value` is a string, else `false`.
+ * @example
+ *
+ * _.isString('fred');
+ * // => true
+ */
+function isString(value) {
+  return typeof value == 'string' ||
+    value && typeof value == 'object' && toString.call(value) == stringClass || false;
+}
+
+module.exports = isString;
+
+},{}],29:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+var isNative = require('../internals/isNative'),
+    isObject = require('./isObject'),
+    shimKeys = require('../internals/shimKeys');
+
+/* Native method shortcuts for methods with the same name as other `lodash` methods */
+var nativeKeys = isNative(nativeKeys = Object.keys) && nativeKeys;
+
+/**
+ * Creates an array composed of the own enumerable property names of an object.
+ *
+ * @static
+ * @memberOf _
+ * @category Objects
+ * @param {Object} object The object to inspect.
+ * @returns {Array} Returns an array of property names.
+ * @example
+ *
+ * _.keys({ 'one': 1, 'two': 2, 'three': 3 });
+ * // => ['one', 'two', 'three'] (property order is not guaranteed across environments)
+ */
+var keys = !nativeKeys ? shimKeys : function(object) {
+  if (!isObject(object)) {
+    return [];
+  }
+  return nativeKeys(object);
+};
+
+module.exports = keys;
+
+},{"../internals/isNative":15,"../internals/shimKeys":17,"./isObject":27}],30:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+
+/**
+ * This method returns the first argument provided to it.
+ *
+ * @static
+ * @memberOf _
+ * @category Utilities
+ * @param {*} value Any value.
+ * @returns {*} Returns `value`.
+ * @example
+ *
+ * var object = { 'name': 'fred' };
+ * _.identity(object) === object;
+ * // => true
+ */
+function identity(value) {
+  return value;
+}
+
+module.exports = identity;
+
+},{}],31:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+
+/**
+ * A no-operation function.
+ *
+ * @static
+ * @memberOf _
+ * @category Utilities
+ * @example
+ *
+ * var object = { 'name': 'fred' };
+ * _.noop(object) === undefined;
+ * // => true
+ */
+function noop() {
+  // no operation performed
+}
+
+module.exports = noop;
+
+},{}],32:[function(require,module,exports){
+/**
+ * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
+ * Build: `lodash modularize underscore exports="node" -o ./underscore/`
+ * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+ * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
+ * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ * Available under MIT license <http://lodash.com/license>
+ */
+
+/**
+ * Creates a "_.pluck" style function, which returns the `key` value of a
+ * given object.
+ *
+ * @static
+ * @memberOf _
+ * @category Utilities
+ * @param {string} key The name of the property to retrieve.
+ * @returns {Function} Returns the new function.
+ * @example
+ *
+ * var characters = [
+ *   { 'name': 'fred',   'age': 40 },
+ *   { 'name': 'barney', 'age': 36 }
+ * ];
+ *
+ * var getName = _.property('name');
+ *
+ * _.map(characters, getName);
+ * // => ['barney', 'fred']
+ *
+ * _.sortBy(characters, getName);
+ * // => [{ 'name': 'barney', 'age': 36 }, { 'name': 'fred',   'age': 40 }]
+ */
+function property(key) {
+  return function(object) {
+    return object[key];
+  };
+}
+
+module.exports = property;
+
+},{}],33:[function(require,module,exports){
+"use strict";
+var undef;
+
+module.exports = redispatch;
+
+function redispatch(){
+  var fns = [], d = function(){
+    var args = arguments, i = fns.length, result;
+    for(; i-- ;){
+      result = fns[i].apply(this, args);
+      if(result !== undef){
+        return result;
+      }
+    }
+  };
+
+  d.register = function(fn){
+    fns.push(fn);
+  };
+  return d;
+}
+
+},{}],34:[function(require,module,exports){
+"use strict";
+var undef,
+    Arr = Array,
+    toString = Object.prototype.toString,
+    isArray = (isFunction(Arr.isArray) ? Arr.isArray : predicateToString('Array')),
+    /* global Symbol */
+    symbolExists = typeof Symbol !== 'undefined',
+    symIterator = symbolExists ? Symbol.iterator : '@@iterator',
+    /* jshint newcap:false */
+    symTransformer = symbolExists ? Symbol('transformer') : '@@transformer',
+    protocols = {
+      iterator: symIterator,
+      transformer: symTransformer
+    };
+
+module.exports = {
+  protocols: protocols,
+  isFunction: isFunction,
+  isArray: isArray,
+  isString: predicateToString('String'),
+  isRegExp: predicateToString('RegExp'),
+  isNumber: predicateToString('Number'),
+  isUndefined: isUndefined,
+  isReduced: isReduced,
+  reduced: reduced,
+  unreduced: unreduced,
+  deref: unreduced,
+  compose: compose,
+  arrayPush: push,
+  identity: identity
+};
+
+function isFunction(value){
+  return typeof value === 'function';
+}
+
+function isUndefined(value){
+  return value === undef;
+}
+
+function predicateToString(type){
+  var str = '[object '+type+']';
+  return function(value){
+    return toString.call(value) === str;
+  };
+}
+
+function isReduced(value){
+  return !!(value instanceof Reduced || value && value.__transducers_reduced__);
+}
+
+function reduced(value){
+  if(!isReduced(value)){
+    value = new Reduced(value);
+  }
+  return value;
+}
+
+function unreduced(value){
+  if(isReduced(value)){
+    value = value.value;
+  }
+  return value;
+}
+
+function Reduced(value){
+  this.value = value;
+  this.__transducers_reduced__ = true;
+}
+
+function identity(result){
+  return result;
+}
+
+function compose(){
+  var fns = arguments;
+  return function(xf){
+    var i = fns.length;
+    while(i--){
+      xf = fns[i](xf);
+    }
+    return xf;
+  };
+}
+
+function push(result, input){
+  result.push(input);
+  return result;
+}
+
+},{}],35:[function(require,module,exports){
 "use strict";
 /*global transducers */
 var libs = ['transducers-js', 'transducers.js'];
@@ -551,60 +1878,43 @@ module.exports = {
   libs: libs
 };
 
-},{}],5:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 "use strict";
 /* global Symbol */
-var undef,
-    symbolExists = typeof Symbol !== 'undefined',
-    /* jshint newcap:false */
-    symIterator = symbolExists ? Symbol.iterator : '@@iterator',
-    symTransformer = symbolExists ? Symbol('transformer') : '@@transformer',
-    protocols = {
-      iterator: symIterator,
-      transformer: symTransformer
-    },
-    Arr = Array,
-    ArrProto = Arr.prototype,
-    slice = ArrProto.slice,
-    isArray = (isFunction(Arr.isArray) ? Arr.isArray : _isArray),
-    Obj = Object,
-    ObjProto = Obj.prototype,
-    toString = ObjProto.toString;
+var util = require('transduce-util'),
+    symbol = util.protocols.iterator,
+    isFunction = util.isFunction,
+    isArray = util.isArray,
+    undef;
 
 module.exports = {
-  protocols: protocols,
+  symbol: symbol,
   isIterable: isIterable,
   isIterator: isIterator,
   iterable: iterable,
   iterator: iterator,
-  isTransformer: isTransformer,
-  transformer: transformer,
-  isReduced: isReduced,
-  reduced: reduced,
-  unreduced: unreduced,
-  deref: unreduced,
-  compose: compose,
+  toArray: toArray,
   isFunction: isFunction,
-  isArray: isArray,
-  arrayPush: push,
-  identity: identity,
-  transduceToArray: toArray
+  isArray: isArray
 };
 
-function isFunction(value){
-  return typeof value === 'function';
-}
-
-function _isArray(value){
-  return toString.call(value) === '[object Array]';
+function toArray(iter){
+  iter = iterator(iter);
+  var next = iter.next(),
+      arr = [];
+  while(!next.done){
+    arr.push(next.value);
+    next = iter.next();
+  }
+  return arr;
 }
 
 function isIterable(value){
-  return (value[symIterator] !== undef);
+  return (value[symbol] !== undef);
 }
 
 function isIterator(value){
-  return isIterable(value) || 
+  return isIterable(value) ||
     (isFunction(value.next));
 }
 
@@ -623,13 +1933,80 @@ function iterable(value){
 function iterator(value){
   var it = iterable(value);
   if(it !== undef){
-    it = it[symIterator]();
+    it = it[symbol]();
   } else if(isFunction(value.next)){
     // handle non-well-formed iterators that only have a next method
     it = value;
   }
   return it;
 }
+
+// Wrap an Array into an iterable
+function ArrayIterable(arr){
+  this.arr = arr;
+}
+ArrayIterable.prototype[symbol] = function(){
+  var arr = this.arr,
+      idx = 0;
+  return {
+    next: function(){
+      if(idx >= arr.length){
+        return {done: true};
+      }
+
+      return {done: false, value: arr[idx++]};
+    }
+  };
+};
+
+// Wrap an function into an iterable that calls function on every next
+function FunctionIterable(fn){
+  this.fn = fn;
+}
+FunctionIterable.prototype[symbol] = function(){
+  var fn = this.fn;
+  return {
+    next: function(){
+      return {done: false, value: fn()};
+    }
+  };
+};
+
+},{"transduce-util":34}],37:[function(require,module,exports){
+"use strict";
+/* global Symbol */
+var undef,
+    util = require('transduce-util'),
+    iter = require('iterator-protocol'),
+    slice = Array.prototype.slice,
+    protocols = util.protocols,
+    symTransformer = protocols.transformer,
+    isFunction = util.isFunction,
+    isArray = util.isArray,
+    identity = util.identity,
+    push = util.arrayPush;
+
+
+module.exports = {
+  protocols: protocols,
+  isIterable: iter.isIterable,
+  isIterator: iter.isIterator,
+  iterable: iter.iterable,
+  iterator: iter.iterator,
+  isTransformer: isTransformer,
+  transformer: transformer,
+  isReduced: util.isReduced,
+  reduced: util.reduced,
+  unreduced: util.unreduced,
+  deref: util.unreduced,
+  compose: util.compose,
+  isFunction: isFunction,
+  isArray: isArray,
+  toArray: iter.toArray,
+  arrayPush: push,
+  identity: identity,
+  transduceToArray: transduceToArray
+};
 
 function isTransformer(value){
   return (value[symTransformer] !== undef) ||
@@ -651,41 +2028,7 @@ function transformer(value){
   return xf;
 }
 
-function isReduced(value){
-  return !!(value && value.__transducers_reduced__);
-}
-
-function reduced(value){
-  if(!isReduced(value)){
-    value = new Reduced(value);
-  }
-  return value;
-}
-
-function unreduced(value){
-  if(isReduced(value)){
-    value = value.value;
-  }
-  return value;
-}
-
-function Reduced(value){
-  this.value = value;
-}
-Reduced.prototype.__transducers_reduced__ = true;
-
-function compose(){
-  var fns = arguments;
-  return function(xf){
-    var i = fns.length;
-    while(i--){
-      xf = fns[i](xf);
-    }
-    return xf;
-  };
-}
-
-function toArray(impl){
+function transduceToArray(impl){
   return function(xf, coll){
     var init = [];
     if(coll === undef){
@@ -694,52 +2037,6 @@ function toArray(impl){
     return impl.transduce(xf, push, init, coll);
   };
 }
-
-function push(result, input){
-  result.push(input);
-  return result;
-}
-
-function identity(result){
-  return result;
-}
-
-// Wrap an Array into an iterable
-function ArrayIterable(arr){
-  this.arr = arr;
-}
-ArrayIterable.prototype[symIterator] = function(){
-  return new ArrayIterator(this.arr);
-};
-
-// Turns an Array into an iterator
-function ArrayIterator(arr){
-  this.arr = arr;
-  this.idx = 0;
-}
-ArrayIterator.prototype.next = function(){
-  if(this.idx >= this.arr.length){
-    return {done: true};
-  }
-
-  return {done: false, value: this.arr[this.idx++]};
-};
-
-// Wrap an function into an iterable that calls function on every next
-function FunctionIterable(fn){
-  this.fn = fn;
-}
-FunctionIterable.prototype[symIterator] = function(){
-  return new FunctionIterator(this.fn);
-};
-
-// Turns a function into an infinite iterator that calls function on every next
-function FunctionIterator(fn){
-  this.fn = fn;
-}
-FunctionIterator.prototype.next = function(){
-  return {done: false, value: this.fn()};
-};
 
 // Pushes value on array, using optional constructor arg as default, or [] if not provided
 // init will clone the default
@@ -767,7 +2064,7 @@ FunctionTransformer.prototype.step = function(result, input){
 };
 FunctionTransformer.prototype.result = identity;
 
-},{}],6:[function(require,module,exports){
+},{"iterator-protocol":36,"transduce-util":34}],38:[function(require,module,exports){
 "use strict";
 var protocol = require('transduce-protocol'),
     lib = require('./load'),
@@ -847,7 +2144,7 @@ var undef, loader = {
 
 load();
 
-},{"./load":4,"transduce-protocol":5}],7:[function(require,module,exports){
+},{"./load":35,"transduce-protocol":37}],39:[function(require,module,exports){
 "use strict";
 var undef;
 
@@ -883,13 +2180,12 @@ var _r = function(obj, transform) {
   this._wrapped = _r.wrap.call(this, obj);
 };
 
-_r.VERSION = '0.1.3';
+_r.VERSION = '0.2.0';
 
-var _ = require('underscore');
 
 // Export for browser or Common-JS
 // Save the previous value of the `_r` variable.
-var previous_r, root;
+var previous_r, root, _;
 if(typeof window !== 'undefined'){
   /*global window*/
   var root = window;
@@ -902,6 +2198,9 @@ if(typeof window !== 'undefined'){
 module.exports = _r;
 
 // access to browser or imported underscore object.
+if(_ === undef){
+  _ = require('./lib/lodash');
+}
 _r._ = _;
 
 // Returns the value if it is a chained transformation, else null
@@ -938,6 +2237,7 @@ _.each([
   require('./lib/dispatch'),
   require('./lib/base'),
   require('./lib/array'),
+  require('./lib/unique'),
   require('./lib/push'),
   require('./lib/iterator'),
   require('./lib/math'),
@@ -949,4 +2249,4 @@ _.each([
     }
   });
 
-},{"./lib/array":3,"./lib/base":1,"./lib/dispatch":2,"./lib/iterator":3,"./lib/math":3,"./lib/push":3,"./lib/string":3,"underscore":3}]},{},[7]);
+},{"./lib/array":4,"./lib/base":1,"./lib/dispatch":2,"./lib/iterator":4,"./lib/lodash":3,"./lib/math":4,"./lib/push":4,"./lib/string":4,"./lib/unique":4}]},{},[39]);

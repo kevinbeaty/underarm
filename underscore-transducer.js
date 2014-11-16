@@ -33,13 +33,12 @@ var _r = function(obj, transform) {
   this._wrapped = _r.wrap.call(this, obj);
 };
 
-_r.VERSION = '0.1.3';
+_r.VERSION = '0.2.0';
 
-var _ = require('./lib/lodash');
 
 // Export for browser or Common-JS
 // Save the previous value of the `_r` variable.
-var previous_r, root;
+var previous_r, root, _;
 if(typeof window !== 'undefined'){
   /*global window*/
   var root = window;
@@ -52,6 +51,9 @@ if(typeof window !== 'undefined'){
 module.exports = _r;
 
 // access to browser or imported underscore object.
+if(_ === undef){
+  _ = require('./lib/lodash');
+}
 _r._ = _;
 
 // Returns the value if it is a chained transformation, else null
