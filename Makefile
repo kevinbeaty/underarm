@@ -28,21 +28,17 @@ js: $(BUILD).js $(BUILD).min.js \
 	$(BUILD).nolodash.js $(BUILD).nolodash.min.js \
 	$(BUILD).nolodash.base.js $(BUILD).nolodash.base.min.js
 
-$(BUILD).js: $(PROJECT).js | build
-	`npm bin`/browserify $< > $@
+$(BUILD).js: lib/*.js | build
+	`npm bin`/browserify $(PROJECT).js > $@
 
-$(BUILD).nolodash.js: $(PROJECT).js | build
-	`npm bin`/browserify -i ./lib/lodash.js $< > $@
+$(BUILD).nolodash.js: lib/*.js | build
+	`npm bin`/browserify $(PROJECT).nolodash.js > $@
 
-$(BUILD).base.js: $(PROJECT).js | build
-	`npm bin`/browserify \
-		-i './lib/array.js' -i './lib/unique.js' -i './lib/math.js' \
-		-i './lib/push.js' -i './lib/string.js' -i './lib/iterator.js' $< > $@
+$(BUILD).base.js: lib/*.js | build
+	`npm bin`/browserify $(PROJECT).base.js > $@
 
-$(BUILD).nolodash.base.js: $(PROJECT).js | build
-	`npm bin`/browserify -i ./lib/lodash.js \
-		-i './lib/array.js' -i './lib/unique.js' -i './lib/math.js' \
-		-i './lib/push.js' -i './lib/string.js' -i './lib/iterator.js' $< > $@
+$(BUILD).nolodash.base.js: lib/*.js | build
+	`npm bin`/browserify $(PROJECT).nolodash.base.js > $@
 
 build:
 	mkdir -p build

@@ -1,6 +1,6 @@
 {
   "name": "underscore-transducer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Transducers for Underscore",
   "main": "underscore-transducer.js",
   "scripts": {
@@ -11,10 +11,11 @@
     "url": "https://github.com/kevinbeaty/underscore-transducer"
   },
   "keywords": [
-    "Underscore",
-    "Transducer",
-    "Reducer",
-    "Reactive"
+    "underscore",
+    "transducer",
+    "reducer",
+    "reactive",
+    "transduce"
   ],
   "author": "Kevin Beaty",
   "license": "MIT",
