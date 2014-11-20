@@ -1,4 +1,4 @@
-module.exports = require('./lib/load')(
+module.exports = require('./lib/load')([
   require('./lib/lodash'),
   require('./lib/dispatch'),
   require('./lib/transduce'),
@@ -7,4 +7,4 @@ module.exports = require('./lib/load')(
   require('./lib/push'),
   require('./lib/iterator'),
   require('./lib/math'),
-  require('./lib/string'));
+  require('./lib/string')]);

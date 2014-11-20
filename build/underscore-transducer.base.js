@@ -1,139 +1,94 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
-var transduce = require('transduce'),
-    slice = Array.prototype.slice, undef;
+var tr = require('transduce'), undef;
 
-module.exports = function(_r){
-  // Base Transducers
-  // ----------------
-  _r.mixin({
-    map: map,
-    collect: map,
-    filter: filter,
-    select: filter,
-    remove: remove,
-    reject: remove,
-    take: take,
-    first: take,
-    head: take,
-    takeWhile: takeWhile,
-    drop: drop,
-    rest: drop,
-    tail: drop,
-    dropWhile: dropWhile,
-    cat: cat,
-    mapcat: mapcat,
-    partitionAll: partitionAll,
-    chunkAll: partitionAll,
-    partitionBy: partitionBy,
-    compact: compact,
-    invoke: invoke,
-    pluck: pluck,
-    where: where
-  });
-
-  var iteratee = _r.iteratee,
-      _ = _r._;
-
-  // Return the results of applying the iteratee to each element.
-  function map(f) {
-    return transduce.map(iteratee(f));
+var _r = function(obj, transform) {
+  var _ = _r._;
+  if (_r.as(obj)){
+    if(transform === undef){
+      return obj;
+    }
+    var wrappedFns = _.clone(obj._wrappedFns);
+    wrappedFns.push(transform);
+    var copy = new _r(obj._wrapped, wrappedFns);
+    copy._opts = _.clone(obj._opts);
+    return copy;
   }
 
-  // Return all the elements that pass a truth test.
-  // Aliased as `select`.
-  function filter(predicate) {
-    return transduce.filter(iteratee(predicate));
+  if (!(_r.as(this))) return new _r(obj, transform);
+
+  if(_r.as(transform)){
+    this._opts = _.clone(transform._opts);
+    transform = transform._wrappedFns;
+  } else {
+    this._opts = {};
   }
 
-  // Return all the elements for which a truth test fails.
-  function remove(predicate) {
-    return transduce.remove(iteratee(predicate));
+  if(tr.isFunction(transform)){
+    this._wrappedFns = [transform];
+  } else if(tr.isArray(transform)){
+    this._wrappedFns = transform;
+  } else {
+    this._wrappedFns = [];
   }
 
-  // Get the first element of an array. Passing **n** will return the first N
-  // values in the array. Aliased as `head` and `take`.
-  function take(n) {
-     if(n === undef){
-       /*jshint validthis:true*/
-       _r.resolveSingleValue(this);
-       n = 1;
-     } else {
-       n = (n > 0) ? n : 0;
-     }
-     return transduce.take(n);
-  }
+  this._wrapped = _r.wrap.call(this, obj);
+};
 
-  // takes items until predicate returns false
-  function takeWhile(predicate) {
-     return transduce.takeWhile(iteratee(predicate));
-  }
+_r.VERSION = '0.2.1';
 
-  // Returns everything but the first entry. Aliased as `tail` and `drop`.
-  // Passing an **n** will return the rest N values.
-  function drop(n) {
-    n = (n === undef) ? 1 : (n > 0) ? n : 0;
-    return transduce.drop(n);
-  }
+// Export for browser or Common-JS
+// Save the previous value of the `_r` variable.
+var previous_r, root;
+if(typeof window !== 'undefined'){
+  /*global window*/
+  var root = window;
+  previous_r = root._r;
+  root._r = _r;
+  _r._ = root._;
+} else {
+  root = {};
+}
+module.exports = _r;
 
-  // Drops items while the predicate returns true
-  function dropWhile(predicate) {
-     return transduce.dropWhile(iteratee(predicate));
-  }
+// Returns the value if it is a chained transformation, else null
+_r.as = function(value){
+  return value instanceof _r ? value : null;
+};
 
-  // Concatenating transducer.
-  // NOTE: unlike libraries, cat should be called as a function to use.
-  // _r.cat() not _r.cat
-  function cat(){
-    return transduce.cat;
-  }
+// Run Underscore.js in *noConflict* mode, returning the `_` variable to its
+// previous owner. Returns a reference to the Underscore object.
+_r.noConflict = function() {
+  root._r = previous_r;
+  return this;
+};
 
-  // mapcat.
-  // Composition of _r.map(f) and _r.cat()
-  function mapcat(f){
-    return transduce.mapcat(iteratee(f));
-  }
+// Returns a new chained instance using current transformation, but
+// wrapping the given source
+_r.prototype.withSource = function(obj){
+  return _r(obj, this);
+};
 
-  // Partitions the source into arrays of size n
-  // When transformer completes, the array will be stepped with any remaining items.
-  // Alias chunkAll
-  function partitionAll(n){
-    return transduce.partitionAll(n);
-  }
-
-  // Partitions the source into sub arrays while the value of the function
-  // changes equality.
-  function partitionBy(f){
-    return transduce.partitionBy(iteratee(f));
-  }
-
-  // Trim out all falsy values from an array.
-  function compact() {
-    return filter(_.identity);
-  }
-
-  // Invoke a method (with arguments) on every item in a collection.
-  function invoke(method) {
-    var args = slice.call(arguments, 2);
-    var isFunc = _.isFunction(method);
-    return map(function(value) {
-      return (isFunc ? method : value[method]).apply(value, args);
-    });
-  }
-
-  // Convenience version of a common use case of `map`: fetching a property.
-  function pluck(key) {
-    return map(_.property(key));
-  }
-
-  // Convenience version of a common use case of `filter`: selecting only objects
-  // containing specific `key:value` pairs.
-  function where(attrs) {
-    return filter(_.matches(attrs));
+// Add your own custom transducers to the Underscore.transducer object.
+_r.mixin = function(obj) {
+  var name, fn;
+  for(name in obj){
+    fn = obj[name];
+    if(typeof fn === 'function'){
+      _r[name] = fn;
+      _r.prototype[name] = _method(fn); 
+    }
   }
 };
 
-},{"transduce":38}],2:[function(require,module,exports){
+function _method(func){
+  return function() {
+    var method = func.apply(this, arguments);
+    return _r(this, method);
+  };
+}
+
+},{"transduce":33}],2:[function(require,module,exports){
 "use strict";
 var tr = require('transduce'),
     dispatcher = require('redispatch'),
@@ -366,7 +321,7 @@ module.exports = function(_r){
   }
 
   // Returns empty object of the same type as argument.
-  // Default returns [] if _.isArray or undefined, {} if _.isObject
+  // Default returns [] if isArray or undefined, {} if _.isObject
   // and an internal sentinel to ignore otherwise
   //
   // Dispatch function. To support different types
@@ -375,7 +330,7 @@ module.exports = function(_r){
   // predicates. Return undefined if not supported, so other
   // dispatched functions can be checked
   empty.register(function(obj){
-    if(obj === undef || _.isArray(obj) || iterator(obj)){
+    if(obj === undef || tr.isArray(obj) || iterator(obj)){
       return []; // array if not specified or from array
     } else if(_.isObject(obj)){
       return {}; // object if from object
@@ -394,7 +349,7 @@ module.exports = function(_r){
   //
   // Return undefined if not supported, so other dispatched functions can be checked
   append.register(function(obj, item){
-    if(_.isArray(obj)){
+    if(tr.isArray(obj)){
       obj.push(item);
       return obj;
     }
@@ -414,161 +369,176 @@ module.exports = function(_r){
   }
 };
 
-},{"redispatch":33,"transduce":38}],3:[function(require,module,exports){
-var _ = {};
+},{"redispatch":28,"transduce":33}],3:[function(require,module,exports){
+"use strict";
+var undef;
+module.exports = function(libs, _r){
+  var i = 0, len = libs.length, lib;
+  if(_r === undef){
+    _r = require('./base');
+  }
 
-module.exports = _;
-
-_.clone = require('lodash-node/underscore/objects/clone');
-_.each = require('lodash-node/underscore/collections/forEach.js');
-_.filter = require('lodash-node/underscore/collections/filter.js');
-_.functions = require('lodash-node/underscore/objects/functions');
-_.isArray = require('lodash-node/underscore/objects/isArray');
-_.isBoolean = require('lodash-node/underscore/objects/isBoolean');
-_.isFunction = require('lodash-node/underscore/objects/isFunction');
-_.isString = require('lodash-node/underscore/objects/isString');
-_.iteratee = require('lodash-node/underscore/functions/createCallback');
-_.matches = _.iteratee;
-_.property = require('lodash-node/underscore/utilities/property');
-
-},{"lodash-node/underscore/collections/filter.js":5,"lodash-node/underscore/collections/forEach.js":6,"lodash-node/underscore/functions/createCallback":8,"lodash-node/underscore/objects/clone":20,"lodash-node/underscore/objects/functions":23,"lodash-node/underscore/objects/isArray":24,"lodash-node/underscore/objects/isBoolean":25,"lodash-node/underscore/objects/isFunction":26,"lodash-node/underscore/objects/isString":28,"lodash-node/underscore/utilities/property":32}],4:[function(require,module,exports){
-
-},{}],5:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var createCallback = require('../functions/createCallback'),
-    forOwn = require('../objects/forOwn');
-
-/**
- * Iterates over elements of a collection, returning an array of all elements
- * the callback returns truey for. The callback is bound to `thisArg` and
- * invoked with three arguments; (value, index|key, collection).
- *
- * If a property name is provided for `callback` the created "_.pluck" style
- * callback will return the property value of the given element.
- *
- * If an object is provided for `callback` the created "_.where" style callback
- * will return `true` for elements that have the properties of the given object,
- * else `false`.
- *
- * @static
- * @memberOf _
- * @alias select
- * @category Collections
- * @param {Array|Object|string} collection The collection to iterate over.
- * @param {Function|Object|string} [callback=identity] The function called
- *  per iteration. If a property name or object is provided it will be used
- *  to create a "_.pluck" or "_.where" style callback, respectively.
- * @param {*} [thisArg] The `this` binding of `callback`.
- * @returns {Array} Returns a new array of elements that passed the callback check.
- * @example
- *
- * var evens = _.filter([1, 2, 3, 4, 5, 6], function(num) { return num % 2 == 0; });
- * // => [2, 4, 6]
- *
- * var characters = [
- *   { 'name': 'barney', 'age': 36, 'blocked': false },
- *   { 'name': 'fred',   'age': 40, 'blocked': true }
- * ];
- *
- * // using "_.pluck" callback shorthand
- * _.filter(characters, 'blocked');
- * // => [{ 'name': 'fred', 'age': 40, 'blocked': true }]
- *
- * // using "_.where" callback shorthand
- * _.filter(characters, { 'age': 36 });
- * // => [{ 'name': 'barney', 'age': 36, 'blocked': false }]
- */
-function filter(collection, callback, thisArg) {
-  var result = [];
-  callback = createCallback(callback, thisArg, 3);
-
-  var index = -1,
-      length = collection ? collection.length : 0;
-
-  if (typeof length == 'number') {
-    while (++index < length) {
-      var value = collection[index];
-      if (callback(value, index, collection)) {
-        result.push(value);
-      }
+  for(; i < len; i++){
+    lib = libs[i];
+    // only import if included in build
+    if(typeof lib === 'function'){
+      lib(_r);
     }
-  } else {
-    forOwn(collection, function(value, index, collection) {
-      if (callback(value, index, collection)) {
-        result.push(value);
-      }
+  }
+
+  return _r;
+};
+
+},{"./base":1}],4:[function(require,module,exports){
+"use strict";
+
+module.exports = function(_r){
+  var _ = {};
+  _r._ = _;
+  _.clone = require('lodash-node/underscore/objects/clone');
+  _.isString = require('lodash-node/underscore/objects/isString');
+  _.isBoolean = require('lodash-node/underscore/objects/isBoolean');
+  _.iteratee = require('lodash-node/underscore/functions/createCallback');
+  _.matches = _.iteratee;
+  _.property = require('lodash-node/underscore/utilities/property');
+};
+
+},{"lodash-node/underscore/functions/createCallback":7,"lodash-node/underscore/objects/clone":18,"lodash-node/underscore/objects/isBoolean":20,"lodash-node/underscore/objects/isString":23,"lodash-node/underscore/utilities/property":27}],5:[function(require,module,exports){
+"use strict";
+var transduce = require('transduce'),
+    slice = Array.prototype.slice, undef;
+
+module.exports = function(_r){
+  // Base Transducers
+  // ----------------
+  _r.mixin({
+    map: map,
+    collect: map,
+    filter: filter,
+    select: filter,
+    remove: remove,
+    reject: remove,
+    take: take,
+    first: take,
+    head: take,
+    takeWhile: takeWhile,
+    drop: drop,
+    rest: drop,
+    tail: drop,
+    dropWhile: dropWhile,
+    cat: cat,
+    mapcat: mapcat,
+    partitionAll: partitionAll,
+    chunkAll: partitionAll,
+    partitionBy: partitionBy,
+    compact: compact,
+    invoke: invoke,
+    pluck: pluck,
+    where: where
+  });
+
+  var iteratee = _r.iteratee,
+      _ = _r._;
+
+  // Return the results of applying the iteratee to each element.
+  function map(f) {
+    return transduce.map(iteratee(f));
+  }
+
+  // Return all the elements that pass a truth test.
+  // Aliased as `select`.
+  function filter(predicate) {
+    return transduce.filter(iteratee(predicate));
+  }
+
+  // Return all the elements for which a truth test fails.
+  function remove(predicate) {
+    return transduce.remove(iteratee(predicate));
+  }
+
+  // Get the first element of an array. Passing **n** will return the first N
+  // values in the array. Aliased as `head` and `take`.
+  function take(n) {
+     if(n === undef){
+       /*jshint validthis:true*/
+       _r.resolveSingleValue(this);
+       n = 1;
+     } else {
+       n = (n > 0) ? n : 0;
+     }
+     return transduce.take(n);
+  }
+
+  // takes items until predicate returns false
+  function takeWhile(predicate) {
+     return transduce.takeWhile(iteratee(predicate));
+  }
+
+  // Returns everything but the first entry. Aliased as `tail` and `drop`.
+  // Passing an **n** will return the rest N values.
+  function drop(n) {
+    n = (n === undef) ? 1 : (n > 0) ? n : 0;
+    return transduce.drop(n);
+  }
+
+  // Drops items while the predicate returns true
+  function dropWhile(predicate) {
+     return transduce.dropWhile(iteratee(predicate));
+  }
+
+  // Concatenating transducer.
+  // NOTE: unlike libraries, cat should be called as a function to use.
+  // _r.cat() not _r.cat
+  function cat(){
+    return transduce.cat;
+  }
+
+  // mapcat.
+  // Composition of _r.map(f) and _r.cat()
+  function mapcat(f){
+    return transduce.mapcat(iteratee(f));
+  }
+
+  // Partitions the source into arrays of size n
+  // When transformer completes, the array will be stepped with any remaining items.
+  // Alias chunkAll
+  function partitionAll(n){
+    return transduce.partitionAll(n);
+  }
+
+  // Partitions the source into sub arrays while the value of the function
+  // changes equality.
+  function partitionBy(f){
+    return transduce.partitionBy(iteratee(f));
+  }
+
+  // Trim out all falsy values from an array.
+  function compact() {
+    return filter(_.identity);
+  }
+
+  // Invoke a method (with arguments) on every item in a collection.
+  function invoke(method) {
+    var args = slice.call(arguments, 2);
+    var isFunc = transduce.isFunction(method);
+    return map(function(value) {
+      return (isFunc ? method : value[method]).apply(value, args);
     });
   }
-  return result;
-}
 
-module.exports = filter;
-
-},{"../functions/createCallback":8,"../objects/forOwn":22}],6:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseCreateCallback = require('../internals/baseCreateCallback'),
-    forOwn = require('../objects/forOwn'),
-    indicatorObject = require('../internals/indicatorObject');
-
-/**
- * Iterates over elements of a collection, executing the callback for each
- * element. The callback is bound to `thisArg` and invoked with three arguments;
- * (value, index|key, collection). Callbacks may exit iteration early by
- * explicitly returning `false`.
- *
- * Note: As with other "Collections" methods, objects with a `length` property
- * are iterated like arrays. To avoid this behavior `_.forIn` or `_.forOwn`
- * may be used for object iteration.
- *
- * @static
- * @memberOf _
- * @alias each
- * @category Collections
- * @param {Array|Object|string} collection The collection to iterate over.
- * @param {Function} [callback=identity] The function called per iteration.
- * @param {*} [thisArg] The `this` binding of `callback`.
- * @returns {Array|Object|string} Returns `collection`.
- * @example
- *
- * _([1, 2, 3]).forEach(function(num) { console.log(num); }).join(',');
- * // => logs each number and returns '1,2,3'
- *
- * _.forEach({ 'one': 1, 'two': 2, 'three': 3 }, function(num) { console.log(num); });
- * // => logs each number and returns the object (property order is not guaranteed across environments)
- */
-function forEach(collection, callback, thisArg) {
-  var index = -1,
-      length = collection ? collection.length : 0;
-
-  callback = callback && typeof thisArg == 'undefined' ? callback : baseCreateCallback(callback, thisArg, 3);
-  if (typeof length == 'number') {
-    while (++index < length) {
-      if (callback(collection[index], index, collection) === indicatorObject) {
-        break;
-      }
-    }
-  } else {
-    forOwn(collection, callback);
+  // Convenience version of a common use case of `map`: fetching a property.
+  function pluck(key) {
+    return map(_.property(key));
   }
-}
 
-module.exports = forEach;
+  // Convenience version of a common use case of `filter`: selecting only objects
+  // containing specific `key:value` pairs.
+  function where(attrs) {
+    return filter(_.matches(attrs));
+  }
+};
 
-},{"../internals/baseCreateCallback":11,"../internals/indicatorObject":14,"../objects/forOwn":22}],7:[function(require,module,exports){
+},{"transduce":33}],6:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -610,7 +580,7 @@ function bind(func, thisArg) {
 
 module.exports = bind;
 
-},{"../internals/createWrapper":13,"../internals/slice":18}],8:[function(require,module,exports){
+},{"../internals/createWrapper":12,"../internals/slice":16}],7:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -679,7 +649,7 @@ function createCallback(func, thisArg, argCount) {
 
 module.exports = createCallback;
 
-},{"../internals/baseCreateCallback":11,"../objects/keys":29,"../utilities/property":32}],9:[function(require,module,exports){
+},{"../internals/baseCreateCallback":10,"../objects/keys":24,"../utilities/property":27}],8:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -741,7 +711,7 @@ function baseBind(bindData) {
 
 module.exports = baseBind;
 
-},{"../objects/isObject":27,"./baseCreate":10,"./slice":18}],10:[function(require,module,exports){
+},{"../objects/isObject":22,"./baseCreate":9,"./slice":16}],9:[function(require,module,exports){
 (function (global){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
@@ -787,7 +757,7 @@ if (!nativeCreate) {
 module.exports = baseCreate;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../objects/isObject":27,"../utilities/noop":31,"./isNative":15}],11:[function(require,module,exports){
+},{"../objects/isObject":22,"../utilities/noop":26,"./isNative":13}],10:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -836,7 +806,7 @@ function baseCreateCallback(func, thisArg, argCount) {
 
 module.exports = baseCreateCallback;
 
-},{"../functions/bind":7,"../utilities/identity":30}],12:[function(require,module,exports){
+},{"../functions/bind":6,"../utilities/identity":25}],11:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -914,7 +884,7 @@ function baseCreateWrapper(bindData) {
 
 module.exports = baseCreateWrapper;
 
-},{"../objects/isObject":27,"./baseCreate":10,"./slice":18}],13:[function(require,module,exports){
+},{"../objects/isObject":22,"./baseCreate":9,"./slice":16}],12:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -976,22 +946,7 @@ function createWrapper(func, bitmask, partialArgs, partialRightArgs, thisArg, ar
 
 module.exports = createWrapper;
 
-},{"../objects/isFunction":26,"./baseBind":9,"./baseCreateWrapper":12,"./slice":18}],14:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/** Used internally to indicate various things */
-var indicatorObject = {};
-
-module.exports = indicatorObject;
-
-},{}],15:[function(require,module,exports){
+},{"../objects/isFunction":21,"./baseBind":8,"./baseCreateWrapper":11,"./slice":16}],13:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1027,7 +982,7 @@ function isNative(value) {
 
 module.exports = isNative;
 
-},{}],16:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1049,7 +1004,7 @@ var objectTypes = {
 
 module.exports = objectTypes;
 
-},{}],17:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1089,7 +1044,7 @@ var shimKeys = function(object) {
 
 module.exports = shimKeys;
 
-},{"./objectTypes":16}],18:[function(require,module,exports){
+},{"./objectTypes":14}],16:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1129,7 +1084,7 @@ function slice(array, start, end) {
 
 module.exports = slice;
 
-},{}],19:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1189,7 +1144,7 @@ function assign(object) {
 
 module.exports = assign;
 
-},{"../internals/baseCreateCallback":11,"../internals/objectTypes":16,"./keys":29}],20:[function(require,module,exports){
+},{"../internals/baseCreateCallback":10,"../internals/objectTypes":14,"./keys":24}],18:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1252,157 +1207,7 @@ function clone(value) {
 
 module.exports = clone;
 
-},{"../internals/baseCreateCallback":11,"../internals/slice":18,"./assign":19,"./isArray":24,"./isObject":27}],21:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseCreateCallback = require('../internals/baseCreateCallback'),
-    indicatorObject = require('../internals/indicatorObject'),
-    objectTypes = require('../internals/objectTypes');
-
-/**
- * Iterates over own and inherited enumerable properties of an object,
- * executing the callback for each property. The callback is bound to `thisArg`
- * and invoked with three arguments; (value, key, object). Callbacks may exit
- * iteration early by explicitly returning `false`.
- *
- * @static
- * @memberOf _
- * @type Function
- * @category Objects
- * @param {Object} object The object to iterate over.
- * @param {Function} [callback=identity] The function called per iteration.
- * @param {*} [thisArg] The `this` binding of `callback`.
- * @returns {Object} Returns `object`.
- * @example
- *
- * function Shape() {
- *   this.x = 0;
- *   this.y = 0;
- * }
- *
- * Shape.prototype.move = function(x, y) {
- *   this.x += x;
- *   this.y += y;
- * };
- *
- * _.forIn(new Shape, function(value, key) {
- *   console.log(key);
- * });
- * // => logs 'x', 'y', and 'move' (property order is not guaranteed across environments)
- */
-var forIn = function(collection, callback) {
-  var index, iterable = collection, result = iterable;
-  if (!iterable) return result;
-  if (!objectTypes[typeof iterable]) return result;
-    for (index in iterable) {
-      if (callback(iterable[index], index, collection) === indicatorObject) return result;
-    }
-  return result
-};
-
-module.exports = forIn;
-
-},{"../internals/baseCreateCallback":11,"../internals/indicatorObject":14,"../internals/objectTypes":16}],22:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseCreateCallback = require('../internals/baseCreateCallback'),
-    indicatorObject = require('../internals/indicatorObject'),
-    keys = require('./keys'),
-    objectTypes = require('../internals/objectTypes');
-
-/** Used for native method references */
-var objectProto = Object.prototype;
-
-/** Native method shortcuts */
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-/**
- * Iterates over own enumerable properties of an object, executing the callback
- * for each property. The callback is bound to `thisArg` and invoked with three
- * arguments; (value, key, object). Callbacks may exit iteration early by
- * explicitly returning `false`.
- *
- * @static
- * @memberOf _
- * @type Function
- * @category Objects
- * @param {Object} object The object to iterate over.
- * @param {Function} [callback=identity] The function called per iteration.
- * @param {*} [thisArg] The `this` binding of `callback`.
- * @returns {Object} Returns `object`.
- * @example
- *
- * _.forOwn({ '0': 'zero', '1': 'one', 'length': 2 }, function(num, key) {
- *   console.log(key);
- * });
- * // => logs '0', '1', and 'length' (property order is not guaranteed across environments)
- */
-var forOwn = function(collection, callback) {
-  var index, iterable = collection, result = iterable;
-  if (!iterable) return result;
-  if (!objectTypes[typeof iterable]) return result;
-    for (index in iterable) {
-      if (hasOwnProperty.call(iterable, index)) {
-        if (callback(iterable[index], index, collection) === indicatorObject) return result;
-      }
-    }
-  return result
-};
-
-module.exports = forOwn;
-
-},{"../internals/baseCreateCallback":11,"../internals/indicatorObject":14,"../internals/objectTypes":16,"./keys":29}],23:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var forIn = require('./forIn'),
-    isFunction = require('./isFunction');
-
-/**
- * Creates a sorted array of property names of all enumerable properties,
- * own and inherited, of `object` that have function values.
- *
- * @static
- * @memberOf _
- * @alias methods
- * @category Objects
- * @param {Object} object The object to inspect.
- * @returns {Array} Returns an array of property names that have function values.
- * @example
- *
- * _.functions(_);
- * // => ['all', 'any', 'bind', 'bindAll', 'clone', 'compact', 'compose', ...]
- */
-function functions(object) {
-  var result = [];
-  forIn(object, function(value, key) {
-    if (isFunction(value)) {
-      result.push(key);
-    }
-  });
-  return result.sort();
-}
-
-module.exports = functions;
-
-},{"./forIn":21,"./isFunction":26}],24:[function(require,module,exports){
+},{"../internals/baseCreateCallback":10,"../internals/slice":16,"./assign":17,"./isArray":19,"./isObject":22}],19:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1449,7 +1254,7 @@ var isArray = nativeIsArray || function(value) {
 
 module.exports = isArray;
 
-},{"../internals/isNative":15}],25:[function(require,module,exports){
+},{"../internals/isNative":13}],20:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1488,7 +1293,7 @@ function isBoolean(value) {
 
 module.exports = isBoolean;
 
-},{}],26:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1532,7 +1337,7 @@ if (isFunction(/x/)) {
 
 module.exports = isFunction;
 
-},{}],27:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1573,7 +1378,7 @@ function isObject(value) {
 
 module.exports = isObject;
 
-},{"../internals/objectTypes":16}],28:[function(require,module,exports){
+},{"../internals/objectTypes":14}],23:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1612,7 +1417,7 @@ function isString(value) {
 
 module.exports = isString;
 
-},{}],29:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1650,7 +1455,7 @@ var keys = !nativeKeys ? shimKeys : function(object) {
 
 module.exports = keys;
 
-},{"../internals/isNative":15,"../internals/shimKeys":17,"./isObject":27}],30:[function(require,module,exports){
+},{"../internals/isNative":13,"../internals/shimKeys":15,"./isObject":22}],25:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1680,7 +1485,7 @@ function identity(value) {
 
 module.exports = identity;
 
-},{}],31:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1708,7 +1513,7 @@ function noop() {
 
 module.exports = noop;
 
-},{}],32:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1750,7 +1555,7 @@ function property(key) {
 
 module.exports = property;
 
-},{}],33:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 "use strict";
 var undef;
 
@@ -1773,7 +1578,7 @@ function redispatch(){
   return d;
 }
 
-},{}],34:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 "use strict";
 var undef,
     Arr = Array,
@@ -1864,7 +1669,7 @@ function push(result, input){
   return result;
 }
 
-},{}],35:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 "use strict";
 /*global transducers */
 var libs = ['transducers-js', 'transducers.js'];
@@ -1878,7 +1683,7 @@ module.exports = {
   libs: libs
 };
 
-},{}],36:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 "use strict";
 /* global Symbol */
 var util = require('transduce-util'),
@@ -1972,7 +1777,7 @@ FunctionIterable.prototype[symbol] = function(){
   };
 };
 
-},{"transduce-util":34}],37:[function(require,module,exports){
+},{"transduce-util":29}],32:[function(require,module,exports){
 "use strict";
 /* global Symbol */
 var undef,
@@ -2064,7 +1869,7 @@ FunctionTransformer.prototype.step = function(result, input){
 };
 FunctionTransformer.prototype.result = identity;
 
-},{"iterator-protocol":36,"transduce-util":34}],38:[function(require,module,exports){
+},{"iterator-protocol":31,"transduce-util":29}],33:[function(require,module,exports){
 "use strict";
 var protocol = require('transduce-protocol'),
     lib = require('./load'),
@@ -2144,109 +1949,10 @@ var undef, loader = {
 
 load();
 
-},{"./load":35,"transduce-protocol":37}],39:[function(require,module,exports){
-"use strict";
-var undef;
-
-var _r = function(obj, transform) {
-  if (_r.as(obj)){
-    if(transform === undef){
-      return obj;
-    }
-    var wrappedFns = _.clone(obj._wrappedFns);
-    wrappedFns.push(transform);
-    var copy = new _r(obj._wrapped, wrappedFns);
-    copy._opts = _.clone(obj._opts);
-    return copy;
-  }
-
-  if (!(_r.as(this))) return new _r(obj, transform);
-
-  if(_r.as(transform)){
-    this._opts = _.clone(transform._opts);
-    transform = transform._wrappedFns;
-  } else {
-    this._opts = {};
-  }
-
-  if(_.isFunction(transform)){
-    this._wrappedFns = [transform];
-  } else if(_.isArray(transform)){
-    this._wrappedFns = _.filter(transform, _.isFunction);
-  } else {
-    this._wrappedFns = [];
-  }
-
-  this._wrapped = _r.wrap.call(this, obj);
-};
-
-_r.VERSION = '0.2.0';
-
-
-// Export for browser or Common-JS
-// Save the previous value of the `_r` variable.
-var previous_r, root, _;
-if(typeof window !== 'undefined'){
-  /*global window*/
-  var root = window;
-  previous_r = root._r;
-  root._r = _r;
-  _ = root._;
-} else {
-  root = {};
-}
-module.exports = _r;
-
-// access to browser or imported underscore object.
-if(_ === undef){
-  _ = require('./lib/lodash');
-}
-_r._ = _;
-
-// Returns the value if it is a chained transformation, else null
-_r.as = function(value){
-  return value instanceof _r ? value : null;
-};
-
-// Run Underscore.js in *noConflict* mode, returning the `_` variable to its
-// previous owner. Returns a reference to the Underscore object.
-_r.noConflict = function() {
-  root._r = previous_r;
-  return this;
-};
-
-// Returns a new chained instance using current transformation, but
-// wrapping the given source
-_r.prototype.withSource = function(obj){
-  return _r(obj, this);
-};
-
-// Add your own custom transducers to the Underscore.transducer object.
-_r.mixin = function(obj) {
-  _.each(_.functions(obj), function(name) {
-    var func = _r[name] = obj[name];
-    _r.prototype[name] = function() {
-      var method = func.apply(this, arguments);
-      return _r(this, method);
-    };
-  });
-};
-
-// import libraries
-_.each([
+},{"./load":30,"transduce-protocol":32}],34:[function(require,module,exports){
+module.exports = require('./lib/load')([
+  require('./lib/lodash'),
   require('./lib/dispatch'),
-  require('./lib/base'),
-  require('./lib/array'),
-  require('./lib/unique'),
-  require('./lib/push'),
-  require('./lib/iterator'),
-  require('./lib/math'),
-  require('./lib/string')],
-  function(lib){
-    // only import if included in build
-    if(_.isFunction(lib)){
-      lib(_r);
-    }
-  });
+  require('./lib/transduce')]);
 
-},{"./lib/array":4,"./lib/base":1,"./lib/dispatch":2,"./lib/iterator":4,"./lib/lodash":3,"./lib/math":4,"./lib/push":4,"./lib/string":4,"./lib/unique":4}]},{},[39]);
+},{"./lib/dispatch":2,"./lib/load":3,"./lib/lodash":4,"./lib/transduce":5}]},{},[34]);

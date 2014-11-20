@@ -84,142 +84,97 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce-array":11}],2:[function(require,module,exports){
+},{"transduce-array":12}],2:[function(require,module,exports){
 "use strict";
-var transduce = require('transduce'),
-    slice = Array.prototype.slice, undef;
+var tr = require('transduce'), undef;
 
-module.exports = function(_r){
-  // Base Transducers
-  // ----------------
-  _r.mixin({
-    map: map,
-    collect: map,
-    filter: filter,
-    select: filter,
-    remove: remove,
-    reject: remove,
-    take: take,
-    first: take,
-    head: take,
-    takeWhile: takeWhile,
-    drop: drop,
-    rest: drop,
-    tail: drop,
-    dropWhile: dropWhile,
-    cat: cat,
-    mapcat: mapcat,
-    partitionAll: partitionAll,
-    chunkAll: partitionAll,
-    partitionBy: partitionBy,
-    compact: compact,
-    invoke: invoke,
-    pluck: pluck,
-    where: where
-  });
-
-  var iteratee = _r.iteratee,
-      _ = _r._;
-
-  // Return the results of applying the iteratee to each element.
-  function map(f) {
-    return transduce.map(iteratee(f));
+var _r = function(obj, transform) {
+  var _ = _r._;
+  if (_r.as(obj)){
+    if(transform === undef){
+      return obj;
+    }
+    var wrappedFns = _.clone(obj._wrappedFns);
+    wrappedFns.push(transform);
+    var copy = new _r(obj._wrapped, wrappedFns);
+    copy._opts = _.clone(obj._opts);
+    return copy;
   }
 
-  // Return all the elements that pass a truth test.
-  // Aliased as `select`.
-  function filter(predicate) {
-    return transduce.filter(iteratee(predicate));
+  if (!(_r.as(this))) return new _r(obj, transform);
+
+  if(_r.as(transform)){
+    this._opts = _.clone(transform._opts);
+    transform = transform._wrappedFns;
+  } else {
+    this._opts = {};
   }
 
-  // Return all the elements for which a truth test fails.
-  function remove(predicate) {
-    return transduce.remove(iteratee(predicate));
+  if(tr.isFunction(transform)){
+    this._wrappedFns = [transform];
+  } else if(tr.isArray(transform)){
+    this._wrappedFns = transform;
+  } else {
+    this._wrappedFns = [];
   }
 
-  // Get the first element of an array. Passing **n** will return the first N
-  // values in the array. Aliased as `head` and `take`.
-  function take(n) {
-     if(n === undef){
-       /*jshint validthis:true*/
-       _r.resolveSingleValue(this);
-       n = 1;
-     } else {
-       n = (n > 0) ? n : 0;
-     }
-     return transduce.take(n);
-  }
+  this._wrapped = _r.wrap.call(this, obj);
+};
 
-  // takes items until predicate returns false
-  function takeWhile(predicate) {
-     return transduce.takeWhile(iteratee(predicate));
-  }
+_r.VERSION = '0.2.1';
 
-  // Returns everything but the first entry. Aliased as `tail` and `drop`.
-  // Passing an **n** will return the rest N values.
-  function drop(n) {
-    n = (n === undef) ? 1 : (n > 0) ? n : 0;
-    return transduce.drop(n);
-  }
+// Export for browser or Common-JS
+// Save the previous value of the `_r` variable.
+var previous_r, root;
+if(typeof window !== 'undefined'){
+  /*global window*/
+  var root = window;
+  previous_r = root._r;
+  root._r = _r;
+  _r._ = root._;
+} else {
+  root = {};
+}
+module.exports = _r;
 
-  // Drops items while the predicate returns true
-  function dropWhile(predicate) {
-     return transduce.dropWhile(iteratee(predicate));
-  }
+// Returns the value if it is a chained transformation, else null
+_r.as = function(value){
+  return value instanceof _r ? value : null;
+};
 
-  // Concatenating transducer.
-  // NOTE: unlike libraries, cat should be called as a function to use.
-  // _r.cat() not _r.cat
-  function cat(){
-    return transduce.cat;
-  }
+// Run Underscore.js in *noConflict* mode, returning the `_` variable to its
+// previous owner. Returns a reference to the Underscore object.
+_r.noConflict = function() {
+  root._r = previous_r;
+  return this;
+};
 
-  // mapcat.
-  // Composition of _r.map(f) and _r.cat()
-  function mapcat(f){
-    return transduce.mapcat(iteratee(f));
-  }
+// Returns a new chained instance using current transformation, but
+// wrapping the given source
+_r.prototype.withSource = function(obj){
+  return _r(obj, this);
+};
 
-  // Partitions the source into arrays of size n
-  // When transformer completes, the array will be stepped with any remaining items.
-  // Alias chunkAll
-  function partitionAll(n){
-    return transduce.partitionAll(n);
-  }
-
-  // Partitions the source into sub arrays while the value of the function
-  // changes equality.
-  function partitionBy(f){
-    return transduce.partitionBy(iteratee(f));
-  }
-
-  // Trim out all falsy values from an array.
-  function compact() {
-    return filter(_.identity);
-  }
-
-  // Invoke a method (with arguments) on every item in a collection.
-  function invoke(method) {
-    var args = slice.call(arguments, 2);
-    var isFunc = _.isFunction(method);
-    return map(function(value) {
-      return (isFunc ? method : value[method]).apply(value, args);
-    });
-  }
-
-  // Convenience version of a common use case of `map`: fetching a property.
-  function pluck(key) {
-    return map(_.property(key));
-  }
-
-  // Convenience version of a common use case of `filter`: selecting only objects
-  // containing specific `key:value` pairs.
-  function where(attrs) {
-    return filter(_.matches(attrs));
+// Add your own custom transducers to the Underscore.transducer object.
+_r.mixin = function(obj) {
+  var name, fn;
+  for(name in obj){
+    fn = obj[name];
+    if(typeof fn === 'function'){
+      _r[name] = fn;
+      _r.prototype[name] = _method(fn); 
+    }
   }
 };
 
-},{"transduce":20}],3:[function(require,module,exports){
+function _method(func){
+  return function() {
+    var method = func.apply(this, arguments);
+    return _r(this, method);
+  };
+}
+
+},{"transduce":21}],3:[function(require,module,exports){
 "use strict";
 var tr = require('transduce'),
     dispatcher = require('redispatch'),
@@ -452,7 +407,7 @@ module.exports = function(_r){
   }
 
   // Returns empty object of the same type as argument.
-  // Default returns [] if _.isArray or undefined, {} if _.isObject
+  // Default returns [] if isArray or undefined, {} if _.isObject
   // and an internal sentinel to ignore otherwise
   //
   // Dispatch function. To support different types
@@ -461,7 +416,7 @@ module.exports = function(_r){
   // predicates. Return undefined if not supported, so other
   // dispatched functions can be checked
   empty.register(function(obj){
-    if(obj === undef || _.isArray(obj) || iterator(obj)){
+    if(obj === undef || tr.isArray(obj) || iterator(obj)){
       return []; // array if not specified or from array
     } else if(_.isObject(obj)){
       return {}; // object if from object
@@ -480,7 +435,7 @@ module.exports = function(_r){
   //
   // Return undefined if not supported, so other dispatched functions can be checked
   append.register(function(obj, item){
-    if(_.isArray(obj)){
+    if(tr.isArray(obj)){
       obj.push(item);
       return obj;
     }
@@ -500,7 +455,7 @@ module.exports = function(_r){
   }
 };
 
-},{"redispatch":10,"transduce":20}],4:[function(require,module,exports){
+},{"redispatch":11,"transduce":21}],4:[function(require,module,exports){
 "use strict";
 var transduce = require('transduce'), undef;
 
@@ -532,7 +487,27 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce":20}],5:[function(require,module,exports){
+},{"transduce":21}],5:[function(require,module,exports){
+"use strict";
+var undef;
+module.exports = function(libs, _r){
+  var i = 0, len = libs.length, lib;
+  if(_r === undef){
+    _r = require('./base');
+  }
+
+  for(; i < len; i++){
+    lib = libs[i];
+    // only import if included in build
+    if(typeof lib === 'function'){
+      lib(_r);
+    }
+  }
+
+  return _r;
+};
+
+},{"./base":2}],6:[function(require,module,exports){
 "use strict";
 var math = require('transduce-math'), undef;
 
@@ -562,7 +537,7 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce-math":12}],6:[function(require,module,exports){
+},{"transduce-math":13}],7:[function(require,module,exports){
 "use strict";
 var push = require('transduce-push'),
     undef;
@@ -636,7 +611,7 @@ module.exports = function(_r){
   };
 };
 
-},{"transduce-push":13}],7:[function(require,module,exports){
+},{"transduce-push":14}],8:[function(require,module,exports){
 "use strict";
 var undef,
     string = require('transduce-string');
@@ -660,7 +635,142 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce-string":14}],8:[function(require,module,exports){
+},{"transduce-string":15}],9:[function(require,module,exports){
+"use strict";
+var transduce = require('transduce'),
+    slice = Array.prototype.slice, undef;
+
+module.exports = function(_r){
+  // Base Transducers
+  // ----------------
+  _r.mixin({
+    map: map,
+    collect: map,
+    filter: filter,
+    select: filter,
+    remove: remove,
+    reject: remove,
+    take: take,
+    first: take,
+    head: take,
+    takeWhile: takeWhile,
+    drop: drop,
+    rest: drop,
+    tail: drop,
+    dropWhile: dropWhile,
+    cat: cat,
+    mapcat: mapcat,
+    partitionAll: partitionAll,
+    chunkAll: partitionAll,
+    partitionBy: partitionBy,
+    compact: compact,
+    invoke: invoke,
+    pluck: pluck,
+    where: where
+  });
+
+  var iteratee = _r.iteratee,
+      _ = _r._;
+
+  // Return the results of applying the iteratee to each element.
+  function map(f) {
+    return transduce.map(iteratee(f));
+  }
+
+  // Return all the elements that pass a truth test.
+  // Aliased as `select`.
+  function filter(predicate) {
+    return transduce.filter(iteratee(predicate));
+  }
+
+  // Return all the elements for which a truth test fails.
+  function remove(predicate) {
+    return transduce.remove(iteratee(predicate));
+  }
+
+  // Get the first element of an array. Passing **n** will return the first N
+  // values in the array. Aliased as `head` and `take`.
+  function take(n) {
+     if(n === undef){
+       /*jshint validthis:true*/
+       _r.resolveSingleValue(this);
+       n = 1;
+     } else {
+       n = (n > 0) ? n : 0;
+     }
+     return transduce.take(n);
+  }
+
+  // takes items until predicate returns false
+  function takeWhile(predicate) {
+     return transduce.takeWhile(iteratee(predicate));
+  }
+
+  // Returns everything but the first entry. Aliased as `tail` and `drop`.
+  // Passing an **n** will return the rest N values.
+  function drop(n) {
+    n = (n === undef) ? 1 : (n > 0) ? n : 0;
+    return transduce.drop(n);
+  }
+
+  // Drops items while the predicate returns true
+  function dropWhile(predicate) {
+     return transduce.dropWhile(iteratee(predicate));
+  }
+
+  // Concatenating transducer.
+  // NOTE: unlike libraries, cat should be called as a function to use.
+  // _r.cat() not _r.cat
+  function cat(){
+    return transduce.cat;
+  }
+
+  // mapcat.
+  // Composition of _r.map(f) and _r.cat()
+  function mapcat(f){
+    return transduce.mapcat(iteratee(f));
+  }
+
+  // Partitions the source into arrays of size n
+  // When transformer completes, the array will be stepped with any remaining items.
+  // Alias chunkAll
+  function partitionAll(n){
+    return transduce.partitionAll(n);
+  }
+
+  // Partitions the source into sub arrays while the value of the function
+  // changes equality.
+  function partitionBy(f){
+    return transduce.partitionBy(iteratee(f));
+  }
+
+  // Trim out all falsy values from an array.
+  function compact() {
+    return filter(_.identity);
+  }
+
+  // Invoke a method (with arguments) on every item in a collection.
+  function invoke(method) {
+    var args = slice.call(arguments, 2);
+    var isFunc = transduce.isFunction(method);
+    return map(function(value) {
+      return (isFunc ? method : value[method]).apply(value, args);
+    });
+  }
+
+  // Convenience version of a common use case of `map`: fetching a property.
+  function pluck(key) {
+    return map(_.property(key));
+  }
+
+  // Convenience version of a common use case of `filter`: selecting only objects
+  // containing specific `key:value` pairs.
+  function where(attrs) {
+    return filter(_.matches(attrs));
+  }
+};
+
+},{"transduce":21}],10:[function(require,module,exports){
 "use strict";
 var un = require('transduce-unique'), undef;
 
@@ -692,9 +802,7 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce-unique":15}],9:[function(require,module,exports){
-
-},{}],10:[function(require,module,exports){
+},{"transduce-unique":16}],11:[function(require,module,exports){
 "use strict";
 var undef;
 
@@ -717,7 +825,7 @@ function redispatch(){
   return d;
 }
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 "use strict";
 var tp = require('transduce-util'),
     _slice = Array.prototype.slice,
@@ -1036,7 +1144,7 @@ Last.prototype.step = function(result, input){
   return result;
 };
 
-},{"transduce-util":16}],12:[function(require,module,exports){
+},{"transduce-util":17}],13:[function(require,module,exports){
 "use strict";
 module.exports = {
   min: min,
@@ -1111,7 +1219,7 @@ Min.prototype.step = function(result, input) {
   return result;
 };
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 var tp = require('transduce-util'),
     undef;
@@ -1269,7 +1377,7 @@ function asyncCallback(xf, continuation, reducer){
   };
 }
 
-},{"transduce-util":16}],14:[function(require,module,exports){
+},{"transduce-util":17}],15:[function(require,module,exports){
 "use strict";
 var tp = require('transduce-util'),
     isString = tp.isString,
@@ -1452,7 +1560,7 @@ function cloneRegExp(regexp){
   return new RegExp(regexp.source, flags.join(''));
 }
 
-},{"transduce-util":16}],15:[function(require,module,exports){
+},{"transduce-util":17}],16:[function(require,module,exports){
 "use strict";
 module.exports = {
   unique: unique,
@@ -1506,7 +1614,7 @@ Uniq.prototype.step = function(result, input){
   return result;
 };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 "use strict";
 var undef,
     Arr = Array,
@@ -1597,7 +1705,7 @@ function push(result, input){
   return result;
 }
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 "use strict";
 /*global transducers */
 var libs = ['transducers-js', 'transducers.js'];
@@ -1611,7 +1719,7 @@ module.exports = {
   libs: libs
 };
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 "use strict";
 /* global Symbol */
 var util = require('transduce-util'),
@@ -1705,7 +1813,7 @@ FunctionIterable.prototype[symbol] = function(){
   };
 };
 
-},{"transduce-util":16}],19:[function(require,module,exports){
+},{"transduce-util":17}],20:[function(require,module,exports){
 "use strict";
 /* global Symbol */
 var undef,
@@ -1797,7 +1905,7 @@ FunctionTransformer.prototype.step = function(result, input){
 };
 FunctionTransformer.prototype.result = identity;
 
-},{"iterator-protocol":18,"transduce-util":16}],20:[function(require,module,exports){
+},{"iterator-protocol":19,"transduce-util":17}],21:[function(require,module,exports){
 "use strict";
 var protocol = require('transduce-protocol'),
     lib = require('./load'),
@@ -1877,109 +1985,15 @@ var undef, loader = {
 
 load();
 
-},{"./load":17,"transduce-protocol":19}],21:[function(require,module,exports){
-"use strict";
-var undef;
-
-var _r = function(obj, transform) {
-  if (_r.as(obj)){
-    if(transform === undef){
-      return obj;
-    }
-    var wrappedFns = _.clone(obj._wrappedFns);
-    wrappedFns.push(transform);
-    var copy = new _r(obj._wrapped, wrappedFns);
-    copy._opts = _.clone(obj._opts);
-    return copy;
-  }
-
-  if (!(_r.as(this))) return new _r(obj, transform);
-
-  if(_r.as(transform)){
-    this._opts = _.clone(transform._opts);
-    transform = transform._wrappedFns;
-  } else {
-    this._opts = {};
-  }
-
-  if(_.isFunction(transform)){
-    this._wrappedFns = [transform];
-  } else if(_.isArray(transform)){
-    this._wrappedFns = _.filter(transform, _.isFunction);
-  } else {
-    this._wrappedFns = [];
-  }
-
-  this._wrapped = _r.wrap.call(this, obj);
-};
-
-_r.VERSION = '0.2.0';
-
-
-// Export for browser or Common-JS
-// Save the previous value of the `_r` variable.
-var previous_r, root, _;
-if(typeof window !== 'undefined'){
-  /*global window*/
-  var root = window;
-  previous_r = root._r;
-  root._r = _r;
-  _ = root._;
-} else {
-  root = {};
-}
-module.exports = _r;
-
-// access to browser or imported underscore object.
-if(_ === undef){
-  _ = require('./lib/lodash');
-}
-_r._ = _;
-
-// Returns the value if it is a chained transformation, else null
-_r.as = function(value){
-  return value instanceof _r ? value : null;
-};
-
-// Run Underscore.js in *noConflict* mode, returning the `_` variable to its
-// previous owner. Returns a reference to the Underscore object.
-_r.noConflict = function() {
-  root._r = previous_r;
-  return this;
-};
-
-// Returns a new chained instance using current transformation, but
-// wrapping the given source
-_r.prototype.withSource = function(obj){
-  return _r(obj, this);
-};
-
-// Add your own custom transducers to the Underscore.transducer object.
-_r.mixin = function(obj) {
-  _.each(_.functions(obj), function(name) {
-    var func = _r[name] = obj[name];
-    _r.prototype[name] = function() {
-      var method = func.apply(this, arguments);
-      return _r(this, method);
-    };
-  });
-};
-
-// import libraries
-_.each([
+},{"./load":18,"transduce-protocol":20}],22:[function(require,module,exports){
+module.exports = require('./lib/load')([
   require('./lib/dispatch'),
-  require('./lib/base'),
+  require('./lib/transduce'),
   require('./lib/array'),
   require('./lib/unique'),
   require('./lib/push'),
   require('./lib/iterator'),
   require('./lib/math'),
-  require('./lib/string')],
-  function(lib){
-    // only import if included in build
-    if(_.isFunction(lib)){
-      lib(_r);
-    }
-  });
+  require('./lib/string')]);
 
-},{"./lib/array":1,"./lib/base":2,"./lib/dispatch":3,"./lib/iterator":4,"./lib/lodash":9,"./lib/math":5,"./lib/push":6,"./lib/string":7,"./lib/unique":8}]},{},[21]);
+},{"./lib/array":1,"./lib/dispatch":3,"./lib/iterator":4,"./lib/load":5,"./lib/math":6,"./lib/push":7,"./lib/string":8,"./lib/transduce":9,"./lib/unique":10}]},{},[22]);
