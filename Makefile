@@ -1,7 +1,6 @@
 PROJECT:=underarm
-VERSION:=0.1.0
 
-JS_TARGET ?= build/$(PROJECT).js
+BUILD ?= build/$(PROJECT)
 
 .PHONY: all clean js test serve
 all: test js
@@ -18,10 +17,22 @@ node_modules:
 %.min.js: %.js | node_modules
 	`npm bin`/uglifyjs $< > $@ -c -m
 
-js: $(JS_TARGET) $(JS_TARGET:.js=.min.js)
+js: $(BUILD).js $(BUILD).min.js \
+	$(BUILD).base.js $(BUILD).base.min.js \
+	$(BUILD).nolodash.js $(BUILD).nolodash.min.js \
+	$(BUILD).nolodash.base.js $(BUILD).nolodash.base.min.js
 
-$(JS_TARGET): $(PROJECT).js lib/*.js | build
-	`npm bin`/browserify -i underscore $< > $@
+$(BUILD).js: lib/*.js | build
+	`npm bin`/browserify $(PROJECT).js > $@
+
+$(BUILD).nolodash.js: lib/*.js | build
+	`npm bin`/browserify $(PROJECT).nolodash.js > $@
+
+$(BUILD).base.js: lib/*.js | build
+	`npm bin`/browserify $(PROJECT).base.js > $@
+
+$(BUILD).nolodash.base.js: lib/*.js | build
+	`npm bin`/browserify $(PROJECT).nolodash.base.js > $@
 
 build: 
 	mkdir -p build

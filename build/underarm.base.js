@@ -172,65 +172,10 @@ module.exports = function(_r){
   }
 };
 
-},{"any-promise":4,"transduce-async":30}],2:[function(require,module,exports){
-"use strict";
-var undef;
-module.exports = function(_r){
-  var _ = _r._ || {};
-  _.debounce = require('lodash-node/underscore/functions/debounce');
-  _.throttle = require('lodash-node/underscore/functions/throttle');
-};
-
-},{"lodash-node/underscore/functions/debounce":7,"lodash-node/underscore/functions/throttle":8}],3:[function(require,module,exports){
-"use strict";
-var undef;
-module.exports = function(_r){
-  var _ = _r._;
-
-  _r.mixin({
-    throttle: throttle,
-    debounce: debounce
-  });
-
-  function throttle(wait, options){
-    return sample(sampler_(_.throttle, wait, options));
-  }
-
-  function debounce(wait, immediate){
-    return sample(sampler_(_.debounce, wait, immediate));
-  }
-
-  function sampler_(debounce, wait, options){
-    return function(fn){
-      return debounce(fn, wait, options);
-    };
-  }
-
-  function sample(sampler){
-    return function(xf){
-      return new Sample(sampler, xf);
-    };
-  }
-  function Sample(sampler, xf){
-    this.xf = xf;
-    this._sample = sampler(xf.step.bind(xf));
-  }
-  Sample.prototype.init = function(){
-    return this.xf.init();
-  };
-  Sample.prototype.result = function(result){
-    return this.xf.result(result);
-  };
-  Sample.prototype.step = function(result, input) {
-    var res = this._sample(result, input);
-    return res !== undef ? res : result;
-  };
-};
-
-},{}],4:[function(require,module,exports){
+},{"any-promise":2,"transduce-async":25}],2:[function(require,module,exports){
 module.exports = Promise;
 
-},{}],5:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -272,7 +217,7 @@ function bind(func, thisArg) {
 
 module.exports = bind;
 
-},{"../internals/createWrapper":13,"../internals/slice":17}],6:[function(require,module,exports){
+},{"../internals/createWrapper":9,"../internals/slice":13}],4:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -341,232 +286,7 @@ function createCallback(func, thisArg, argCount) {
 
 module.exports = createCallback;
 
-},{"../internals/baseCreateCallback":11,"../objects/keys":25,"../utilities/property":29}],7:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var isFunction = require('../objects/isFunction'),
-    isObject = require('../objects/isObject'),
-    now = require('../utilities/now');
-
-/* Native method shortcuts for methods with the same name as other `lodash` methods */
-var nativeMax = Math.max;
-
-/**
- * Creates a function that will delay the execution of `func` until after
- * `wait` milliseconds have elapsed since the last time it was invoked.
- * Provide an options object to indicate that `func` should be invoked on
- * the leading and/or trailing edge of the `wait` timeout. Subsequent calls
- * to the debounced function will return the result of the last `func` call.
- *
- * Note: If `leading` and `trailing` options are `true` `func` will be called
- * on the trailing edge of the timeout only if the the debounced function is
- * invoked more than once during the `wait` timeout.
- *
- * @static
- * @memberOf _
- * @category Functions
- * @param {Function} func The function to debounce.
- * @param {number} wait The number of milliseconds to delay.
- * @param {Object} [options] The options object.
- * @param {boolean} [options.leading=false] Specify execution on the leading edge of the timeout.
- * @param {number} [options.maxWait] The maximum time `func` is allowed to be delayed before it's called.
- * @param {boolean} [options.trailing=true] Specify execution on the trailing edge of the timeout.
- * @returns {Function} Returns the new debounced function.
- * @example
- *
- * // avoid costly calculations while the window size is in flux
- * var lazyLayout = _.debounce(calculateLayout, 150);
- * jQuery(window).on('resize', lazyLayout);
- *
- * // execute `sendMail` when the click event is fired, debouncing subsequent calls
- * jQuery('#postbox').on('click', _.debounce(sendMail, 300, {
- *   'leading': true,
- *   'trailing': false
- * });
- *
- * // ensure `batchLog` is executed once after 1 second of debounced calls
- * var source = new EventSource('/stream');
- * source.addEventListener('message', _.debounce(batchLog, 250, {
- *   'maxWait': 1000
- * }, false);
- */
-function debounce(func, wait, options) {
-  var args,
-      maxTimeoutId,
-      result,
-      stamp,
-      thisArg,
-      timeoutId,
-      trailingCall,
-      lastCalled = 0,
-      maxWait = false,
-      trailing = true;
-
-  if (!isFunction(func)) {
-    throw new TypeError;
-  }
-  wait = nativeMax(0, wait) || 0;
-  if (options === true) {
-    var leading = true;
-    trailing = false;
-  } else if (isObject(options)) {
-    leading = options.leading;
-    maxWait = 'maxWait' in options && (nativeMax(wait, options.maxWait) || 0);
-    trailing = 'trailing' in options ? options.trailing : trailing;
-  }
-  var delayed = function() {
-    var remaining = wait - (now() - stamp);
-    if (remaining <= 0) {
-      if (maxTimeoutId) {
-        clearTimeout(maxTimeoutId);
-      }
-      var isCalled = trailingCall;
-      maxTimeoutId = timeoutId = trailingCall = undefined;
-      if (isCalled) {
-        lastCalled = now();
-        result = func.apply(thisArg, args);
-        if (!timeoutId && !maxTimeoutId) {
-          args = thisArg = null;
-        }
-      }
-    } else {
-      timeoutId = setTimeout(delayed, remaining);
-    }
-  };
-
-  var maxDelayed = function() {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    maxTimeoutId = timeoutId = trailingCall = undefined;
-    if (trailing || (maxWait !== wait)) {
-      lastCalled = now();
-      result = func.apply(thisArg, args);
-      if (!timeoutId && !maxTimeoutId) {
-        args = thisArg = null;
-      }
-    }
-  };
-
-  return function() {
-    args = arguments;
-    stamp = now();
-    thisArg = this;
-    trailingCall = trailing && (timeoutId || !leading);
-
-    if (maxWait === false) {
-      var leadingCall = leading && !timeoutId;
-    } else {
-      if (!maxTimeoutId && !leading) {
-        lastCalled = stamp;
-      }
-      var remaining = maxWait - (stamp - lastCalled),
-          isCalled = remaining <= 0;
-
-      if (isCalled) {
-        if (maxTimeoutId) {
-          maxTimeoutId = clearTimeout(maxTimeoutId);
-        }
-        lastCalled = stamp;
-        result = func.apply(thisArg, args);
-      }
-      else if (!maxTimeoutId) {
-        maxTimeoutId = setTimeout(maxDelayed, remaining);
-      }
-    }
-    if (isCalled && timeoutId) {
-      timeoutId = clearTimeout(timeoutId);
-    }
-    else if (!timeoutId && wait !== maxWait) {
-      timeoutId = setTimeout(delayed, wait);
-    }
-    if (leadingCall) {
-      isCalled = true;
-      result = func.apply(thisArg, args);
-    }
-    if (isCalled && !timeoutId && !maxTimeoutId) {
-      args = thisArg = null;
-    }
-    return result;
-  };
-}
-
-module.exports = debounce;
-
-},{"../objects/isFunction":22,"../objects/isObject":23,"../utilities/now":28}],8:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var debounce = require('./debounce'),
-    isFunction = require('../objects/isFunction'),
-    isObject = require('../objects/isObject');
-
-/**
- * Creates a function that, when executed, will only call the `func` function
- * at most once per every `wait` milliseconds. Provide an options object to
- * indicate that `func` should be invoked on the leading and/or trailing edge
- * of the `wait` timeout. Subsequent calls to the throttled function will
- * return the result of the last `func` call.
- *
- * Note: If `leading` and `trailing` options are `true` `func` will be called
- * on the trailing edge of the timeout only if the the throttled function is
- * invoked more than once during the `wait` timeout.
- *
- * @static
- * @memberOf _
- * @category Functions
- * @param {Function} func The function to throttle.
- * @param {number} wait The number of milliseconds to throttle executions to.
- * @param {Object} [options] The options object.
- * @param {boolean} [options.leading=true] Specify execution on the leading edge of the timeout.
- * @param {boolean} [options.trailing=true] Specify execution on the trailing edge of the timeout.
- * @returns {Function} Returns the new throttled function.
- * @example
- *
- * // avoid excessively updating the position while scrolling
- * var throttled = _.throttle(updatePosition, 100);
- * jQuery(window).on('scroll', throttled);
- *
- * // execute `renewToken` when the click event is fired, but not more than once every 5 minutes
- * jQuery('.interactive').on('click', _.throttle(renewToken, 300000, {
- *   'trailing': false
- * }));
- */
-function throttle(func, wait, options) {
-  var leading = true,
-      trailing = true;
-
-  if (!isFunction(func)) {
-    throw new TypeError;
-  }
-  if (options === false) {
-    leading = false;
-  } else if (isObject(options)) {
-    leading = 'leading' in options ? options.leading : leading;
-    trailing = 'trailing' in options ? options.trailing : trailing;
-  }
-  options = {};
-  options.leading = leading;
-  options.maxWait = wait;
-  options.trailing = trailing;
-
-  return debounce(func, wait, options);
-}
-
-module.exports = throttle;
-
-},{"../objects/isFunction":22,"../objects/isObject":23,"./debounce":7}],9:[function(require,module,exports){
+},{"../internals/baseCreateCallback":7,"../objects/keys":21,"../utilities/property":24}],5:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -628,7 +348,7 @@ function baseBind(bindData) {
 
 module.exports = baseBind;
 
-},{"../objects/isObject":23,"./baseCreate":10,"./slice":17}],10:[function(require,module,exports){
+},{"../objects/isObject":19,"./baseCreate":6,"./slice":13}],6:[function(require,module,exports){
 (function (global){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
@@ -674,7 +394,7 @@ if (!nativeCreate) {
 module.exports = baseCreate;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../objects/isObject":23,"../utilities/noop":27,"./isNative":14}],11:[function(require,module,exports){
+},{"../objects/isObject":19,"../utilities/noop":23,"./isNative":10}],7:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -723,7 +443,7 @@ function baseCreateCallback(func, thisArg, argCount) {
 
 module.exports = baseCreateCallback;
 
-},{"../functions/bind":5,"../utilities/identity":26}],12:[function(require,module,exports){
+},{"../functions/bind":3,"../utilities/identity":22}],8:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -801,7 +521,7 @@ function baseCreateWrapper(bindData) {
 
 module.exports = baseCreateWrapper;
 
-},{"../objects/isObject":23,"./baseCreate":10,"./slice":17}],13:[function(require,module,exports){
+},{"../objects/isObject":19,"./baseCreate":6,"./slice":13}],9:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -863,7 +583,7 @@ function createWrapper(func, bitmask, partialArgs, partialRightArgs, thisArg, ar
 
 module.exports = createWrapper;
 
-},{"../objects/isFunction":22,"./baseBind":9,"./baseCreateWrapper":12,"./slice":17}],14:[function(require,module,exports){
+},{"../objects/isFunction":18,"./baseBind":5,"./baseCreateWrapper":8,"./slice":13}],10:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -899,7 +619,7 @@ function isNative(value) {
 
 module.exports = isNative;
 
-},{}],15:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -921,7 +641,7 @@ var objectTypes = {
 
 module.exports = objectTypes;
 
-},{}],16:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -961,7 +681,7 @@ var shimKeys = function(object) {
 
 module.exports = shimKeys;
 
-},{"./objectTypes":15}],17:[function(require,module,exports){
+},{"./objectTypes":11}],13:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1001,7 +721,7 @@ function slice(array, start, end) {
 
 module.exports = slice;
 
-},{}],18:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1061,7 +781,7 @@ function assign(object) {
 
 module.exports = assign;
 
-},{"../internals/baseCreateCallback":11,"../internals/objectTypes":15,"./keys":25}],19:[function(require,module,exports){
+},{"../internals/baseCreateCallback":7,"../internals/objectTypes":11,"./keys":21}],15:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1124,7 +844,7 @@ function clone(value) {
 
 module.exports = clone;
 
-},{"../internals/baseCreateCallback":11,"../internals/slice":17,"./assign":18,"./isArray":20,"./isObject":23}],20:[function(require,module,exports){
+},{"../internals/baseCreateCallback":7,"../internals/slice":13,"./assign":14,"./isArray":16,"./isObject":19}],16:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1171,7 +891,7 @@ var isArray = nativeIsArray || function(value) {
 
 module.exports = isArray;
 
-},{"../internals/isNative":14}],21:[function(require,module,exports){
+},{"../internals/isNative":10}],17:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1210,7 +930,7 @@ function isBoolean(value) {
 
 module.exports = isBoolean;
 
-},{}],22:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1254,7 +974,7 @@ if (isFunction(/x/)) {
 
 module.exports = isFunction;
 
-},{}],23:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1295,7 +1015,7 @@ function isObject(value) {
 
 module.exports = isObject;
 
-},{"../internals/objectTypes":15}],24:[function(require,module,exports){
+},{"../internals/objectTypes":11}],20:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1334,7 +1054,7 @@ function isString(value) {
 
 module.exports = isString;
 
-},{}],25:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1372,7 +1092,7 @@ var keys = !nativeKeys ? shimKeys : function(object) {
 
 module.exports = keys;
 
-},{"../internals/isNative":14,"../internals/shimKeys":16,"./isObject":23}],26:[function(require,module,exports){
+},{"../internals/isNative":10,"../internals/shimKeys":12,"./isObject":19}],22:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1402,7 +1122,7 @@ function identity(value) {
 
 module.exports = identity;
 
-},{}],27:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1430,37 +1150,7 @@ function noop() {
 
 module.exports = noop;
 
-},{}],28:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var isNative = require('../internals/isNative');
-
-/**
- * Gets the number of milliseconds that have elapsed since the Unix epoch
- * (1 January 1970 00:00:00 UTC).
- *
- * @static
- * @memberOf _
- * @category Utilities
- * @example
- *
- * var stamp = _.now();
- * _.defer(function() { console.log(_.now() - stamp); });
- * // => logs the number of milliseconds it took for the deferred function to be called
- */
-var now = isNative(now = Date.now) && now || function() {
-  return new Date().getTime();
-};
-
-module.exports = now;
-
-},{"../internals/isNative":14}],29:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1502,7 +1192,7 @@ function property(key) {
 
 module.exports = property;
 
-},{}],30:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 "use strict";
 var tp = require('transduce-protocol'),
     Prom = require('any-promise'),
@@ -1739,7 +1429,7 @@ DelayTask.prototype.result = function(value){
   return task.resolved;
 };
 
-},{"any-promise":4,"transduce-protocol":32}],31:[function(require,module,exports){
+},{"any-promise":2,"transduce-protocol":27}],26:[function(require,module,exports){
 "use strict";
 /* global Symbol */
 var util = require('transduce-util'),
@@ -1833,7 +1523,7 @@ FunctionIterable.prototype[symbol] = function(){
   };
 };
 
-},{"transduce-util":33}],32:[function(require,module,exports){
+},{"transduce-util":28}],27:[function(require,module,exports){
 "use strict";
 /* global Symbol */
 var undef,
@@ -1925,7 +1615,7 @@ FunctionTransformer.prototype.step = function(result, input){
 };
 FunctionTransformer.prototype.result = identity;
 
-},{"iterator-protocol":31,"transduce-util":33}],33:[function(require,module,exports){
+},{"iterator-protocol":26,"transduce-util":28}],28:[function(require,module,exports){
 "use strict";
 var undef,
     Arr = Array,
@@ -2016,93 +1706,7 @@ function push(result, input){
   return result;
 }
 
-},{}],34:[function(require,module,exports){
-"use strict";
-var array = require('transduce-array'), undef;
-
-module.exports = function(_r){
-  // Array Functions
-  // ---------------
-  _r.mixin({
-    forEach: array.forEach,
-    each: array.forEach,
-    find: find,
-    detect: find,
-    every: every,
-    all: every,
-    some: some,
-    any: some,
-    contains: contains,
-    include: contains,
-    findWhere: findWhere,
-    push: array.push,
-    unshift: array.unshift,
-    at: at,
-    slice: array.slice,
-    initial: array.initial,
-    last: last
-  });
-
-  var iteratee = _r.iteratee,
-      resolveSingleValue = _r.resolveSingleValue,
-      _ = _r._;
-
-  // Return the first value which passes a truth test. Aliased as `detect`.
-  function find(predicate) {
-     /*jshint validthis:true*/
-     resolveSingleValue(this);
-     return array.find(iteratee(predicate));
-  }
-
-  // Determine whether all of the elements match a truth test.
-  // Aliased as `all`.
-  function every(predicate) {
-     /*jshint validthis:true*/
-    resolveSingleValue(this);
-    return array.every(iteratee(predicate));
-  }
-
-  // Determine if at least one element in the object matches a truth test.
-  // Aliased as `any`.
-  function some(predicate) {
-     /*jshint validthis:true*/
-    resolveSingleValue(this);
-    return array.some(iteratee(predicate));
-  }
-
-  // Determine if contains a given value (using `===`).
-  // Aliased as `include`.
-  function contains(target) {
-     /*jshint validthis:true*/
-    return some.call(this, function(x){ return x === target; });
-  }
-
-  // Convenience version of a common use case of `find`: getting the first object
-  // containing specific `key:value` pairs.
-  function findWhere(attrs) {
-     /*jshint validthis:true*/
-    return find.call(this, _.matches(attrs));
-  }
-
-  // Retrieves the value at the given index. Resolves as single value.
-  function at(idx){
-     /*jshint validthis:true*/
-    resolveSingleValue(this);
-    return array.slice(idx, idx+1);
-  }
-
-  // Get the last element. Passing **n** will return the last N  values.
-  // Note that no items will be sent until completion.
-  function last(n) {
-    if(n === undef){
-     /*jshint validthis:true*/
-      resolveSingleValue(this);
-    }
-    return array.last(n);
-  }
-};
-
-},{"transduce-array":46}],35:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 "use strict";
 var tr = require('transduce'), undef;
 
@@ -2192,7 +1796,7 @@ function _method(func){
   };
 }
 
-},{"transduce":52}],36:[function(require,module,exports){
+},{"transduce":36}],30:[function(require,module,exports){
 "use strict";
 var tr = require('transduce'),
     dispatcher = require('redispatch'),
@@ -2473,39 +2077,7 @@ module.exports = function(_r){
   }
 };
 
-},{"redispatch":45,"transduce":52}],37:[function(require,module,exports){
-"use strict";
-var transduce = require('transduce'), undef;
-
-module.exports = function(_r){
-  _r.generate = generate;
-
-  // Transduces the current chained object by using the chained trasnformation
-  // and an iterator created with the callback
-  _r.prototype.generate = function(callback, callToInit){
-    return this.withSource(generate(callback, callToInit));
-  };
-
-  // Creates an (duck typed) iterator that calls the provided next callback repeatedly
-  // and uses the return value as the next value of the iterator.
-  // Marks iterator as done if the next callback returns undefined (returns nothing)
-  // Can be used to as a source obj to reduce, transduce etc
-  function generate(callback, callToInit){
-    var gen = {};
-    gen[transduce.protocols.iterator] = function(){
-      var next = callToInit ? callback() : callback;
-      return {
-        next: function(){
-          var value = next();
-          return (value === undef) ? {done: true} : {done: false, value: value};
-        }
-      };
-    };
-    return gen;
-  }
-};
-
-},{"transduce":52}],38:[function(require,module,exports){
+},{"redispatch":34,"transduce":36}],31:[function(require,module,exports){
 "use strict";
 var undef;
 module.exports = function(libs, _r){
@@ -2525,7 +2097,7 @@ module.exports = function(libs, _r){
   return _r;
 };
 
-},{"./base":35}],39:[function(require,module,exports){
+},{"./base":29}],32:[function(require,module,exports){
 "use strict";
 
 module.exports = function(_r){
@@ -2539,135 +2111,7 @@ module.exports = function(_r){
   _.property = require('lodash-node/underscore/utilities/property');
 };
 
-},{"lodash-node/underscore/functions/createCallback":6,"lodash-node/underscore/objects/clone":19,"lodash-node/underscore/objects/isBoolean":21,"lodash-node/underscore/objects/isString":24,"lodash-node/underscore/utilities/property":29}],40:[function(require,module,exports){
-"use strict";
-var math = require('transduce-math'), undef;
-
-module.exports = function(_r){
-  // Math Functions
-  // --------------------
-  _r.mixin({
-    max: max,
-    min: min
-  });
-
-  var iteratee = _r.iteratee,
-      resolveSingleValue = _r.resolveSingleValue;
-
-  // Return the maximum element (or element-based computation).
-  function max(f) {
-    /*jshint validthis:true */
-    resolveSingleValue(this);
-    return math.max(iteratee(f));
-  }
-
-  // Return the minimum element (or element-based computation).
-  function min(f) {
-    /*jshint validthis:true */
-    resolveSingleValue(this);
-    return math.min(iteratee(f));
-  }
-};
-
-},{"transduce-math":47}],41:[function(require,module,exports){
-"use strict";
-var push = require('transduce-push'),
-    undef;
-
-module.exports = function(_r){
-
-  _r.mixin({tap: push.tap});
-  _r.asCallback = asCallback;
-  _r.asyncCallback = asyncCallback;
-
-  var as = _r.as,
-      dispatch = _r.dispatch,
-      transducer = _r.transducer;
-
-  // Creates a callback that starts a transducer process and accepts
-  // parameter as a new item in the process. Each item advances the state
-  // of the transducer. If the transducer exhausts due to early termination,
-  // all subsequent calls to the callback will no-op and return the computed result.
-  //
-  // If the callback is called with no argument, the transducer terminates,
-  // and all subsequent calls will no-op and return the computed result.
-  //
-  // The callback returns undefined until completion. Once completed, the result
-  // is always returned.
-  //
-  // If init is defined, maintains last value and does not buffer results.
-  // If init is provided, it is dispatched
-  function asCallback(xf, init){
-    if(as(xf)){
-      xf = transducer(xf);
-    }
-
-    var reducer;
-    if(init !== undef){
-      reducer = dispatch();
-    }
-    return push.asCallback(xf, reducer);
-  }
-
-  _r.prototype.asCallback = function(init){
-    return asCallback(this, init);
-  };
-
-  // Creates an async callback that starts a transducer process and accepts
-  // parameter cb(err, item) as a new item in the process. The returned callback
-  // and the optional continuation follow node conventions with  fn(err, item).
-  //
-  // Each item advances the state  of the transducer, if the continuation
-  // is provided, it will be called on completion or error. An error will terminate
-  // the transducer and be propagated to the continuation.  If the transducer
-  // exhausts due to early termination, any further call will be a no-op.
-  //
-  // If the callback is called with no item, it will terminate the transducer process.
-  //
-  // If init is defined, maintains last value and does not buffer results.
-  // If init is provided, it is dispatched
-  function asyncCallback(xf, continuation, init){
-    if(as(xf)){
-      xf = transducer(xf);
-    }
-
-    var reducer;
-    if(init !== undef){
-      reducer = dispatch();
-    }
-    return push.asyncCallback(xf, continuation, reducer);
-  }
-
-  _r.prototype.asyncCallback = function(continuation, init){
-    return asyncCallback(this, continuation, init);
-  };
-};
-
-},{"transduce-push":48}],42:[function(require,module,exports){
-"use strict";
-var undef,
-    string = require('transduce-string');
-
-module.exports = function(_r){
-  // String Functions
-  // --------------------
-  _r.mixin({
-    split: string.split,
-    join: join,
-    nonEmpty: string.nonEmpty,
-    lines: string.lines,
-    chars: string.chars,
-    words: string.words
-  });
-
-  function join(separator){
-    /*jshint validthis:true */
-    _r.resolveSingleValue(this);
-    return string.join(separator);
-  }
-};
-
-},{"transduce-string":49}],43:[function(require,module,exports){
+},{"lodash-node/underscore/functions/createCallback":4,"lodash-node/underscore/objects/clone":15,"lodash-node/underscore/objects/isBoolean":17,"lodash-node/underscore/objects/isString":20,"lodash-node/underscore/utilities/property":24}],33:[function(require,module,exports){
 "use strict";
 var transduce = require('transduce'),
     slice = Array.prototype.slice, undef;
@@ -2802,39 +2246,7 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce":52}],44:[function(require,module,exports){
-"use strict";
-var un = require('transduce-unique'), undef;
-
-module.exports = function(_r){
-  // Array Functions
-  // ---------------
-  _r.mixin({
-    unique: unique,
-    uniq: unique
-  });
-
-  var _ = _r._,
-      iteratee = _r.iteratee;
-
-  // Produce a duplicate-free version of the array. If the array has already
-  // been sorted, you have the option of using a faster algorithm.
-  // Aliased as `unique`.
-  function unique(isSorted, f) {
-     if (!_.isBoolean(isSorted)) {
-       f = isSorted;
-       isSorted = false;
-     }
-     if(isSorted){
-       return un.dedupe();
-     }
-
-     if (f !== undef) f = iteratee(f);
-     return un.unique(f);
-  }
-};
-
-},{"transduce-unique":50}],45:[function(require,module,exports){
+},{"transduce":36}],34:[function(require,module,exports){
 "use strict";
 var undef;
 
@@ -2880,796 +2292,7 @@ function dispatch(fns, ctx){
   };
 }
 
-},{}],46:[function(require,module,exports){
-"use strict";
-var tp = require('transduce-util'),
-    _slice = Array.prototype.slice,
-    undef;
-
-module.exports = {
-  forEach: forEach,
-  find: find,
-  every: every,
-  some: some,
-  contains: contains,
-  push: push,
-  unshift: unshift,
-  slice: slice,
-  initial: initial,
-  last: last
-};
-
-// Executes f with f(input, idx, result) for forEach item
-// passed through transducer without changing the result.
-function forEach(f) {
-  return function(xf){
-    return new ForEach(f, xf);
-  };
-}
-function ForEach(f, xf) {
-  this.xf = xf;
-  this.f = f;
-  this.i = 0;
-}
-ForEach.prototype.init = function(){
-  return this.xf.init();
-};
-ForEach.prototype.result = function(result){
-  return this.xf.result(result);
-};
-ForEach.prototype.step = function(result, input) {
-  this.f(input, this.i++, result);
-  return this.xf.step(result, input);
-};
-
-// Return the first value which passes a truth test. Aliased as `detect`.
-function find(predicate) {
-   return function(xf){
-     return new Find(predicate, xf);
-   };
-}
-function Find(f, xf) {
-  this.xf = xf;
-  this.f = f;
-}
-Find.prototype.init = function(){
-  return this.xf.init();
-};
-Find.prototype.result = function(result){
-  return this.xf.result(result);
-};
-Find.prototype.step = function(result, input) {
-  if(this.f(input)){
-    result = tp.reduced(this.xf.step(result, input));
-  }
-  return result;
-};
-
-// Determine whether all of the elements match a truth test.
-// Early termination if item does not match predicate.
-function every(predicate) {
-  return function(xf){
-    return new Every(predicate, xf);
-  };
-}
-function Every(f, xf) {
-  this.xf = xf;
-  this.f = f;
-  this.found = false;
-}
-Every.prototype.init = function(){
-  return this.xf.init();
-};
-Every.prototype.result = function(result){
-  if(!this.found){
-    result = this.xf.step(result, true);
-  }
-  return this.xf.result(result);
-};
-Every.prototype.step = function(result, input) {
-  if(!this.f(input)){
-    this.found = true;
-    return tp.reduced(this.xf.step(result, false));
-  }
-  return result;
-};
-
-// Determine if at least one element in the object matches a truth test.
-// Aliased as `any`.
-// Early termination if item matches predicate.
-function some(predicate) {
-  return function(xf){
-    return new Some(predicate, xf);
-  };
-}
-function Some(f, xf) {
-  this.xf = xf;
-  this.f = f;
-  this.found = false;
-}
-Some.prototype.init = function(){
-  return this.xf.init();
-};
-Some.prototype.result = function(result){
-  if(!this.found){
-    result = this.xf.step(result, false);
-  }
-  return this.xf.result(result);
-};
-Some.prototype.step = function(result, input) {
-  if(this.f(input)){
-    this.found = true;
-    return tp.reduced(this.xf.step(result, true));
-  }
-  return result;
-};
-
-// Determine if contains a given value (using `===`).
-// Aliased as `include`.
-// Early termination when item found.
-function contains(target) {
-  return some(function(x){return x === target; });
-}
-
-
-// Adds one or more items to the end of the sequence, like Array.prototype.push.
-function push(){
-  var toPush = _slice.call(arguments);
-  return function(xf){
-    return new Push(toPush, xf);
-  };
-}
-function Push(toPush, xf) {
-  this.xf = xf;
-  this.toPush = toPush;
-}
-Push.prototype.init = function(){
-  return this.xf.init();
-};
-Push.prototype.result = function(result){
-  var idx, toPush = this.toPush, len = toPush.length;
-  for(idx = 0; idx < len; idx++){
-    result = this.xf.step(result, toPush[idx]);
-    if(tp.isReduced(result)){
-      result = tp.unreduced(result);
-      break;
-    }
-  }
-  return this.xf.result(result);
-};
-Push.prototype.step = function(result, input){
-  return this.xf.step(result, input);
-};
-
-// Adds one or more items to the beginning of the sequence, like Array.prototype.unshift.
-function unshift(){
-  var toUnshift = _slice.call(arguments);
-  return function(xf){
-    return new Unshift(toUnshift, xf);
-  };
-}
-function Unshift(toUnshift, xf){
-  this.xf = xf;
-  this.toUnshift = toUnshift;
-  this.idx = 0;
-}
-Unshift.prototype.init = function(){
-  return this.xf.init();
-};
-Unshift.prototype.result = function(result){
-  return this.xf.result(result);
-};
-Unshift.prototype.step = function(result, input){
-  var toUnshift = this.toUnshift;
-  if(toUnshift){
-    var idx, len = toUnshift.length;
-    for(idx = 0; idx < len; idx++){
-      result = this.xf.step(result, toUnshift[idx]);
-      if(tp.isReduced(result)){
-        return result;
-      }
-    }
-    this.toUnshift = null;
-  }
-  return this.xf.step(result, input);
-};
-
-function slice(begin, end){
-  if(begin === undef){
-    begin = 0;
-  }
-
-  if(begin < 0){
-    if(end === undef){
-      return last(-begin);
-    }
-    if(end >= 0){
-      return tp.compose(last(-begin), slice(0, end+begin+1));
-    }
-  }
-
-  if(end < 0){
-    if(begin === 0){
-      return initial(-end);
-    }
-    return tp.compose(slice(begin), initial(-end));
-  }
-
-  return function(xf){
-    return new Slice(begin, end, xf);
-  };
-}
-function Slice(begin, end, xf) {
-  this.xf = xf;
-  if(begin === undef){
-    begin = 0;
-  }
-  this.begin = begin;
-  this.end = end;
-  this.idx = 0;
-}
-Slice.prototype.init = function(){
-  return this.xf.init();
-};
-Slice.prototype.result = function(result){
-  return this.xf.result(result);
-};
-Slice.prototype.step = function(result, input){
-  if(this.idx++ >= this.begin){
-    result = this.xf.step(result, input);
-  }
-  if(this.idx >= this.end){
-    result = tp.reduced(result);
-  }
-  return result; 
-};
-
-// Returns everything but the last entry. Passing **n** will return all the values
-// excluding the last N.
-// Note that no items will be sent and all items will be buffered until completion.
-function initial(n) {
-  n = (n === undef) ? 1 : (n > 0) ? n : 0;
-  return function(xf){
-    return new Initial(n, xf);
-  };
-}
-function Initial(n, xf) {
-  this.xf = xf;
-  this.n = n;
-  this.idx = 0;
-  this.buffer = [];
-}
-Initial.prototype.init = function(){
-  return this.xf.init();
-};
-Initial.prototype.result = function(result){
-  var idx = 0, count = this.idx - this.n, buffer = this.buffer;
-  for(idx = 0; idx < count; idx++){
-    result = this.xf.step(result, buffer[idx]);
-    if(tp.isReduced(result)){
-      result = tp.unreduced(result);
-      break;
-    }
-  }
-  return this.xf.result(result);
-};
-Initial.prototype.step = function(result, input){
-  this.buffer[this.idx++] = input;
-  return result;
-};
-
-// Get the last element. Passing **n** will return the last N  values.
-// Note that no items will be sent until completion.
-function last(n) {
-  if(n === undef){
-    n = 1;
-  } else {
-    n = (n > 0) ? n : 0;
-  }
-  return function(xf){
-    return new Last(n, xf);
-  };
-}
-function Last(n, xf) {
-  this.xf = xf;
-  this.n = n;
-  this.idx = 0;
-  this.buffer = [];
-}
-Last.prototype.init = function(){
-  return this.xf.init();
-};
-Last.prototype.result = function(result){
-  var n = this.n, count = n, buffer=this.buffer, idx=this.idx;
-  if(idx < count){
-    count = idx;
-    idx = 0;
-  }
-  while(count--){
-    result = this.xf.step(result, buffer[idx++ % n]);
-    if(tp.isReduced(result)){
-      result = tp.unreduced(result);
-      break;
-    }
-  }
-  return this.xf.result(result);
-};
-Last.prototype.step = function(result, input){
-  this.buffer[this.idx++ % this.n] = input;
-  return result;
-};
-
-},{"transduce-util":33}],47:[function(require,module,exports){
-"use strict";
-module.exports = {
-  min: min,
-  max: max
-};
-
-function identity(v){
-  return v;
-}
-
-// Return the maximum element (or element-based computation).
-function max(f) {
-  if(!f){
-    f = identity;
-  }
-  return function(xf){
-    return new Max(f, xf);
-  };
-}
-function Max(f, xf) {
-  this.xf = xf;
-  this.f = f;
-  this.computedResult = -Infinity;
-  this.lastComputed = -Infinity;
-}
-Max.prototype.init = function(){
-  return this.xf.init();
-};
-Max.prototype.result = function(result){
-  result = this.xf.step(result, this.computedResult);
-  return this.xf.result(result);
-};
-Max.prototype.step = function(result, input) {
-  var computed = this.f(input);
-  if (computed > this.lastComputed ||
-      computed === -Infinity && this.computedResult === -Infinity) {
-    this.computedResult = input;
-    this.lastComputed = computed;
-  }
-  return result;
-};
-
-// Return the minimum element (or element-based computation).
-function min(f) {
-  if(!f){
-    f = identity;
-  }
-  return function(xf){
-    return new Min(f, xf);
-  };
-}
-function Min(f, xf) {
-  this.xf = xf;
-  this.f = f;
-  this.computedResult = Infinity;
-  this.lastComputed = Infinity;
-}
-Min.prototype.init = function(){
-  return this.xf.init();
-};
-Min.prototype.result = function(result){
-  result = this.xf.step(result, this.computedResult);
-  return this.xf.result(result);
-};
-Min.prototype.step = function(result, input) {
-  var computed = this.f(input);
-  if (computed < this.lastComputed ||
-      computed === Infinity && this.computedResult === Infinity) {
-    this.computedResult = input;
-    this.lastComputed = computed;
-  }
-  return result;
-};
-
-},{}],48:[function(require,module,exports){
-"use strict";
-var tp = require('transduce-util'),
-    undef;
-
-module.exports = {
-  tap: tap,
-  asCallback: asCallback,
-  asyncCallback: asyncCallback,
-  LastValue: LastValue
-};
-
-// Reducer that maintains last value
-function LastValue(){}
-LastValue.prototype.init = function(){};
-LastValue.prototype.result = function(val){
-  return val;
-};
-LastValue.prototype.step = function(result, input){
-  return input;
-};
-
-// Invokes interceptor with each result and input, and then passes through input.
-// The primary purpose of this method is to "tap into" a method chain, in
-// order to perform operations on intermediate results within the chain.
-// Executes interceptor with current result and input
-// Stateless transducer
-function tap(interceptor) {
- return function(xf){
-   return new Tap(interceptor, xf);
- };
-}
-function Tap(f, xf) {
-  this.xf = xf;
-  this.f = f;
-}
-Tap.prototype.init = function(){
-  return this.xf.init();
-};
-Tap.prototype.result = function(result){
-  return this.xf.result(result);
-};
-Tap.prototype.step = function(result, input) {
-  this.f(result, input);
-  return this.xf.step(result, input);
-};
-
-// Creates a callback that starts a transducer process and accepts
-// parameter as a new item in the process. Each item advances the state
-// of the transducer. If the transducer exhausts due to early termination,
-// all subsequent calls to the callback will no-op and return the computed result.
-//
-// If the callback is called with no argument, the transducer terminates,
-// and all subsequent calls will no-op and return the computed result.
-//
-// The callback returns undefined until completion. Once completed, the result
-// is always returned.
-//
-// If reducer is not defined, maintains last value and does not buffer results.
-function asCallback(xf, reducer){
-  var done = false, stepper, result;
-
-  if(reducer === undef){
-    reducer = new LastValue();
-  }
-
-  stepper = xf(reducer);
-  result = stepper.init();
-
-  return function(item){
-    if(done) return result;
-
-    if(item === undef){
-      // complete
-      result = stepper.result(result);
-      done = true;
-    } else {
-      // step to next result.
-      result = stepper.step(result, item);
-
-      // check if exhausted
-      if(tp.isReduced(result)){
-        result = stepper.result(tp.unreduced(result));
-        done = true;
-      }
-    }
-
-    if(done) return result;
-  };
-}
-
-// Creates an async callback that starts a transducer process and accepts
-// parameter cb(err, item) as a new item in the process. The returned callback
-// and the optional continuation follow node conventions with  fn(err, item).
-//
-// Each item advances the state  of the transducer, if the continuation
-// is provided, it will be called on completion or error. An error will terminate
-// the transducer and be propagated to the continuation.  If the transducer
-// exhausts due to early termination, any further call will be a no-op.
-//
-// If the callback is called with no item, it will terminate the transducer process.
-//
-// If reducer is not defined, maintains last value and does not buffer results.
-function asyncCallback(xf, continuation, reducer){
-  var done = false, stepper, result;
-
-  if(reducer === undef){
-    reducer = new LastValue();
-  }
-
-  stepper = xf(reducer);
-  result = stepper.init();
-
-  function checkDone(err, item){
-    if(done){
-      return true;
-    }
-
-    err = err || null;
-
-    // check if exhausted
-    if(tp.isReduced(result)){
-      result = tp.unreduced(result);
-      done = true;
-    }
-
-    if(err || done || item === undef){
-      result = stepper.result(result);
-      done = true;
-    }
-
-    // notify if done
-    if(done){
-      if(continuation){
-        continuation(err, result);
-        continuation = null;
-      } else if(err){
-        throw err;
-      }
-      result = null;
-    }
-
-    return done;
-  }
-
-  return function(err, item){
-    if(!checkDone(err, item)){
-      try {
-        // step to next result.
-        result = stepper.step(result, item);
-        checkDone(err, item);
-      } catch(err2){
-        checkDone(err2, item);
-      }
-    }
-  };
-}
-
-},{"transduce-util":33}],49:[function(require,module,exports){
-"use strict";
-var tp = require('transduce-util'),
-    isString = tp.isString,
-    isRegExp = tp.isRegExp,
-    isNumber = tp.isNumber,
-    undef;
-
-module.exports = {
-  split: split,
-  join: join,
-  nonEmpty: nonEmpty,
-  lines: function(limit){
-    return split('\n', limit);
-  },
-  chars: function(limit){
-    return split('', limit);
-  },
-  words: function(delimiter, limit) {
-    if(delimiter === undef || isNumber(delimiter)){
-      limit  = delimiter;
-      delimiter = /\s+/;
-    }
-    return tp.compose(split(delimiter, limit), nonEmpty());
-  }
-};
-
-function join(separator){
-  return function(xf){
-    return new Join(separator, xf);
-  };
-}
-function Join(separator, xf){
-  this.separator = separator;
-  this.xf = xf;
-  this.buffer = [];
-}
-Join.prototype.init = function(){return this.xf.init();};
-Join.prototype.step = function(result, input){
-  this.buffer.push(input);
-  return result;
-};
-Join.prototype.result = function(result){
-  result = this.xf.step(result, this.buffer.join(this.separator));
-  return this.xf.result(result);
-};
-
-function nonEmpty(){
-  return function(xf){
-    return new NonEmpty(xf);
-  };
-}
-function NonEmpty(xf){
-  this.xf = xf;
-}
-NonEmpty.prototype.init = function(){return this.xf.init();};
-NonEmpty.prototype.step = function(result, input){
-  if(isString(input) && input.trim().length){
-    result = this.xf.step(result, input);
-  }
-  return result;
-};
-NonEmpty.prototype.result = function(result){
-  return this.xf.result(result);
-};
-
-function split(separator, limit){
-  if(isRegExp(separator)){
-    separator = cloneRegExp(separator);
-  }
-  return function(xf){
-    return new Split(separator, limit, xf);
-  };
-}
-
-function Split(separator, limit, xf){
-  this.separator = separator;
-  this.xf = xf;
-  this.next = null;
-  this.idx = 0;
-
-  if(limit == undef){
-    limit = Infinity;
-  }
-  this.limit = limit;
-
-  if(!isRegExp(separator) && separator !== ''){
-    this.spliterate = spliterateString;
-  } else if(isRegExp(separator)){
-    this.spliterate = spliterateRegExp;
-  } else {
-    this.spliterate = spliterateChars;
-  }
-}
-Split.prototype.init = function(){return this.xf.init();};
-Split.prototype.step = function(result, input){
-  if(input === null || input === undef){
-    return result;
-  }
-
-  var next = this.next,
-      str = (next && next.value || '')+input,
-      chunk = this.spliterate(str, this.separator);
-
-  for(;;){
-    this.next = next = chunk();
-    if(next.done){
-      break;
-    }
-
-    result = this.xf.step(result, next.value);
-
-    if(++this.idx >= this.limit){
-      this.next = null;
-      result = tp.reduced(result);
-      break;
-    }
-  }
-  return result;
-};
-Split.prototype.result = function(result){
-  var next = this.next;
-  if(next && next.value !== null && next.value !== undef){
-    result = this.xf.step(result, next.value);
-  }
-  return this.xf.result(result);
-};
-
-function spliterateChars(str){
-  var i = 0,  len = str.length,
-      result = {done: false};
-  return function(){
-    result.value = str[i++];
-    if(i >= len){
-      result.done = true;
-    }
-    return result;
-  };
-}
-
-function spliterateString(str, separator){
-  var first, second, sepLen = separator.length,
-      result = {done: false};
-  return function(){
-    first = (first === undef) ? 0 : second + sepLen;
-    second = str.indexOf(separator, first);
-
-    if(second < 0){
-      result.done = true;
-      second = undef;
-    }
-    result.value = str.substring(first, second);
-    return result;
-  };
-}
-
-function spliterateRegExp(str, pattern){
-  var index, match,
-      result = {done: false};
-  pattern = cloneRegExp(pattern);
-  return function(){
-    match = pattern.exec(str);
-    if(match){
-      index = match.index;
-      result.value = str.substring(0, index);
-      str = str.substring(index + match[0].length);
-    } else {
-      result.done = true;
-      result.value = str;
-    }
-    return result;
-  };
-}
-
-function cloneRegExp(regexp){
-  // From https://github.com/aheckmann/regexp-clone
-  var flags = [];
-  if (regexp.global) flags.push('g');
-  if (regexp.multiline) flags.push('m');
-  if (regexp.ignoreCase) flags.push('i');
-  return new RegExp(regexp.source, flags.join(''));
-}
-
-},{"transduce-util":33}],50:[function(require,module,exports){
-"use strict";
-module.exports = {
-  unique: unique,
-  dedupe: dedupe
-};
-
-function unique(f) {
-  return _unique(f, true);
-}
-
-function dedupe(){
-  return _unique();
-}
-
-function _unique(f, buffer) {
-   return function(xf){
-     return new Uniq(f, !buffer, xf);
-   };
-}
-function Uniq(f, isSorted, xf) {
-  this.xf = xf;
-  this.f = f;
-  this.isSorted = isSorted;
-  this.seen = [];
-  this.i = 0;
-}
-Uniq.prototype.init = function(){
-  return this.xf.init();
-};
-Uniq.prototype.result = function(result){
-  return this.xf.result(result);
-};
-Uniq.prototype.step = function(result, input){
-  var seen = this.seen;
-  if (this.isSorted) {
-    if (!this.i || seen !== input){
-      result = this.xf.step(result, input);
-    }
-    this.seen = input;
-    this.i++;
-  } else if (this.f) {
-    var computed = this.f(input);
-    if (seen.indexOf(computed) < 0) {
-      seen.push(computed);
-      result = this.xf.step(result, input);
-    }
-  } else if (seen.indexOf(input) < 0) {
-      seen.push(input);
-      result = this.xf.step(result, input);
-  }
-  return result;
-};
-
-},{}],51:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 "use strict";
 /*global transducers */
 var libs = ['transducers-js', 'transducers.js'];
@@ -3683,7 +2306,7 @@ module.exports = {
   libs: libs
 };
 
-},{}],52:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 "use strict";
 var protocol = require('transduce-protocol'),
     lib = require('./load'),
@@ -3763,23 +2386,15 @@ var undef, loader = {
 
 load();
 
-},{"./load":51,"transduce-protocol":32}],53:[function(require,module,exports){
+},{"./load":35,"transduce-protocol":27}],37:[function(require,module,exports){
 module.exports = require('./lib/load')([
   require('./lib/lodash'),
   require('./lib/dispatch'),
-  require('./lib/transduce'),
-  require('./lib/array'),
-  require('./lib/unique'),
-  require('./lib/push'),
-  require('./lib/iterator'),
-  require('./lib/math'),
-  require('./lib/string')]);
+  require('./lib/transduce')]);
 
-},{"./lib/array":34,"./lib/dispatch":36,"./lib/iterator":37,"./lib/load":38,"./lib/lodash":39,"./lib/math":40,"./lib/push":41,"./lib/string":42,"./lib/transduce":43,"./lib/unique":44}],54:[function(require,module,exports){
+},{"./lib/dispatch":30,"./lib/load":31,"./lib/lodash":32,"./lib/transduce":33}],38:[function(require,module,exports){
 module.exports = require('underscore-transducer/lib/load')([
-  require('./lib/lodash'),
-  require('./lib/async'),
-  require('./lib/sample')],
-  require('underscore-transducer'));
+  require('./lib/async')],
+  require('underscore-transducer/underscore-transducer.base'));
 
-},{"./lib/async":1,"./lib/lodash":2,"./lib/sample":3,"underscore-transducer":53,"underscore-transducer/lib/load":38}]},{},[54]);
+},{"./lib/async":1,"underscore-transducer/lib/load":31,"underscore-transducer/underscore-transducer.base":37}]},{},[38]);
