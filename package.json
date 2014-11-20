@@ -29,7 +29,7 @@
     "transduce-array": "0.0.8",
     "transduce-push": "0.0.7",
     "transduce-string": "0.0.8",
-    "redispatch": "0.0.1",
+    "redispatch": "0.0.2",
     "transduce-unique": "0.0.1",
     "lodash-node": "~2.4.1"
   },
