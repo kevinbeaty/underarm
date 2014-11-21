@@ -6,6 +6,8 @@ Use [transducers-js][10] or [transducers.js][11] (your choice) with the familiar
 
 If you are not familiar with transducers, check out [Transducers Explained][3].
 
+Too much API for you?  Just grab what you need from the [transduce][14] libraries, which underscore-transudcer is based.  Want more?  Check out [underarm][18] for asynchronous (reactive) extensions.
+
 ## Install
 
 ### Browser
@@ -13,6 +15,8 @@ Install browser version of [transducers-js][10] or [transducers.js][11] and incl
 
 * [Development][12]
 * [Minified][13]
+
+Checkout other [builds][19] that optionally bundle custom build of lodash and base versions without extensions.
 
 ### Node.js
 Library depends on either [transducers-js][10] or [transducers.js][11]. It is your choice.  Must `npm install` either one and it will be detected automatically.
@@ -604,3 +608,5 @@ MIT
 [15]: https://github.com/transduce/transduce-array
 [16]: https://github.com/transduce/transduce-math
 [17]: https://github.com/transduce/transduce-push
+[18]: https://github.com/kevinbeaty/underarm
+[19]: https://github.com/kevinbeaty/underscore-transducer/tree/master/build
