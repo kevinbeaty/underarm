@@ -1,9 +1,9 @@
 # Underarm
 [![Build Status](https://secure.travis-ci.org/kevinbeaty/underarm.png)](http://travis-ci.org/kevinbeaty/underarm)
 
-Use [transducers-js][10] or [transducers.js][11] (your choice) with the familiar [Underscore.js][1] API with extra goodies like and [asynchronous (reactive) execution][2] and [lazy generators and callback processes][4].
+Use JavaScript with the familiar [Underscore.js][1] API with extra goodies like and [asynchronous (reactive) execution][2] and [lazy generators and callback processes][4].
 
-Also works with [any-promise][6] library (a pollyfill, es6-promise, promise, native-promise-only, bluebird, rsvp, when, q ... your choice) for asynchronous execution.
+Works with [any-promise][6] library (a pollyfill, es6-promise, promise, native-promise-only, bluebird, rsvp, when, q ... your choice) for asynchronous execution.
 
 If you are not familiar with transducers, check out [Transducers Explained][3].
 
@@ -11,43 +11,35 @@ Underarm is an extension to [underscore-transducer][5]. All methods there work w
 
 ## Install
 
-Install your transducers and Promise library preference before underarm and it will be auto detected and used.
+Install your Promise library preference before underarm and it will be auto detected and used.
 
 ### Browser
-Install browser version of [transducers-js][10] or [transducers.js][11] and include with `<script>`. Also include an ES6 Promise Pollyfill.  Then include the browser version of underarm.
+Include an ES6 Promise Pollyfill.  Then include the browser version of underarm.
 
 * [Development][12]
 * [Minified][13]
 
 ### Node.js
-Library depends on either [transducers-js][10] or [transducers.js][11]. It is your choice.  Must `npm install` either one and it will be detected automatically.  Also uses [any-promise][6] to allow choice of Promise library.
+Library uses [any-promise][6] to allow choice of Promise library.
 
-Using transducers-js:
 ```bash
-$ npm install transducers-js
 $ npm install promise # or es6-promise, bluebird, q, when, rsvp ... see any-promise
 $ npm install underarm
 ```
 
-Using transducers.js:
-```bash
-$ npm install transducers.js
-$ npm install promise # or es6-promise, bluebird, q, when, rsvp ... see any-promise
-$ npm install underarm
-```
 ### Async
 Uses [transduce-async][15] to support promises in transducer `init`, `step` and `result`.
 
-#### prototype.async()
+##### prototype.async()
 Marks chained transformation as asynchronous.  See below for changes to API when `async`.
 
-#### prototype.value()
+##### prototype.value()
 Resolve value as [underscore-transducer][5] if not `async`.  If chained transformation is `async` returns a promise for the value of the transformation
 
-#### prototype.then(resolve, reject)
+##### prototype.then(resolve, reject)
 Marks chained transformation as `async` and adds Promise listeners to Promise `value`.  This means that any chained transformation is a promise.
 
-#### compose(\*fns)
+##### compose(\*fns)
 Like a normal compose when chained transformation not `async`. If `async` all arguments are interleaved with `defer`.  This allows any transducer in composed pipeline to `step` or `result` a Promise in addition to a value.  The wrapped transformer is called with value of resolved Promise.
 
 #### transduce(xf?, f, init, coll?)
@@ -82,8 +74,6 @@ MIT
 [4]: http://simplectic.com/projects/underscore-transducer/
 [5]: https://github.com/kevinbeaty/underscore-transducer
 [6]: https://github.com/kevinbeaty/any-promise
-[10]: https://github.com/cognitect-labs/transducers-js
-[11]: https://github.com/jlongster/transducers.js
 [12]: https://raw.githubusercontent.com/kevinbeaty/underarm/master/build/underarm.js
 [13]: https://raw.githubusercontent.com/kevinbeaty/underarm/master/build/underarm.min.js
 [14]: https://github.com/transduce/transduce
