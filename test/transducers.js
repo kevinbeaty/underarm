@@ -1,7 +1,7 @@
 "use strict";
 var _r = require('../'),
     _ = require('lodash-node'),
-    tp = require('transduce'),
+    tr = require('transduce'),
     test = require('tape');
 
 function isEven(x){
@@ -267,9 +267,9 @@ test('asyncCallback', function(t){
 test('dispatch', function(t){
   t.plan(8);
   function StringBuilder(str){
-    if(_.isString(str)){
+    if(tr.isString(str)){
       this.strings = [str];
-    } else if(_.isArray(str)){
+    } else if(tr.isArray(str)){
       this.strings = str;
     } else if(str instanceof StringBuilder){
       this.strings = _.clone(str.strings);
@@ -287,7 +287,7 @@ test('dispatch', function(t){
     return this.strings.join('');
   };
 
-  StringBuilder.prototype[tp.protocols.iterator] = function(){
+  StringBuilder.prototype[tr.protocols.iterator] = function(){
     var done = false, self = this;
     return {
       next: function(){
@@ -302,7 +302,7 @@ test('dispatch', function(t){
   };
 
   _r.wrap.register(function(obj){
-    if(_.isString(obj)){
+    if(tr.isString(obj)){
       return new StringBuilder(obj);
     }
   });
@@ -314,13 +314,13 @@ test('dispatch', function(t){
   });
 
   _r.empty.register(function(obj){
-    if(_.isString(obj) || obj instanceof StringBuilder){
+    if(tr.isString(obj) || obj instanceof StringBuilder){
       return new StringBuilder();
     }
   });
 
   _r.append.register(function(obj, item){
-    if(_.isString(obj)){
+    if(tr.isString(obj)){
       return new StringBuilder(item).append(item);
     } else if(obj instanceof StringBuilder){
       return obj.append(item);

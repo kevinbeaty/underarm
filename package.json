@@ -1,6 +1,6 @@
 {
   "name": "underscore-transducer",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Transducers for Underscore",
   "main": "underscore-transducer.js",
   "scripts": {
@@ -24,20 +24,18 @@
   },
   "homepage": "http://simplectic.com/projects/underscore-transducer/",
   "dependencies": {
-    "transduce": "0.0.12",
-    "transduce-math": "0.0.3",
-    "transduce-array": "0.0.8",
-    "transduce-push": "0.0.7",
-    "transduce-string": "0.0.8",
-    "redispatch": "0.0.2",
-    "transduce-unique": "0.0.1",
-    "lodash-node": "~2.4.1"
+    "lodash-node": "~2.4.1",
+    "transduce": "~0.2.0",
+    "transduce-array": "~0.1.0",
+    "transduce-math": "~0.1.0",
+    "transduce-push": "~0.1.0",
+    "transduce-string": "~0.1.0",
+    "transduce-unique": "~0.1.0",
+    "redispatch": "0.0.2"
   },
   "devDependencies": {
     "tape": "~3.0.0",
     "uglify-js": "~2.3.6",
-    "transducers-js": "~0.4.135",
-    "transducers.js": "~0.2.3",
     "browserify": "~6.1.0",
     "tap-bail": "0.0.0"
   }

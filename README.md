@@ -2,7 +2,7 @@
 
 [![Build Status](https://secure.travis-ci.org/kevinbeaty/underscore-transducer.svg)](http://travis-ci.org/kevinbeaty/underscore-transducer)
 
-Use [transducers-js][10] or [transducers.js][11] (your choice) with the familiar [Underscore.js][1] API with extra goodies like [lazy generators and callback processes][4].
+Use JavaScript transducers with the familiar [Underscore.js][1] API with extra goodies like [lazy generators and callback processes][4].
 
 If you are not familiar with transducers, check out [Transducers Explained][3].
 
@@ -10,30 +10,18 @@ Too much API for you?  Just grab what you need from the [transduce][14] librarie
 
 ## Install
 
+```bash
+$ npm install underscore-transducer
+$ bower install underscore-transducer
+```
+
 ### Browser
-Install browser version of [transducers-js][10] or [transducers.js][11] and include with `<script>`.  Then include the browser version of underscore-transducer.
 
 * [Development][12]
 * [Minified][13]
 
 Checkout other [builds][19] that optionally bundle custom build of lodash and base versions without extensions.
 
-### Node.js
-Library depends on either [transducers-js][10] or [transducers.js][11]. It is your choice.  Must `npm install` either one and it will be detected automatically.
-
-Using transducers-js:
-```bash
-$ npm install transducers-js
-$ npm install underscore-transducer
-```
-
-Using transducers.js:
-```bash
-$ npm install transducers.js
-$ npm install underscore-transducer
-```
-
-If both are installed, prefers transducers-js by default.  If you need to override this (maybe you want to test against both), you can change the implementation using the `TRANSDUCE_IMPL` environment variable.
 
 ### Transducers
 
