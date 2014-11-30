@@ -24,7 +24,6 @@
   },
   "homepage": "http://simplectic.com/projects/underscore-transducer/",
   "dependencies": {
-    "lodash-node": "~2.4.1",
     "transduce": "~0.2.0",
     "transduce-array": "~0.1.0",
     "transduce-math": "~0.1.0",
@@ -37,6 +36,8 @@
     "tape": "~3.0.0",
     "uglify-js": "~2.3.6",
     "browserify": "~6.1.0",
-    "tap-bail": "0.0.0"
+    "tap-bail": "0.0.0",
+    "lodash-node": "~2.4.1",
+    "bundle-collapser": "~1.1.0"
   }
 }

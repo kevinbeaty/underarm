@@ -1,9 +1,0 @@
-module.exports = require('./lib/load')([
-  require('./lib/dispatch'),
-  require('./lib/transduce'),
-  require('./lib/array'),
-  require('./lib/unique'),
-  require('./lib/push'),
-  require('./lib/iterator'),
-  require('./lib/math'),
-  require('./lib/string')]);
