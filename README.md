@@ -20,8 +20,12 @@ $ bower install underscore-transducer
 * [Development][12]
 * [Minified][13]
 
-Checkout other [builds][19] that optionally bundle custom build of lodash and base versions without extensions.
+Structured to allow creation of custom builds by loading only desired libs.  For example, see:
 
+* [Base Development][20]
+* [Base Minified][21]
+
+Created by using `browserify` with [this loader][22].
 
 ### Transducers
 
@@ -588,8 +592,6 @@ MIT
 [6]: https://github.com/facebook/immutable-js
 [7]: https://github.com/transduce/transduce-stream
 [8]: https://github.com/transduce/transduce-string
-[10]: https://github.com/cognitect-labs/transducers-js
-[11]: https://github.com/jlongster/transducers.js
 [12]: https://raw.githubusercontent.com/kevinbeaty/underscore-transducer/master/build/underscore-transducer.js
 [13]: https://raw.githubusercontent.com/kevinbeaty/underscore-transducer/master/build/underscore-transducer.min.js
 [14]: https://github.com/transduce/transduce
@@ -598,3 +600,6 @@ MIT
 [17]: https://github.com/transduce/transduce-push
 [18]: https://github.com/kevinbeaty/underarm
 [19]: https://github.com/kevinbeaty/underscore-transducer/tree/master/build
+[20]: https://raw.githubusercontent.com/kevinbeaty/underscore-transducer/master/build/underscore-transducer.base.js
+[21]: https://raw.githubusercontent.com/kevinbeaty/underscore-transducer/master/build/underscore-transducer.base.min.js
+[22]: https://github.com/kevinbeaty/underscore-transducer/tree/master/underscore-transducer.base.js
