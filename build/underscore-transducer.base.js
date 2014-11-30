@@ -1,6 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
-var tr = require('transduce'),
+var tr = require(28),
     merge = tr.objectMerge,
     undef;
 
@@ -89,10 +89,10 @@ function _method(func){
   };
 }
 
-},{"transduce":28}],2:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 "use strict";
-var tr = require('transduce'),
-    dispatcher = require('redispatch'),
+var tr = require(28),
+    dispatcher = require(6),
     undef;
 
 module.exports = function(_r){
@@ -370,13 +370,13 @@ module.exports = function(_r){
   }
 };
 
-},{"redispatch":6,"transduce":28}],3:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 "use strict";
 var undef;
 module.exports = function(libs, _r){
   var i = 0, len = libs.length, lib;
   if(_r === undef){
-    _r = require('./base');
+    _r = require(1);
   }
 
   for(; i < len; i++){
@@ -390,7 +390,7 @@ module.exports = function(libs, _r){
   return _r;
 };
 
-},{"./base":1}],4:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 "use strict";
 
 // Based on Underscore.js 1.7.0
@@ -400,7 +400,7 @@ module.exports = function(libs, _r){
 // Underscore.js > (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 // Underscore.js > Underscore may be freely distributed under the MIT license.
 
-var tr = require('transduce'), undef;
+var tr = require(28), undef;
 
 module.exports = function(_r){
   var _ = {};
@@ -468,9 +468,9 @@ function pairs(value){
   return ps;
 }
 
-},{"transduce":28}],5:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
-var transduce = require('transduce'),
+var transduce = require(28),
     slice = Array.prototype.slice, undef;
 
 module.exports = function(_r){
@@ -603,7 +603,7 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce":28}],6:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 var undef;
 
@@ -771,7 +771,7 @@ function append(result, input){
 },{}],10:[function(require,module,exports){
 "use strict";
 /* global Symbol */
-var util = require('transduce-util'),
+var util = require(9),
     symbol = util.protocols.iterator,
     isFunction = util.isFunction,
     keys = Object.keys || _keys,
@@ -892,11 +892,11 @@ function _keys(obj){
   return keys;
 }
 
-},{"transduce-util":9}],11:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 "use strict";
 
-var tp = require('transduce-reduced'),
-    reduce = require('transduce-reduce');
+var tp = require(8),
+    reduce = require(20);
 
 module.exports = cat;
 function cat(xf){
@@ -932,7 +932,7 @@ PreserveReduced.prototype.step = function(value, item){
   return value;
 };
 
-},{"transduce-reduce":20,"transduce-reduced":8}],12:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 "use strict";
 
 module.exports = drop;
@@ -1016,14 +1016,14 @@ Filter.prototype.step = function(result, input) {
 
 },{}],15:[function(require,module,exports){
 "use strict";
-var transduce = require('transduce-transduce');
+var transduce = require(26);
 
 module.exports = into;
 function into(to, xf, from){
   return transduce(xf, to, to, from);
 }
 
-},{"transduce-transduce":26}],16:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 "use strict";
 module.exports = map;
 function map(callback) {
@@ -1047,15 +1047,15 @@ Map.prototype.step = function(result, input) {
 
 },{}],17:[function(require,module,exports){
 "use strict";
-var compose = require('transduce-compose'),
-    map = require('transduce-map'),
-    cat = require('transduce-cat');
+var compose = require(7),
+    map = require(16),
+    cat = require(11);
 module.exports = mapcat;
 function mapcat(callback) {
   return compose(map(callback), cat);
 }
 
-},{"transduce-cat":11,"transduce-compose":7,"transduce-map":16}],18:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 "use strict";
 module.exports = partitionAll;
 function partitionAll(n) {
@@ -1092,7 +1092,7 @@ PartitionAll.prototype.step = function(result, input) {
 
 },{}],19:[function(require,module,exports){
 "use strict";
-var tp = require('transduce-reduced'),
+var tp = require(8),
     undef;
 
 module.exports = partitionBy;
@@ -1136,12 +1136,12 @@ PartitionBy.prototype.step = function(result, input) {
   return result;
 };
 
-},{"transduce-reduced":8}],20:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 "use strict";
-var iter = require('iterator-protocol'),
-    trans = require('transformer-protocol'),
-    red = require('transduce-reduced'),
-    util = require('transduce-util'),
+var iter = require(10),
+    trans = require(27),
+    red = require(8),
+    util = require(9),
     isReduced = red.isReduced,
     deref = red.deref,
     transformer = trans.transformer,
@@ -1191,9 +1191,9 @@ function iteratorReduce(xf, init, iter){
   return xf.result(value);
 }
 
-},{"iterator-protocol":10,"transduce-reduced":8,"transduce-util":9,"transformer-protocol":27}],21:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 "use strict";
-var filter = require('transduce-filter');
+var filter = require(14);
 
 module.exports = remove;
 function remove(p){
@@ -1203,10 +1203,10 @@ function remove(p){
 }
 
 
-},{"transduce-filter":14}],22:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 "use strict";
 
-var tp = require('transduce-reduced');
+var tp = require(8);
 
 module.exports = take;
 function take(n){
@@ -1234,9 +1234,9 @@ Take.prototype.step = function(value, item){
   return value;
 };
 
-},{"transduce-reduced":8}],23:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 "use strict";
-var reduced = require('transduce-reduced').reduced;
+var reduced = require(8).reduced;
 
 module.exports = takeWhile;
 function takeWhile(p){
@@ -1263,9 +1263,9 @@ TakeWhile.prototype.step = function(value, item){
   return value;
 };
 
-},{"transduce-reduced":8}],24:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 "use strict";
-var util = require('transduce-util'),
+var util = require(9),
     push = util.arrayPush,
     undef;
 
@@ -1280,18 +1280,18 @@ function transduceImplToArray(impl){
   };
 }
 
-},{"transduce-util":9}],25:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 "use strict";
-var implToArray = require('transduce-impl-toarray');
+var implToArray = require(24);
 module.exports = implToArray({
-  transduce: require('transduce-transduce'),
-  reduce: require('transduce-reduce')
+  transduce: require(26),
+  reduce: require(20)
 });
 
-},{"transduce-impl-toarray":24,"transduce-reduce":20,"transduce-transduce":26}],26:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 "use strict";
-var tp = require('transformer-protocol'),
-    reduce = require('transduce-reduce'),
+var tp = require(27),
+    reduce = require(20),
     transformer = tp.transformer;
 
 module.exports = transduce;
@@ -1300,11 +1300,11 @@ function transduce(xf, f, init, coll){
   return reduce(xf(f), init, coll);
 }
 
-},{"transduce-reduce":20,"transformer-protocol":27}],27:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 "use strict";
 /* global Symbol */
 var undef,
-    util = require('transduce-util'),
+    util = require(9),
     slice = Array.prototype.slice,
     symTransformer = util.protocols.transformer,
     isFunction = util.isFunction,
@@ -1394,30 +1394,30 @@ ObjectTransformer.prototype.init = function(){
 ObjectTransformer.prototype.step = merge;
 ObjectTransformer.prototype.result = identity;
 
-},{"transduce-util":9}],28:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 "use strict";
-var util = require('transduce-util'),
-    compose = require('transduce-compose'),
-    reduced = require('transduce-reduced'),
-    iter = require('iterator-protocol'),
-    transformer = require('transformer-protocol');
+var util = require(9),
+    compose = require(7),
+    reduced = require(8),
+    iter = require(10),
+    transformer = require(27);
 
 module.exports = {
-  reduce: require('transduce-reduce'),
-  transduce: require('transduce-transduce'),
-  into: require('transduce-into'),
-  toArray: require('transduce-toarray'),
-  map: require('transduce-map'),
-  filter: require('transduce-filter'),
-  remove: require('transduce-remove'),
-  take: require('transduce-take'),
-  takeWhile: require('transduce-takewhile'),
-  drop: require('transduce-drop'),
-  dropWhile: require('transduce-dropwhile'),
-  cat: require('transduce-cat'),
-  mapcat: require('transduce-mapcat'),
-  partitionAll: require('transduce-partitionall'),
-  partitionBy: require('transduce-partitionby'),
+  reduce: require(20),
+  transduce: require(26),
+  into: require(15),
+  toArray: require(25),
+  map: require(16),
+  filter: require(14),
+  remove: require(21),
+  take: require(22),
+  takeWhile: require(23),
+  drop: require(12),
+  dropWhile: require(13),
+  cat: require(11),
+  mapcat: require(17),
+  partitionAll: require(18),
+  partitionBy: require(19),
   compose: compose,
   isIterable: iter.isIterable,
   isIterator: iter.isIterator,
@@ -1442,10 +1442,10 @@ module.exports = {
   identity: util.identity,
 };
 
-},{"iterator-protocol":10,"transduce-cat":11,"transduce-compose":7,"transduce-drop":12,"transduce-dropwhile":13,"transduce-filter":14,"transduce-into":15,"transduce-map":16,"transduce-mapcat":17,"transduce-partitionall":18,"transduce-partitionby":19,"transduce-reduce":20,"transduce-reduced":8,"transduce-remove":21,"transduce-take":22,"transduce-takewhile":23,"transduce-toarray":25,"transduce-transduce":26,"transduce-util":9,"transformer-protocol":27}],29:[function(require,module,exports){
-module.exports = require('./lib/load')([
-  require('./lib/lodash'),
-  require('./lib/dispatch'),
-  require('./lib/transduce')]);
+},{}],29:[function(require,module,exports){
+module.exports = require(3)([
+  require(4),
+  require(2),
+  require(5)]);
 
-},{"./lib/dispatch":2,"./lib/load":3,"./lib/lodash":4,"./lib/transduce":5}]},{},[29]);
+},{}]},{},[29]);

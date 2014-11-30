@@ -30,7 +30,7 @@ $(BUILD).js: lib/*.js | build
 	`npm bin`/browserify -p bundle-collapser/plugin $(PROJECT).js > $@
 
 $(BUILD).base.js: lib/*.js | build
-	`npm bin`/browserify $(PROJECT).base.js > $@
+	`npm bin`/browserify -p bundle-collapser/plugin $(PROJECT).base.js > $@
 
 build:
 	mkdir -p build
