@@ -1,6 +1,6 @@
 {
   "name": "underarm",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Underscore Transducer meets Reactive Programming",
   "main": "underarm.js",
   "homepage": "https://github.com/kevinbeaty/underarm",
@@ -21,7 +21,7 @@
   "author": "Kevin Beaty",
   "license": "MIT",
   "dependencies": {
-    "underscore-transducer": "~0.3.0",
+    "underscore-transducer": "~0.3.1",
     "transduce-async": "~0.1.0",
     "any-promise": "0.0.2",
     "lodash-node": "~2.4.1"
@@ -30,6 +30,7 @@
     "tape": "~3.0.0",
     "uglify-js": "~2.3.6",
     "browserify": "~6.1.0",
+    "bundle-collapser": "~1.1.0",
     "transduce-then": "~0.1.0",
     "promise": "~6.0.1",
     "es6-promise": "~2.0.0",

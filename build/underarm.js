@@ -1,7 +1,7 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
-var async = require('transduce-async'),
-    Prom = require('any-promise'),
+var async = require(13),
+    Prom = require(4),
     undef;
 
 module.exports = function(_r){
@@ -172,16 +172,16 @@ module.exports = function(_r){
   }
 };
 
-},{"any-promise":4,"transduce-async":26}],2:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 "use strict";
 var undef;
 module.exports = function(_r){
   var _ = _r._ || {};
-  _.debounce = require('lodash-node/underscore/functions/debounce');
-  _.throttle = require('lodash-node/underscore/functions/throttle');
+  _.debounce = require(6);
+  _.throttle = require(7);
 };
 
-},{"lodash-node/underscore/functions/debounce":8,"lodash-node/underscore/functions/throttle":9}],3:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 "use strict";
 var undef;
 module.exports = function(_r){
@@ -233,7 +233,7 @@ module.exports = Promise;
 },{}],5:[function(require,module,exports){
 "use strict";
 /* global Symbol */
-var util = require('transduce-util'),
+var util = require(17),
     symbol = util.protocols.iterator,
     isFunction = util.isFunction,
     keys = Object.keys || _keys,
@@ -354,7 +354,7 @@ function _keys(obj){
   return keys;
 }
 
-},{"transduce-util":30}],6:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -363,120 +363,9 @@ function _keys(obj){
  * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  * Available under MIT license <http://lodash.com/license>
  */
-var createWrapper = require('../internals/createWrapper'),
-    slice = require('../internals/slice');
-
-/**
- * Creates a function that, when called, invokes `func` with the `this`
- * binding of `thisArg` and prepends any additional `bind` arguments to those
- * provided to the bound function.
- *
- * @static
- * @memberOf _
- * @category Functions
- * @param {Function} func The function to bind.
- * @param {*} [thisArg] The `this` binding of `func`.
- * @param {...*} [arg] Arguments to be partially applied.
- * @returns {Function} Returns the new bound function.
- * @example
- *
- * var func = function(greeting) {
- *   return greeting + ' ' + this.name;
- * };
- *
- * func = _.bind(func, { 'name': 'fred' }, 'hi');
- * func();
- * // => 'hi fred'
- */
-function bind(func, thisArg) {
-  return arguments.length > 2
-    ? createWrapper(func, 17, slice(arguments, 2), null, thisArg)
-    : createWrapper(func, 1, null, null, thisArg);
-}
-
-module.exports = bind;
-
-},{"../internals/createWrapper":14,"../internals/slice":18}],7:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseCreateCallback = require('../internals/baseCreateCallback'),
-    keys = require('../objects/keys'),
-    property = require('../utilities/property');
-
-/**
- * Produces a callback bound to an optional `thisArg`. If `func` is a property
- * name the created callback will return the property value for a given element.
- * If `func` is an object the created callback will return `true` for elements
- * that contain the equivalent object properties, otherwise it will return `false`.
- *
- * @static
- * @memberOf _
- * @category Utilities
- * @param {*} [func=identity] The value to convert to a callback.
- * @param {*} [thisArg] The `this` binding of the created callback.
- * @param {number} [argCount] The number of arguments the callback accepts.
- * @returns {Function} Returns a callback function.
- * @example
- *
- * var characters = [
- *   { 'name': 'barney', 'age': 36 },
- *   { 'name': 'fred',   'age': 40 }
- * ];
- *
- * // wrap to create custom callback shorthands
- * _.createCallback = _.wrap(_.createCallback, function(func, callback, thisArg) {
- *   var match = /^(.+?)__([gl]t)(.+)$/.exec(callback);
- *   return !match ? func(callback, thisArg) : function(object) {
- *     return match[2] == 'gt' ? object[match[1]] > match[3] : object[match[1]] < match[3];
- *   };
- * });
- *
- * _.filter(characters, 'age__gt38');
- * // => [{ 'name': 'fred', 'age': 40 }]
- */
-function createCallback(func, thisArg, argCount) {
-  var type = typeof func;
-  if (func == null || type == 'function') {
-    return baseCreateCallback(func, thisArg, argCount);
-  }
-  // handle "_.pluck" style callback shorthands
-  if (type != 'object') {
-    return property(func);
-  }
-  var props = keys(func);
-  return function(object) {
-    var length = props.length,
-        result = false;
-
-    while (length--) {
-      if (!(result = object[props[length]] === func[props[length]])) {
-        break;
-      }
-    }
-    return result;
-  };
-}
-
-module.exports = createCallback;
-
-},{"../internals/baseCreateCallback":12,"../objects/keys":21,"../utilities/property":25}],8:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var isFunction = require('../objects/isFunction'),
-    isObject = require('../objects/isObject'),
-    now = require('../utilities/now');
+var isFunction = require(10),
+    isObject = require(11),
+    now = require(12);
 
 /* Native method shortcuts for methods with the same name as other `lodash` methods */
 var nativeMax = Math.max;
@@ -623,7 +512,7 @@ function debounce(func, wait, options) {
 
 module.exports = debounce;
 
-},{"../objects/isFunction":19,"../objects/isObject":20,"../utilities/now":24}],9:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -632,9 +521,9 @@ module.exports = debounce;
  * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  * Available under MIT license <http://lodash.com/license>
  */
-var debounce = require('./debounce'),
-    isFunction = require('../objects/isFunction'),
-    isObject = require('../objects/isObject');
+var debounce = require(6),
+    isFunction = require(10),
+    isObject = require(11);
 
 /**
  * Creates a function that, when executed, will only call the `func` function
@@ -690,304 +579,7 @@ function throttle(func, wait, options) {
 
 module.exports = throttle;
 
-},{"../objects/isFunction":19,"../objects/isObject":20,"./debounce":8}],10:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseCreate = require('./baseCreate'),
-    isObject = require('../objects/isObject'),
-    slice = require('./slice');
-
-/**
- * Used for `Array` method references.
- *
- * Normally `Array.prototype` would suffice, however, using an array literal
- * avoids issues in Narwhal.
- */
-var arrayRef = [];
-
-/** Native method shortcuts */
-var push = arrayRef.push;
-
-/**
- * The base implementation of `_.bind` that creates the bound function and
- * sets its meta data.
- *
- * @private
- * @param {Array} bindData The bind data array.
- * @returns {Function} Returns the new bound function.
- */
-function baseBind(bindData) {
-  var func = bindData[0],
-      partialArgs = bindData[2],
-      thisArg = bindData[4];
-
-  function bound() {
-    // `Function#bind` spec
-    // http://es5.github.io/#x15.3.4.5
-    if (partialArgs) {
-      // avoid `arguments` object deoptimizations by using `slice` instead
-      // of `Array.prototype.slice.call` and not assigning `arguments` to a
-      // variable as a ternary expression
-      var args = slice(partialArgs);
-      push.apply(args, arguments);
-    }
-    // mimic the constructor's `return` behavior
-    // http://es5.github.io/#x13.2.2
-    if (this instanceof bound) {
-      // ensure `new bound` is an instance of `func`
-      var thisBinding = baseCreate(func.prototype),
-          result = func.apply(thisBinding, args || arguments);
-      return isObject(result) ? result : thisBinding;
-    }
-    return func.apply(thisArg, args || arguments);
-  }
-  return bound;
-}
-
-module.exports = baseBind;
-
-},{"../objects/isObject":20,"./baseCreate":11,"./slice":18}],11:[function(require,module,exports){
-(function (global){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var isNative = require('./isNative'),
-    isObject = require('../objects/isObject'),
-    noop = require('../utilities/noop');
-
-/* Native method shortcuts for methods with the same name as other `lodash` methods */
-var nativeCreate = isNative(nativeCreate = Object.create) && nativeCreate;
-
-/**
- * The base implementation of `_.create` without support for assigning
- * properties to the created object.
- *
- * @private
- * @param {Object} prototype The object to inherit from.
- * @returns {Object} Returns the new object.
- */
-function baseCreate(prototype, properties) {
-  return isObject(prototype) ? nativeCreate(prototype) : {};
-}
-// fallback for browsers without `Object.create`
-if (!nativeCreate) {
-  baseCreate = (function() {
-    function Object() {}
-    return function(prototype) {
-      if (isObject(prototype)) {
-        Object.prototype = prototype;
-        var result = new Object;
-        Object.prototype = null;
-      }
-      return result || global.Object();
-    };
-  }());
-}
-
-module.exports = baseCreate;
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../objects/isObject":20,"../utilities/noop":23,"./isNative":15}],12:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var bind = require('../functions/bind'),
-    identity = require('../utilities/identity');
-
-/**
- * The base implementation of `_.createCallback` without support for creating
- * "_.pluck" or "_.where" style callbacks.
- *
- * @private
- * @param {*} [func=identity] The value to convert to a callback.
- * @param {*} [thisArg] The `this` binding of the created callback.
- * @param {number} [argCount] The number of arguments the callback accepts.
- * @returns {Function} Returns a callback function.
- */
-function baseCreateCallback(func, thisArg, argCount) {
-  if (typeof func != 'function') {
-    return identity;
-  }
-  // exit early for no `thisArg` or already bound by `Function#bind`
-  if (typeof thisArg == 'undefined' || !('prototype' in func)) {
-    return func;
-  }
-  switch (argCount) {
-    case 1: return function(value) {
-      return func.call(thisArg, value);
-    };
-    case 2: return function(a, b) {
-      return func.call(thisArg, a, b);
-    };
-    case 3: return function(value, index, collection) {
-      return func.call(thisArg, value, index, collection);
-    };
-    case 4: return function(accumulator, value, index, collection) {
-      return func.call(thisArg, accumulator, value, index, collection);
-    };
-  }
-  return bind(func, thisArg);
-}
-
-module.exports = baseCreateCallback;
-
-},{"../functions/bind":6,"../utilities/identity":22}],13:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseCreate = require('./baseCreate'),
-    isObject = require('../objects/isObject'),
-    slice = require('./slice');
-
-/**
- * Used for `Array` method references.
- *
- * Normally `Array.prototype` would suffice, however, using an array literal
- * avoids issues in Narwhal.
- */
-var arrayRef = [];
-
-/** Native method shortcuts */
-var push = arrayRef.push;
-
-/**
- * The base implementation of `createWrapper` that creates the wrapper and
- * sets its meta data.
- *
- * @private
- * @param {Array} bindData The bind data array.
- * @returns {Function} Returns the new function.
- */
-function baseCreateWrapper(bindData) {
-  var func = bindData[0],
-      bitmask = bindData[1],
-      partialArgs = bindData[2],
-      partialRightArgs = bindData[3],
-      thisArg = bindData[4],
-      arity = bindData[5];
-
-  var isBind = bitmask & 1,
-      isBindKey = bitmask & 2,
-      isCurry = bitmask & 4,
-      isCurryBound = bitmask & 8,
-      key = func;
-
-  function bound() {
-    var thisBinding = isBind ? thisArg : this;
-    if (partialArgs) {
-      var args = slice(partialArgs);
-      push.apply(args, arguments);
-    }
-    if (partialRightArgs || isCurry) {
-      args || (args = slice(arguments));
-      if (partialRightArgs) {
-        push.apply(args, partialRightArgs);
-      }
-      if (isCurry && args.length < arity) {
-        bitmask |= 16 & ~32;
-        return baseCreateWrapper([func, (isCurryBound ? bitmask : bitmask & ~3), args, null, thisArg, arity]);
-      }
-    }
-    args || (args = arguments);
-    if (isBindKey) {
-      func = thisBinding[key];
-    }
-    if (this instanceof bound) {
-      thisBinding = baseCreate(func.prototype);
-      var result = func.apply(thisBinding, args);
-      return isObject(result) ? result : thisBinding;
-    }
-    return func.apply(thisBinding, args);
-  }
-  return bound;
-}
-
-module.exports = baseCreateWrapper;
-
-},{"../objects/isObject":20,"./baseCreate":11,"./slice":18}],14:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseBind = require('./baseBind'),
-    baseCreateWrapper = require('./baseCreateWrapper'),
-    isFunction = require('../objects/isFunction'),
-    slice = require('./slice');
-
-/**
- * Creates a function that, when called, either curries or invokes `func`
- * with an optional `this` binding and partially applied arguments.
- *
- * @private
- * @param {Function|string} func The function or method name to reference.
- * @param {number} bitmask The bitmask of method flags to compose.
- *  The bitmask may be composed of the following flags:
- *  1 - `_.bind`
- *  2 - `_.bindKey`
- *  4 - `_.curry`
- *  8 - `_.curry` (bound)
- *  16 - `_.partial`
- *  32 - `_.partialRight`
- * @param {Array} [partialArgs] An array of arguments to prepend to those
- *  provided to the new function.
- * @param {Array} [partialRightArgs] An array of arguments to append to those
- *  provided to the new function.
- * @param {*} [thisArg] The `this` binding of `func`.
- * @param {number} [arity] The arity of `func`.
- * @returns {Function} Returns the new function.
- */
-function createWrapper(func, bitmask, partialArgs, partialRightArgs, thisArg, arity) {
-  var isBind = bitmask & 1,
-      isBindKey = bitmask & 2,
-      isCurry = bitmask & 4,
-      isCurryBound = bitmask & 8,
-      isPartial = bitmask & 16,
-      isPartialRight = bitmask & 32;
-
-  if (!isBindKey && !isFunction(func)) {
-    throw new TypeError;
-  }
-  if (isPartial && !partialArgs.length) {
-    bitmask &= ~16;
-    isPartial = partialArgs = false;
-  }
-  if (isPartialRight && !partialRightArgs.length) {
-    bitmask &= ~32;
-    isPartialRight = partialRightArgs = false;
-  }
-  // fast path for `_.bind`
-  var creater = (bitmask == 1 || bitmask === 17) ? baseBind : baseCreateWrapper;
-  return creater([func, bitmask, partialArgs, partialRightArgs, thisArg, arity]);
-}
-
-module.exports = createWrapper;
-
-},{"../objects/isFunction":19,"./baseBind":10,"./baseCreateWrapper":13,"./slice":18}],15:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1023,7 +615,7 @@ function isNative(value) {
 
 module.exports = isNative;
 
-},{}],16:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1045,87 +637,7 @@ var objectTypes = {
 
 module.exports = objectTypes;
 
-},{}],17:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var objectTypes = require('./objectTypes');
-
-/** Used for native method references */
-var objectProto = Object.prototype;
-
-/** Native method shortcuts */
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-/**
- * A fallback implementation of `Object.keys` which produces an array of the
- * given object's own enumerable property names.
- *
- * @private
- * @type Function
- * @param {Object} object The object to inspect.
- * @returns {Array} Returns an array of property names.
- */
-var shimKeys = function(object) {
-  var index, iterable = object, result = [];
-  if (!iterable) return result;
-  if (!(objectTypes[typeof object])) return result;
-    for (index in iterable) {
-      if (hasOwnProperty.call(iterable, index)) {
-        result.push(index);
-      }
-    }
-  return result
-};
-
-module.exports = shimKeys;
-
-},{"./objectTypes":16}],18:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/**
- * Slices the `collection` from the `start` index up to, but not including,
- * the `end` index.
- *
- * Note: This function is used instead of `Array#slice` to support node lists
- * in IE < 9 and to ensure dense arrays are returned.
- *
- * @private
- * @param {Array|Object|string} collection The collection to slice.
- * @param {number} start The start index.
- * @param {number} end The end index.
- * @returns {Array} Returns the new array.
- */
-function slice(array, start, end) {
-  start || (start = 0);
-  if (typeof end == 'undefined') {
-    end = array ? array.length : 0;
-  }
-  var index = -1,
-      length = end - start || 0,
-      result = Array(length < 0 ? 0 : length);
-
-  while (++index < length) {
-    result[index] = array[start + index];
-  }
-  return result;
-}
-
-module.exports = slice;
-
-},{}],19:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1169,7 +681,7 @@ if (isFunction(/x/)) {
 
 module.exports = isFunction;
 
-},{}],20:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1178,7 +690,7 @@ module.exports = isFunction;
  * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  * Available under MIT license <http://lodash.com/license>
  */
-var objectTypes = require('../internals/objectTypes');
+var objectTypes = require(9);
 
 /**
  * Checks if `value` is the language type of Object.
@@ -1210,7 +722,7 @@ function isObject(value) {
 
 module.exports = isObject;
 
-},{"../internals/objectTypes":16}],21:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -1219,103 +731,7 @@ module.exports = isObject;
  * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  * Available under MIT license <http://lodash.com/license>
  */
-var isNative = require('../internals/isNative'),
-    isObject = require('./isObject'),
-    shimKeys = require('../internals/shimKeys');
-
-/* Native method shortcuts for methods with the same name as other `lodash` methods */
-var nativeKeys = isNative(nativeKeys = Object.keys) && nativeKeys;
-
-/**
- * Creates an array composed of the own enumerable property names of an object.
- *
- * @static
- * @memberOf _
- * @category Objects
- * @param {Object} object The object to inspect.
- * @returns {Array} Returns an array of property names.
- * @example
- *
- * _.keys({ 'one': 1, 'two': 2, 'three': 3 });
- * // => ['one', 'two', 'three'] (property order is not guaranteed across environments)
- */
-var keys = !nativeKeys ? shimKeys : function(object) {
-  if (!isObject(object)) {
-    return [];
-  }
-  return nativeKeys(object);
-};
-
-module.exports = keys;
-
-},{"../internals/isNative":15,"../internals/shimKeys":17,"./isObject":20}],22:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/**
- * This method returns the first argument provided to it.
- *
- * @static
- * @memberOf _
- * @category Utilities
- * @param {*} value Any value.
- * @returns {*} Returns `value`.
- * @example
- *
- * var object = { 'name': 'fred' };
- * _.identity(object) === object;
- * // => true
- */
-function identity(value) {
-  return value;
-}
-
-module.exports = identity;
-
-},{}],23:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/**
- * A no-operation function.
- *
- * @static
- * @memberOf _
- * @category Utilities
- * @example
- *
- * var object = { 'name': 'fred' };
- * _.noop(object) === undefined;
- * // => true
- */
-function noop() {
-  // no operation performed
-}
-
-module.exports = noop;
-
-},{}],24:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var isNative = require('../internals/isNative');
+var isNative = require(8);
 
 /**
  * Gets the number of milliseconds that have elapsed since the Unix epoch
@@ -1336,56 +752,14 @@ var now = isNative(now = Date.now) && now || function() {
 
 module.exports = now;
 
-},{"../internals/isNative":15}],25:[function(require,module,exports){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize underscore exports="node" -o ./underscore/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/**
- * Creates a "_.pluck" style function, which returns the `key` value of a
- * given object.
- *
- * @static
- * @memberOf _
- * @category Utilities
- * @param {string} key The name of the property to retrieve.
- * @returns {Function} Returns the new function.
- * @example
- *
- * var characters = [
- *   { 'name': 'fred',   'age': 40 },
- *   { 'name': 'barney', 'age': 36 }
- * ];
- *
- * var getName = _.property('name');
- *
- * _.map(characters, getName);
- * // => ['barney', 'fred']
- *
- * _.sortBy(characters, getName);
- * // => [{ 'name': 'barney', 'age': 36 }, { 'name': 'fred',   'age': 40 }]
- */
-function property(key) {
-  return function(object) {
-    return object[key];
-  };
-}
-
-module.exports = property;
-
-},{}],26:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 "use strict";
-var comp = require('transduce-compose'),
-    Prom = require('any-promise'),
-    ip = require('iterator-protocol'),
-    xfp = require('transformer-protocol'),
-    red = require('transduce-reduced'),
-    transduceToArray = require('transduce-impl-toarray'),
+var comp = require(14),
+    Prom = require(4),
+    ip = require(5),
+    xfp = require(18),
+    red = require(16),
+    transduceToArray = require(15),
     transformer = xfp.transformer,
     undef;
 
@@ -1620,7 +994,7 @@ DelayTask.prototype.result = function(value){
   return task.resolved;
 };
 
-},{"any-promise":4,"iterator-protocol":5,"transduce-compose":27,"transduce-impl-toarray":28,"transduce-reduced":29,"transformer-protocol":31}],27:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 module.exports = compose;
 function compose(){
@@ -1634,9 +1008,9 @@ function compose(){
   };
 }
 
-},{}],28:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 "use strict";
-var util = require('transduce-util'),
+var util = require(17),
     push = util.arrayPush,
     undef;
 
@@ -1651,7 +1025,7 @@ function transduceImplToArray(impl){
   };
 }
 
-},{"transduce-util":30}],29:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 "use strict";
 
 module.exports = {
@@ -1684,7 +1058,7 @@ function Reduced(value){
   this.__transducers_reduced__ = true;
 }
 
-},{}],30:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 "use strict";
 var undef,
     Arr = Array,
@@ -1756,11 +1130,11 @@ function append(result, input){
   return result + input;
 }
 
-},{}],31:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 "use strict";
 /* global Symbol */
 var undef,
-    util = require('transduce-util'),
+    util = require(17),
     slice = Array.prototype.slice,
     symTransformer = util.protocols.transformer,
     isFunction = util.isFunction,
@@ -1850,9 +1224,9 @@ ObjectTransformer.prototype.init = function(){
 ObjectTransformer.prototype.step = merge;
 ObjectTransformer.prototype.result = identity;
 
-},{"transduce-util":30}],32:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 "use strict";
-var array = require('transduce-array'), undef;
+var array = require(31), undef;
 
 module.exports = function(_r){
   // Array Functions
@@ -1936,9 +1310,9 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce-array":44}],33:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 "use strict";
-var tr = require('transduce'),
+var tr = require(51),
     merge = tr.objectMerge,
     undef;
 
@@ -1974,7 +1348,7 @@ var _r = function(obj, transform) {
   this._wrapped = _r.wrap.call(this, obj);
 };
 
-_r.VERSION = '0.3.0';
+_r.VERSION = '0.3.1';
 
 // Export for browser or Common-JS
 // Save the previous value of the `_r` variable.
@@ -2027,10 +1401,10 @@ function _method(func){
   };
 }
 
-},{"transduce":64}],34:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 "use strict";
-var tr = require('transduce'),
-    dispatcher = require('redispatch'),
+var tr = require(51),
+    dispatcher = require(30),
     undef;
 
 module.exports = function(_r){
@@ -2308,9 +1682,9 @@ module.exports = function(_r){
   }
 };
 
-},{"redispatch":43,"transduce":64}],35:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 "use strict";
-var transduce = require('transduce'), undef;
+var transduce = require(51), undef;
 
 module.exports = function(_r){
   _r.generate = generate;
@@ -2340,13 +1714,13 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce":64}],36:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 "use strict";
 var undef;
 module.exports = function(libs, _r){
   var i = 0, len = libs.length, lib;
   if(_r === undef){
-    _r = require('./base');
+    _r = require(20);
   }
 
   for(; i < len; i++){
@@ -2360,20 +1734,87 @@ module.exports = function(libs, _r){
   return _r;
 };
 
-},{"./base":33}],37:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 "use strict";
+
+// Based on Underscore.js 1.7.0
+// http://underscorejs.org
+//
+// Which is distributed under MIT License:
+// Underscore.js > (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+// Underscore.js > Underscore may be freely distributed under the MIT license.
+
+var tr = require(51), undef;
 
 module.exports = function(_r){
   var _ = {};
   _r._ = _;
-  _.iteratee = require('lodash-node/underscore/functions/createCallback');
-  _.matches = _.iteratee;
-  _.property = require('lodash-node/underscore/utilities/property');
+  _.iteratee = iteratee;
+  _.matches = matches;
+  _.property = property;
 };
 
-},{"lodash-node/underscore/functions/createCallback":7,"lodash-node/underscore/utilities/property":25}],38:[function(require,module,exports){
+function iteratee(value){
+  var f;
+  if(isNull(value)){
+    f = tr.identity;
+  } else if(tr.isFunction(value)){
+    f = value;
+  } else if(isKey(value)){
+    f = property(value);
+  } else {
+    f = matches(value);
+  }
+  return f;
+}
+
+function property(key){
+  return function(value){
+    return value[key];
+  };
+}
+
+function matches(attrs){
+  var ps = pairs(attrs),
+      len = ps.length;
+  return function(value){
+    if(isNull(value)){
+      return len === 0;
+    }
+    var i = 0, p, k, v;
+    for(; i < len; i++){
+      p = ps[i];
+      k = p[0];
+      v = p[1];
+      if(v !== value[k] || !(k in value)){
+        return false;
+      }
+    }
+    return true;
+  };
+}
+
+function isNull(value){
+  return value === undef || value === null;
+}
+
+function isKey(value){
+  return tr.isString(value) || tr.isNumber(value);
+}
+
+function pairs(value){
+  var key, ps = [];
+  for(key in value){
+    if(value.hasOwnProperty(key)){
+      ps.push([key, value[key]]);
+    }
+  }
+  return ps;
+}
+
+},{}],25:[function(require,module,exports){
 "use strict";
-var math = require('transduce-math'), undef;
+var math = require(32), undef;
 
 module.exports = function(_r){
   // Math Functions
@@ -2401,9 +1842,9 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce-math":45}],39:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 "use strict";
-var push = require('transduce-push'),
+var push = require(33),
     undef;
 
 module.exports = function(_r){
@@ -2475,10 +1916,10 @@ module.exports = function(_r){
   };
 };
 
-},{"transduce-push":46}],40:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 "use strict";
 var undef,
-    string = require('transduce-string');
+    string = require(34);
 
 module.exports = function(_r){
   // String Functions
@@ -2499,9 +1940,9 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce-string":47}],41:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 "use strict";
-var transduce = require('transduce'),
+var transduce = require(51),
     slice = Array.prototype.slice, undef;
 
 module.exports = function(_r){
@@ -2634,10 +2075,10 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce":64}],42:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 "use strict";
-var tr = require('transduce'),
-    un = require('transduce-unique'),
+var tr = require(51),
+    un = require(35),
     undef;
 
 module.exports = function(_r){
@@ -2668,7 +2109,7 @@ module.exports = function(_r){
   }
 };
 
-},{"transduce":64,"transduce-unique":48}],43:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 "use strict";
 var undef;
 
@@ -2714,10 +2155,10 @@ function dispatch(fns, ctx){
   };
 }
 
-},{}],44:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 "use strict";
-var red = require('transduce-reduced'),
-    compose = require('transduce-compose'),
+var red = require(16),
+    compose = require(14),
     reduced = red.reduced,
     isReduced = red.isReduced,
     unreduced = red.unreduced,
@@ -3037,7 +2478,7 @@ Last.prototype.step = function(result, input){
   return result;
 };
 
-},{"transduce-compose":27,"transduce-reduced":29}],45:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 "use strict";
 module.exports = {
   min: min,
@@ -3112,9 +2553,9 @@ Min.prototype.step = function(result, input) {
   return result;
 };
 
-},{}],46:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 "use strict";
-var red = require('transduce-reduced'),
+var red = require(16),
     isReduced = red.isReduced,
     unreduced = red.unreduced,
     undef;
@@ -3272,11 +2713,11 @@ function asyncCallback(xf, continuation, reducer){
   };
 }
 
-},{"transduce-reduced":29}],47:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 "use strict";
-var util = require('transduce-util'),
-    compose = require('transduce-compose'),
-    reduced = require('transduce-reduced').reduced,
+var util = require(17),
+    compose = require(14),
+    reduced = require(16).reduced,
     isString = util.isString,
     isRegExp = util.isRegExp,
     isNumber = util.isNumber,
@@ -3457,7 +2898,7 @@ function cloneRegExp(regexp){
   return new RegExp(regexp.source, flags.join(''));
 }
 
-},{"transduce-compose":27,"transduce-reduced":29,"transduce-util":30}],48:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 "use strict";
 module.exports = {
   unique: unique,
@@ -3511,11 +2952,11 @@ Uniq.prototype.step = function(result, input){
   return result;
 };
 
-},{}],49:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 "use strict";
 
-var tp = require('transduce-reduced'),
-    reduce = require('transduce-reduce');
+var tp = require(16),
+    reduce = require(45);
 
 module.exports = cat;
 function cat(xf){
@@ -3551,7 +2992,7 @@ PreserveReduced.prototype.step = function(value, item){
   return value;
 };
 
-},{"transduce-reduce":58,"transduce-reduced":29}],50:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 "use strict";
 
 module.exports = drop;
@@ -3577,7 +3018,7 @@ Drop.prototype.step = function(value, item){
   return value;
 };
 
-},{}],51:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 "use strict";
 var undef;
 
@@ -3607,7 +3048,7 @@ DropWhile.prototype.step = function(value, item){
   return this.xf.step(value, item);
 };
 
-},{}],52:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 "use strict";
 module.exports = filter;
 
@@ -3633,16 +3074,16 @@ Filter.prototype.step = function(result, input) {
   return result;
 };
 
-},{}],53:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 "use strict";
-var transduce = require('transduce-transduce');
+var transduce = require(50);
 
 module.exports = into;
 function into(to, xf, from){
   return transduce(xf, to, to, from);
 }
 
-},{"transduce-transduce":63}],54:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 "use strict";
 module.exports = map;
 function map(callback) {
@@ -3664,17 +3105,17 @@ Map.prototype.step = function(result, input) {
   return this.xf.step(result, this.f(input));
 };
 
-},{}],55:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 "use strict";
-var compose = require('transduce-compose'),
-    map = require('transduce-map'),
-    cat = require('transduce-cat');
+var compose = require(14),
+    map = require(41),
+    cat = require(36);
 module.exports = mapcat;
 function mapcat(callback) {
   return compose(map(callback), cat);
 }
 
-},{"transduce-cat":49,"transduce-compose":27,"transduce-map":54}],56:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 "use strict";
 module.exports = partitionAll;
 function partitionAll(n) {
@@ -3709,9 +3150,9 @@ PartitionAll.prototype.step = function(result, input) {
   return result;
 };
 
-},{}],57:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 "use strict";
-var tp = require('transduce-reduced'),
+var tp = require(16),
     undef;
 
 module.exports = partitionBy;
@@ -3755,12 +3196,12 @@ PartitionBy.prototype.step = function(result, input) {
   return result;
 };
 
-},{"transduce-reduced":29}],58:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 "use strict";
-var iter = require('iterator-protocol'),
-    trans = require('transformer-protocol'),
-    red = require('transduce-reduced'),
-    util = require('transduce-util'),
+var iter = require(5),
+    trans = require(18),
+    red = require(16),
+    util = require(17),
     isReduced = red.isReduced,
     deref = red.deref,
     transformer = trans.transformer,
@@ -3810,9 +3251,9 @@ function iteratorReduce(xf, init, iter){
   return xf.result(value);
 }
 
-},{"iterator-protocol":5,"transduce-reduced":29,"transduce-util":30,"transformer-protocol":31}],59:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 "use strict";
-var filter = require('transduce-filter');
+var filter = require(39);
 
 module.exports = remove;
 function remove(p){
@@ -3822,10 +3263,10 @@ function remove(p){
 }
 
 
-},{"transduce-filter":52}],60:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 "use strict";
 
-var tp = require('transduce-reduced');
+var tp = require(16);
 
 module.exports = take;
 function take(n){
@@ -3853,9 +3294,9 @@ Take.prototype.step = function(value, item){
   return value;
 };
 
-},{"transduce-reduced":29}],61:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 "use strict";
-var reduced = require('transduce-reduced').reduced;
+var reduced = require(16).reduced;
 
 module.exports = takeWhile;
 function takeWhile(p){
@@ -3882,18 +3323,18 @@ TakeWhile.prototype.step = function(value, item){
   return value;
 };
 
-},{"transduce-reduced":29}],62:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 "use strict";
-var implToArray = require('transduce-impl-toarray');
+var implToArray = require(15);
 module.exports = implToArray({
-  transduce: require('transduce-transduce'),
-  reduce: require('transduce-reduce')
+  transduce: require(50),
+  reduce: require(45)
 });
 
-},{"transduce-impl-toarray":28,"transduce-reduce":58,"transduce-transduce":63}],63:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 "use strict";
-var tp = require('transformer-protocol'),
-    reduce = require('transduce-reduce'),
+var tp = require(18),
+    reduce = require(45),
     transformer = tp.transformer;
 
 module.exports = transduce;
@@ -3902,30 +3343,30 @@ function transduce(xf, f, init, coll){
   return reduce(xf(f), init, coll);
 }
 
-},{"transduce-reduce":58,"transformer-protocol":31}],64:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 "use strict";
-var util = require('transduce-util'),
-    compose = require('transduce-compose'),
-    reduced = require('transduce-reduced'),
-    iter = require('iterator-protocol'),
-    transformer = require('transformer-protocol');
+var util = require(17),
+    compose = require(14),
+    reduced = require(16),
+    iter = require(5),
+    transformer = require(18);
 
 module.exports = {
-  reduce: require('transduce-reduce'),
-  transduce: require('transduce-transduce'),
-  into: require('transduce-into'),
-  toArray: require('transduce-toarray'),
-  map: require('transduce-map'),
-  filter: require('transduce-filter'),
-  remove: require('transduce-remove'),
-  take: require('transduce-take'),
-  takeWhile: require('transduce-takewhile'),
-  drop: require('transduce-drop'),
-  dropWhile: require('transduce-dropwhile'),
-  cat: require('transduce-cat'),
-  mapcat: require('transduce-mapcat'),
-  partitionAll: require('transduce-partitionall'),
-  partitionBy: require('transduce-partitionby'),
+  reduce: require(45),
+  transduce: require(50),
+  into: require(40),
+  toArray: require(49),
+  map: require(41),
+  filter: require(39),
+  remove: require(46),
+  take: require(47),
+  takeWhile: require(48),
+  drop: require(37),
+  dropWhile: require(38),
+  cat: require(36),
+  mapcat: require(42),
+  partitionAll: require(43),
+  partitionBy: require(44),
   compose: compose,
   isIterable: iter.isIterable,
   isIterator: iter.isIterator,
@@ -3950,23 +3391,23 @@ module.exports = {
   identity: util.identity,
 };
 
-},{"iterator-protocol":5,"transduce-cat":49,"transduce-compose":27,"transduce-drop":50,"transduce-dropwhile":51,"transduce-filter":52,"transduce-into":53,"transduce-map":54,"transduce-mapcat":55,"transduce-partitionall":56,"transduce-partitionby":57,"transduce-reduce":58,"transduce-reduced":29,"transduce-remove":59,"transduce-take":60,"transduce-takewhile":61,"transduce-toarray":62,"transduce-transduce":63,"transduce-util":30,"transformer-protocol":31}],65:[function(require,module,exports){
-module.exports = require('./lib/load')([
-  require('./lib/lodash'),
-  require('./lib/dispatch'),
-  require('./lib/transduce'),
-  require('./lib/array'),
-  require('./lib/unique'),
-  require('./lib/push'),
-  require('./lib/iterator'),
-  require('./lib/math'),
-  require('./lib/string')]);
+},{}],52:[function(require,module,exports){
+module.exports = require(23)([
+  require(24),
+  require(21),
+  require(28),
+  require(19),
+  require(29),
+  require(26),
+  require(22),
+  require(25),
+  require(27)]);
 
-},{"./lib/array":32,"./lib/dispatch":34,"./lib/iterator":35,"./lib/load":36,"./lib/lodash":37,"./lib/math":38,"./lib/push":39,"./lib/string":40,"./lib/transduce":41,"./lib/unique":42}],66:[function(require,module,exports){
-module.exports = require('underscore-transducer/lib/load')([
-  require('./lib/lodash'),
-  require('./lib/async'),
-  require('./lib/sample')],
-  require('underscore-transducer'));
+},{}],53:[function(require,module,exports){
+module.exports = require(23)([
+  require(2),
+  require(1),
+  require(3)],
+  require(52));
 
-},{"./lib/async":1,"./lib/lodash":2,"./lib/sample":3,"underscore-transducer":65,"underscore-transducer/lib/load":36}]},{},[66]);
+},{}]},{},[53]);

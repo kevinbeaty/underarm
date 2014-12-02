@@ -18,21 +18,13 @@ node_modules:
 	`npm bin`/uglifyjs $< > $@ -c -m
 
 js: $(BUILD).js $(BUILD).min.js \
-	$(BUILD).base.js $(BUILD).base.min.js \
-	$(BUILD).nolodash.js $(BUILD).nolodash.min.js \
-	$(BUILD).nolodash.base.js $(BUILD).nolodash.base.min.js
+	$(BUILD).base.js $(BUILD).base.min.js
 
 $(BUILD).js: lib/*.js | build
-	`npm bin`/browserify $(PROJECT).js > $@
-
-$(BUILD).nolodash.js: lib/*.js | build
-	`npm bin`/browserify $(PROJECT).nolodash.js > $@
+	`npm bin`/browserify -p bundle-collapser/plugin $(PROJECT).js > $@
 
 $(BUILD).base.js: lib/*.js | build
-	`npm bin`/browserify $(PROJECT).base.js > $@
-
-$(BUILD).nolodash.base.js: lib/*.js | build
-	`npm bin`/browserify $(PROJECT).nolodash.base.js > $@
+	`npm bin`/browserify -p bundle-collapser/plugin $(PROJECT).base.js > $@
 
 build: 
 	mkdir -p build
