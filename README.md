@@ -6,7 +6,7 @@ Use JavaScript transducers with the familiar [Underscore.js][1] API with extra g
 
 If you are not familiar with transducers, check out [Transducers Explained][3].
 
-Too much API for you?  Just grab what you need from the [transduce][14] libraries, which underscore-transudcer is based.  Want more?  Check out [underarm][18] for asynchronous (reactive) extensions.
+Too much API for you?  Just grab what you need from the [transduce][14] libraries, which underscore-transducer is based.  Want more?  Check out [underarm][18] for asynchronous (reactive) extensions.
 
 ## Install
 
@@ -29,12 +29,11 @@ Created by using `browserify` with [this loader][22].
 
 ### Transducers
 
-First some helper functions and imports.  You can optionally mix in `_r` into the underscore object
+First some helper functions and imports.
 
 ```javascript
 // import, mixin and helper functions
 var _r = require('underscore-transducer');
-var _ = require('underscore');
 
 function isEven(x){
   return x % 2 !== 1;
@@ -55,7 +54,7 @@ var trans, result;
 Chaining transducers is the same as function composition. Composed transducers are executed left to right.
 
 ```javascript
-result = _r.into([], _.compose(_r.filter(isEven), _r.map(inc)), [1,2,3,4]);
+result = _r.into([], _r.compose(_r.filter(isEven), _r.map(inc)), [1,2,3,4]);
 // [ 3, 5 ]
 
 // these are also the same
@@ -96,32 +95,18 @@ result = _r.into([], _r.findWhere({age: 40}), stooges);
 
 result = _r.into([], _r.every(isEven), [0, 2, 8, 4, 8]);
 // [true]
-result = _r.into([], _r.every(isEven), [0, 2, 7, 8, 9]);
-// [false]
 
-result = _r.into([], _r.some(isEven), [1, 3, 7, 8, 9]);
-// [true]
 result = _r.into([], _r.some(isEven), [1, 3, 7, 11, 9]);
 // [false]
 
 result = _r.into([], _r.contains(3), [1, 3, 7, 11, 9]);
 // [true]
-result = _r.into([], _r.contains(3), [1, 10, 7, 11, 9]);
-// [false]
 
 result = _r.into([], _r.find(isEven), [7, 8, 7, 11, 12]);
 // [8]
-result = _r.into([], _r.find(isEven), [1, 9, 13, 11, 9]);
-// []
 
 result = _r.into([], _r.first(3), [1, 9, 13, 11, 9]);
 //  [1, 9, 13 ]
-
-result = _r.into([], _r.max(), [1, 9, 13, 11, 9]);
-// [13]
-
-result = _r.into([], _r.min(), [11, 9, 13, 11, 9]);
-// [9]
 ```
 
 Transducers implemented
@@ -364,9 +349,6 @@ function* genNums(){
   yield 2;
   yield 3;
   yield 4;
-  yield 4;
-  yield 7;
-  yield 4;
 }
 
 result = _r.into([], _r.first(3), genNums());
@@ -391,24 +373,10 @@ function fib(){
 }
 ```
 
-Different ways to use `_r.generate`.  If not chaining, creates an iterator that can be used with transduce. If chaining, creates an iterator a wraps the result. Pass true as second argument optionally call function to init on each iteration (allows reuse).
+If not chaining, creates an iterator that can be used with transduce. If chaining, creates an iterator a wraps the result. Pass true as second argument optionally call function to init on each iteration (allows reuse).
 
 ```javascript
-// All results below the same
-// [ 1, 1, 2, 3, 5, 8, 13 ]
-result = _r.seqeuence(_r.first(7), _r.generate(fib()));
-result = _r.into([], _r.first(7), _r.generate(fib()));
-result = _r().first(7).seqeuence(_r.generate(fib()));
-result = _r().first(7).generate(fib()).value();
-
-result = _r(_r.generate(fib())).first(7).value();
-result = _r().generate(fib()).first(7).value();
-
 // call on init to allow reuse
-trans = _r(_r.generate(fib, true)).first(7);
-result = trans.value();
-result = trans.value();
-
 trans = _r().generate(fib, true).first(7);
 result = trans.value();
 result = trans.value();
@@ -416,7 +384,7 @@ result = trans.value();
 
 ### Callback Processes
 
-Transducers are normally consumed by reduce, but since they are designed to be independent, we can use them in a variety of processes that consume an input and produce a result, such as [CSP][3]. We can also create a process using a simple callback where each call advances a step in the process.  These can be used as event handlers (like the [demo][4]).
+Transducers can be consumed by reduce, but since they are designed to be independent, we can use them in a variety of contexts that consume an input and produce a result, such as [CSP][3]. We can also create a process using a callback where each call advances a step in the process.  These can be used as event handlers (like the [demo][4]).
 
 Uses [transduce-push][17] to create push streams from transducers.
 
@@ -450,7 +418,7 @@ Uses [transduce-push][17] to create push streams from transducers.
   }
 
 ```
-We are simply composing transducers.  The previous examples are all using transducers behind the scenes. Method chaining is implicit and is simple composition, `_r.generate` uses an iterator and passes on to `transduce`. Even `asCallback` uses transducers but steps through the results using the argument of a callback, instead of reducing over the results.
+We are composing transducers.  The previous examples are all using transducers behind the scenes. Method chaining is implicit and is composition, `_r.generate` uses an iterator and passes on to `transduce`. Even `asCallback` uses transducers but steps through the results using the argument of a callback, instead of reducing over the results.
 
 ### Node Async
 
