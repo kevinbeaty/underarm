@@ -33,12 +33,12 @@ test('into sequence', function(t){
   result = _r.into([3], _r.map(inc), [1,2,3,4]);
   t.deepEqual(result, [3,2,3,4,5], 'map into non empty array');
 
-  result = _r.into([], _.compose(_r.filter(isEven), _r.map(inc)), [1,2,3,4]);
+  result = _r.into([], _r.compose(_r.filter(isEven), _r.map(inc)), [1,2,3,4]);
   t.deepEqual(result, [3, 5], 'compose filtered and map into empty array');
 
   var incIt = _r.map(inc),
       evenIt = _r.filter(isEven);
-  result = _r.into([], _.compose(incIt, incIt, evenIt, incIt), [1,2,3,4]);
+  result = _r.into([], _r.compose(incIt, incIt, evenIt, incIt), [1,2,3,4]);
   t.deepEqual(result, [5, 7], 'compose filtered and map 3 into empty array');
   
   result = _r.into([], _r.invoke('sort'), [[5, 1, 7], [3, 2, 1]]);
@@ -52,7 +52,7 @@ test('into sequence', function(t){
   result = _r.sequence(trans, [1,2,3,4,5]);
   t.deepEqual(result, [2,3,4,5,6], 'map into');
 
-  trans = _.compose(_r.filter(isEven), _r.map(inc));
+  trans = _r.compose(_r.filter(isEven), _r.map(inc));
   result = _r.into([], trans, [1,2,3,4,5]);
   t.deepEqual(result, [3,5], 'filter and map into');
 
