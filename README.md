@@ -177,9 +177,6 @@ Convenience version of a common use case of `map`: fetching a property.
 ##### where(attrs)
 Convenience version of a common use case of `filter`: selecting only objects containing specific `key:value` pairs.
 
-##### tap(interceptor)
-Invokes interceptor with each result and item, and then steps through unchanged. The primary purpose of this method is to "tap into" a method chain, in order to perform operations on intermediate results within the chain. Executes interceptor with current result and item.
-
 #### Array
 Array transducers mixing functionality from [transduce-array][15].
 
@@ -420,6 +417,10 @@ Uses [transduce-push][17] to create push streams from transducers.
 ```
 We are composing transducers.  The previous examples are all using transducers behind the scenes. Method chaining is implicit and is composition, `_r.generate` uses an iterator and passes on to `transduce`. Even `asCallback` uses transducers but steps through the results using the argument of a callback, instead of reducing over the results.
 
+##### tap(interceptor)
+Transduce also adds `tap`, which  invokes interceptor with each result and item, and then steps through unchanged. The primary purpose of this method is to "tap into" a method chain, in order to perform operations on intermediate results within the chain. Executes interceptor with current result and item.
+
+
 ### Node Async
 
 If you are using Node.js, `asyncCallback` returns a callback that follows the standard convention of `fn(err, item)` and accepts a continuation that is called on completion or error.
@@ -549,6 +550,56 @@ _r.empty.register(function(obj){
 // Vector [ 1, 2, 3, 4 ]
 _r(vector).value();
 ```
+
+#### Utils
+Finally, adds utils from [transduce][14].
+
+##### toArray(xf?, coll)
+Transduce a collection into an array with an optional transformation.
+
+From [transduce-toarray](https://github.com/transduce/transduce-toarray)
+
+##### compose()
+Simple function composition of arguments. Useful for composing (combining) transducers.
+
+From [transduce-compose](https://github.com/transduce/transduce-compose)
+
+##### isIterable(value)
+Does the parameter conform to the iterable protocol?
+
+##### iterable(value)
+Returns the iterable for the parameter.  Returns value if conforms to iterable protocol. Returns `undefined` if cannot return en iterable.
+
+The return value will either conform to iterator protocol that can be invoked for iteration or will be undefined.
+
+Supports anything that returns true for `isIterable` and converts arrays to iterables over each indexed item. Converts to functions to infinite iterables that always call function on next
+
+##### isIterator(value)
+Does the parameter have an iterator protocol or have a next method?
+
+##### isTransformer(value)
+Does the parameter have a [transformer protocol][10] or have `init`, `step`, `result` methods?
+
+##### transformer(value)
+Attempts to convert the parameter into a transformer.  If cannot be converted, returns `undefined`.  If defined, the return value will have `init`, `step`, `result` methods that can be used for transformation.  Converts arrays (`arrayPush`), strings (`stringAppend`), objects (`objectMerge`), functions (wrap as reducing function) or anything that `isTransformer` into a transformer.
+
+##### protocols
+Symbols (or strings that act as symbols) for `@@iterator` and [`@@transformer`][10] that you can use to configure your custom objects.
+
+##### identity(value)
+Always returns value
+
+##### arrayPush(arr, item)
+Array.push as a reducing function.  Calls push and returns array;
+
+##### objectMerge(object, item)
+Merges the item into the object.  If `item` is an array of length 2, uses first (0 index) as the key and the second (1 index) as the value.  Otherwise iterates over own properties of items and merges values with same keys into the result object.
+
+##### stringAppend(string, item)
+Appends item onto result using `+`.
+
+##### is{Array, String, RegExp, Number, Undefined}
+Predicates for object types
 
 #### License
 MIT
