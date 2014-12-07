@@ -1,7 +1,7 @@
 {
   "name": "underscore-transducer",
   "main": "build/underscore-transducer.min.js",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "homepage": "https://github.com/kevinbeaty/underscore-transducer",
   "authors": [
     "Kevin Beaty <kevin@simplectic.com>"

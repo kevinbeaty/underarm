@@ -122,7 +122,7 @@ var _r = function(obj, transform) {
   this._wrapped = _r.wrap.call(this, obj);
 };
 
-_r.VERSION = '0.3.1';
+_r.VERSION = '0.3.2';
 
 // Export for browser or Common-JS
 // Save the previous value of the `_r` variable.
@@ -211,6 +211,25 @@ module.exports = function(_r){
   _r.conj = append;
   _r.conjoin = append;
   _r.dispatch = dispatch;
+
+  _r.compose = tr.compose;
+  _r.isIterable = tr.isIterable;
+  _r.isIterator = tr.isIterator;
+  _r.iterable = tr.iterable;
+  _r.isTransformer = tr.isTransformer;
+  _r.transformer = tr.transformer;
+  _r.protocols = tr.protocols;
+  _r.isFunction = tr.isFunction;
+  _r.isArray = tr.isArray;
+  _r.isString = tr.isString;
+  _r.isRegExp = tr.isRegExp;
+  _r.isNumber = tr.isNumber;
+  _r.isUndefined = tr.isUndefined;
+  _r.arrayPush = tr.arrayPush;
+  _r.objectMerge = tr.objectMerge;
+  _r.stringAppend = tr.stringAppend;
+  _r.identity = tr.identity;
+
 
   // Dispatchers
   // -----------
