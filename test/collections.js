@@ -10,7 +10,7 @@ test('each', function(t){
     trans = _r.each(function(num, i){
       t.equal(num, i+1, 'index passed with item');
     });
-    result = _r.sequence(trans, [1, 2, 3]);
+    result = _r.toArray(trans, [1, 2, 3]);
     t.deepEqual(result, [1, 2, 3], 'result passed through');
   });
 
@@ -25,12 +25,12 @@ test('map', function(t){
     t.plan(5);
 
     var doubled = _r.map(function(num){ return num * 2; });
-    t.deepEqual([2,4,6], _r.sequence(doubled, [1,2,3]), 'can double');
+    t.deepEqual([2,4,6], _r.toArray(doubled, [1,2,3]), 'can double');
 
     var tripled = _r.map(function(num){ return num * 3; });
-    t.deepEqual([3,6,9], _r.sequence(tripled, [1,2,3]), 'can triple');
+    t.deepEqual([3,6,9], _r.toArray(tripled, [1,2,3]), 'can triple');
 
-    doubled = _r().map(function(num){ return num * 2; }).sequence([1,2,3]);
+    doubled = _r().map(function(num){ return num * 2; }).toArray([1,2,3]);
     t.deepEqual([2,4,6], doubled, 'can double in chain');
 
     doubled = _r([1,2,3]).map(function(num){ return num * 2; }).value();
@@ -71,8 +71,8 @@ test('find', function(t) {
   t.test('find ops', function(t){
     t.plan(7);
     var array = [1, 2, 3, 4];
-    t.strictEqual(_r.sequence(_r.find(function(n) { return n > 2; }), array)[0], 3, 'should return first found `value`');
-    t.strictEqual(_r.sequence(_r.find(function() { return false; }), array)[0], void 0, 'should return `undefined` if `value` is not found');
+    t.strictEqual(_r.toArray(_r.find(function(n) { return n > 2; }), array)[0], 3, 'should return first found `value`');
+    t.strictEqual(_r.toArray(_r.find(function() { return false; }), array)[0], void 0, 'should return `undefined` if `value` is not found');
 
     // Matching an object like _.findWhere.
     var list = [{a: 1, b: 2}, {a: 2, b: 2}, {a: 1, b: 3}, {a: 1, b: 4}, {a: 2, b: 4}];

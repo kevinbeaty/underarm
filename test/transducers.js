@@ -15,14 +15,14 @@ function inc(x){
 var trans, result;
 
 
-test('into sequence', function(t){
+test('into toArray', function(t){
   t.plan(34);
 
   result = _r.into([], [1,2,3,4]);
   t.deepEqual(result, [1,2,3,4], 'into empty array');
 
-  result = _r.sequence([1,2,3,4]);
-  t.deepEqual(result, [1,2,3,4], 'sequence empty');
+  result = _r.toArray([1,2,3,4]);
+  t.deepEqual(result, [1,2,3,4], 'toArray empty');
 
   result = _r.into([], _r.filter(isEven), [1,2,3,4]);
   t.deepEqual(result, [2, 4], 'filter into empty array');
@@ -45,11 +45,11 @@ test('into sequence', function(t){
   t.deepEqual(result, [[1, 5, 7], [1, 2, 3]], 'sort into');
 
   trans = _r.filter(isEven);
-  result = _r.sequence(trans, [1,2,3,4,5]);
+  result = _r.toArray(trans, [1,2,3,4,5]);
   t.deepEqual(result, [2,4], 'filter into');
 
   trans = _r.map(inc);
-  result = _r.sequence(trans, [1,2,3,4,5]);
+  result = _r.toArray(trans, [1,2,3,4,5]);
   t.deepEqual(result, [2,3,4,5,6], 'map into');
 
   trans = _r.compose(_r.filter(isEven), _r.map(inc));
@@ -57,14 +57,14 @@ test('into sequence', function(t){
   t.deepEqual(result, [3,5], 'filter and map into');
 
   trans = _r().filter(isEven).map(inc);
-  result = _r.sequence(trans, [1,2,3,4,5]);
+  result = _r.toArray(trans, [1,2,3,4,5]);
   t.deepEqual(result, [3,5], 'filter and map into chain');
 
   trans = _r().filter(isEven).map(inc);
   result = _r.into([], trans, [1,2,3,4,5]);
   t.deepEqual(result, [3,5], 'filter and map into chain');
 
-  result = _r().filter(isEven).map(inc).sequence([1, 2, 3, 4]);
+  result = _r().filter(isEven).map(inc).toArray([1, 2, 3, 4]);
   t.deepEqual(result, [3,5], 'filter and map into chain');
 
   result = _r().filter(isEven).map(inc).into([1,2], [1, 2, 3, 4]);
@@ -128,7 +128,7 @@ test('into sequence', function(t){
   t.deepEqual(result, [0, 1, 3, 4, 2, 10, 8], 'uniq into');
 });
 
-test('sequence into chained', function(t){
+test('toArray into chained', function(t){
   t.plan(18);
 
   var results = [], items = [];
@@ -143,10 +143,10 @@ test('sequence into chained', function(t){
 
   results = [];
   items = [];
-  result = _r.sequence(trans, [1,2,3,200]);
-  t.deepEqual(result, [4, 40000], 'sequence filter and map chained with tap');
-  t.deepEqual(results, [[], [4]], 'sequence filter and map chained with tap results');
-  t.deepEqual(items, [2, 200], 'sequence filter and map chained with tap items');
+  result = _r.toArray(trans, [1,2,3,200]);
+  t.deepEqual(result, [4, 40000], 'toArray filter and map chained with tap');
+  t.deepEqual(results, [[], [4]], 'toArray filter and map chained with tap results');
+  t.deepEqual(items, [2, 200], 'toArray filter and map chained with tap items');
 
   results = [];
   items = [];
@@ -157,8 +157,8 @@ test('sequence into chained', function(t){
 
   results = [];
   items = [];
-  result = trans.sequence([1,2,3,200]);
-  t.deepEqual(result, [4, 40000], 'chained sequence filter and map chained with tap');
+  result = trans.toArray([1,2,3,200]);
+  t.deepEqual(result, [4, 40000], 'chained toArray filter and map chained with tap');
   t.deepEqual(results, [[], [4]], 'chained seqeuence filter and map chained with tap results');
   t.deepEqual(items, [2, 200], 'chained seqeuence filter and map chained with tap items');
 
@@ -171,8 +171,8 @@ test('sequence into chained', function(t){
 
   results = [];
   items = [];
-  result = trans.withSource([1,2,3,200]).sequence();
-  t.deepEqual(result, [4, 40000], 'wrap chained sequence filter and map chained with tap');
+  result = trans.withSource([1,2,3,200]).toArray();
+  t.deepEqual(result, [4, 40000], 'wrap chained toArray filter and map chained with tap');
   t.deepEqual(results, [[], [4]], 'wrap chained seqeuence filter and map chained with tap results');
   t.deepEqual(items, [2, 200], 'wrap chained seqeuence filter and map chained with tap items');
 });
@@ -346,7 +346,7 @@ test('generate', function(t){
   result = _r.into([], _r.first(7), _r.generate(fib()));
   t.deepEqual(result, [1,1,2,3,5,8,13], 'generate into');
 
-  result = _r().first(7).sequence(_r.generate(fib()));
+  result = _r().first(7).toArray(_r.generate(fib()));
   t.deepEqual(result, [1,1,2,3,5,8,13], 'generate chain');
 
   result = _r().first(7).generate(fib()).value();
@@ -355,7 +355,7 @@ test('generate', function(t){
   result = _r().generate(fib()).first(7).value();
   t.deepEqual(result, [1,1,2,3,5,8,13], 'generate chain before');
 
-  result = _r.sequence(_r.first(7), _r.generate(fib()));
+  result = _r.toArray(_r.first(7), _r.generate(fib()));
   t.deepEqual(result, [1,1,2,3,5,8,13], 'generate');
 
   result = _r(_r.generate(fib())).first(7).value();

@@ -60,7 +60,7 @@ result = _r.into([], _r.compose(_r.filter(isEven), _r.map(inc)), [1,2,3,4]);
 // these are also the same
 trans = _r().filter(isEven).map(inc).value();
 result = _r.into([], trans, [1,2,3,4, 5]);
-result = _r().filter(isEven).map(inc).sequence([1,2,3,4,5]);
+result = _r().filter(isEven).map(inc).toArray([1,2,3,4,5]);
 // [ 3, 5 ]
 ```
 
@@ -71,7 +71,7 @@ result = _r()
   .filter(function(num) { return num % 2 == 0; })
   .tap(printIt)
   .map(function(num) { return num * num })
-  .sequence([1,2,3,200]);
+  .toArray([1,2,3,200]);
 // 2 []
 // 200 [4]
 // [4, 40000 ]
@@ -80,7 +80,7 @@ result = _r()
 Support for underscore collection functions.
 
 ```javascript
-result = _r().invoke('sort').sequence([[5, 1, 7], [3, 2, 1]]);
+result = _r().invoke('sort').toArray([[5, 1, 7], [3, 2, 1]]);
 // [ [ 1, 5, 7 ], [ 1, 2, 3 ] ]
 
 var stooges = [{name: 'moe', age: 40}, {name: 'larry', age: 50}, {name: 'curly', age: 40}];
@@ -308,12 +308,10 @@ Mixin custom transducer creating functions. Transducer creating functions will b
 
 Adds functionality from [transduce][14] with default values from dispatched functions and chained transformations.
 
-##### sequence(xf?, from?)
-Returns a new collection of the same type as `from` after running it through the optional transformation.
+##### toArray(xf?, from?)
+Returns a new orray by iterating through`from` after running it through the optional transformation.
 
 If called on a chained transformation, uses the composed transformation as `xf`. If `from` is not defined, uses the wrapped source when creating the chain, `_r(wrapped)`.
-
-Equivalent to calling `into` with `to` created with `_r.empty(from)`.
 
 ##### into(to?, xf?, from?)
 Returns a new collection appending all items into the empty collection `to` by passing all items from source collection `from` through the transformation `xf`.
@@ -553,11 +551,6 @@ _r(vector).value();
 
 #### Utils
 Finally, adds utils from [transduce][14].
-
-##### toArray(xf?, coll)
-Transduce a collection into an array with an optional transformation.
-
-From [transduce-toarray](https://github.com/transduce/transduce-toarray)
 
 ##### compose()
 Simple function composition of arguments. Useful for composing (combining) transducers.
