@@ -398,3 +398,15 @@ test('_riteratee', function(t){
   t.deepEqual(value, ['FOO','BAZ','TWO']);
   t.end();
 });
+
+test('sequence', function(t){
+  result = _r.into([], _r([1,2,3,4]));
+  t.deepEqual(result, [1,2,3,4], 'into empty array');
+
+  result = _r.into([], _r([1,2,3,4]).map(inc));
+  t.deepEqual(result, [2,3,4,5], 'into empty array');
+
+  result = _r.into([], _r([1,2,3,4]).filter(isEven));
+  t.deepEqual(result, [2,4], 'into empty array');
+  t.end();
+});

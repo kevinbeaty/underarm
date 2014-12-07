@@ -30,6 +30,8 @@
     "transduce-push": "~0.1.0",
     "transduce-string": "~0.1.0",
     "transduce-unique": "~0.1.0",
+    "transduce-sequence": "~0.1.0",
+    "iterator-protocol": "~0.1.0",
     "redispatch": "0.0.2"
   },
   "devDependencies": {
