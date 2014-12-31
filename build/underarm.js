@@ -1,6 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
-var async = require(13),
+var async = require(18),
     Prom = require(4),
     undef;
 
@@ -177,8 +177,8 @@ module.exports = function(_r){
 var undef;
 module.exports = function(_r){
   var _ = _r._ || {};
-  _.debounce = require(6);
-  _.throttle = require(7);
+  _.debounce = require(5);
+  _.throttle = require(6);
 };
 
 },{}],3:[function(require,module,exports){
@@ -231,130 +231,6 @@ module.exports = function(_r){
 module.exports = Promise;
 
 },{}],5:[function(require,module,exports){
-"use strict";
-/* global Symbol */
-var util = require(17),
-    symbol = util.protocols.iterator,
-    isFunction = util.isFunction,
-    keys = Object.keys || _keys,
-    undef;
-
-module.exports = {
-  symbol: symbol,
-  isIterable: isIterable,
-  isIterator: isIterator,
-  iterable: iterable,
-  iterator: iterator,
-  toArray: toArray
-};
-
-function toArray(iter){
-  iter = iterator(iter);
-  var next = iter.next(),
-      arr = [];
-  while(!next.done){
-    arr.push(next.value);
-    next = iter.next();
-  }
-  return arr;
-}
-
-function isIterable(value){
-  return (value[symbol] !== undef);
-}
-
-function isIterator(value){
-  return isIterable(value) ||
-    (isFunction(value.next));
-}
-
-function iterable(value){
-  var it;
-  if(isIterable(value)){
-    it = value;
-  } else if(util.isArray(value) || util.isString(value)){
-    it = new ArrayIterable(value);
-  } else if(isFunction(value)){
-    it = new FunctionIterable(value);
-  } else {
-    it = new ObjectIterable(value);
-  }
-  return it;
-}
-
-function iterator(value){
-  var it = iterable(value);
-  if(it !== undef){
-    it = it[symbol]();
-  } else if(isFunction(value.next)){
-    // handle non-well-formed iterators that only have a next method
-    it = value;
-  }
-  return it;
-}
-
-// Wrap an Array into an iterable
-function ArrayIterable(arr){
-  this.arr = arr;
-}
-ArrayIterable.prototype[symbol] = function(){
-  var arr = this.arr,
-      idx = 0;
-  return {
-    next: function(){
-      if(idx >= arr.length){
-        return {done: true};
-      }
-
-      return {done: false, value: arr[idx++]};
-    }
-  };
-};
-
-// Wrap an function into an iterable that calls function on every next
-function FunctionIterable(fn){
-  this.fn = fn;
-}
-FunctionIterable.prototype[symbol] = function(){
-  var fn = this.fn;
-  return {
-    next: function(){
-      return {done: false, value: fn()};
-    }
-  };
-};
-
-// Wrap an Object into an iterable. iterates [key, val]
-function ObjectIterable(obj){
-  this.obj = obj;
-  this.keys = keys(obj);
-}
-ObjectIterable.prototype[symbol] = function(){
-  var obj = this.obj,
-      keys = this.keys,
-      idx = 0;
-  return {
-    next: function(){
-      if(idx >= keys.length){
-        return {done: true};
-      }
-      var key = keys[idx++];
-      return {done: false, value: [key, obj[key]]};
-    }
-  };
-};
-
-function _keys(obj){
-  var prop, keys = [];
-  for(prop in obj){
-    if(obj.hasOwnProperty(prop)){
-      keys.push(prop);
-    }
-  }
-  return keys;
-}
-
-},{}],6:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -363,9 +239,9 @@ function _keys(obj){
  * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  * Available under MIT license <http://lodash.com/license>
  */
-var isFunction = require(10),
-    isObject = require(11),
-    now = require(12);
+var isFunction = require(9),
+    isObject = require(10),
+    now = require(11);
 
 /* Native method shortcuts for methods with the same name as other `lodash` methods */
 var nativeMax = Math.max;
@@ -512,7 +388,7 @@ function debounce(func, wait, options) {
 
 module.exports = debounce;
 
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -521,9 +397,9 @@ module.exports = debounce;
  * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  * Available under MIT license <http://lodash.com/license>
  */
-var debounce = require(6),
-    isFunction = require(10),
-    isObject = require(11);
+var debounce = require(5),
+    isFunction = require(9),
+    isObject = require(10);
 
 /**
  * Creates a function that, when executed, will only call the `func` function
@@ -579,7 +455,7 @@ function throttle(func, wait, options) {
 
 module.exports = throttle;
 
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -615,7 +491,7 @@ function isNative(value) {
 
 module.exports = isNative;
 
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -637,7 +513,7 @@ var objectTypes = {
 
 module.exports = objectTypes;
 
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -681,7 +557,7 @@ if (isFunction(/x/)) {
 
 module.exports = isFunction;
 
-},{}],11:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -690,7 +566,7 @@ module.exports = isFunction;
  * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  * Available under MIT license <http://lodash.com/license>
  */
-var objectTypes = require(9);
+var objectTypes = require(8);
 
 /**
  * Checks if `value` is the language type of Object.
@@ -722,7 +598,7 @@ function isObject(value) {
 
 module.exports = isObject;
 
-},{}],12:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /**
  * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
  * Build: `lodash modularize underscore exports="node" -o ./underscore/`
@@ -731,7 +607,7 @@ module.exports = isObject;
  * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  * Available under MIT license <http://lodash.com/license>
  */
-var isNative = require(8);
+var isNative = require(7);
 
 /**
  * Gets the number of milliseconds that have elapsed since the Unix epoch
@@ -752,14 +628,368 @@ var now = isNative(now = Date.now) && now || function() {
 
 module.exports = now;
 
+},{}],12:[function(require,module,exports){
+"use strict";
+/* global Symbol */
+var util = require(16),
+    symbol = util.protocols.iterator,
+    isFunction = util.isFunction,
+    keys = Object.keys || _keys,
+    undef;
+
+module.exports = {
+  symbol: symbol,
+  isIterable: isIterable,
+  isIterator: isIterator,
+  iterable: iterable,
+  iterator: iterator,
+  toArray: toArray
+};
+
+function toArray(iter){
+  iter = iterator(iter);
+  var next = iter.next(),
+      arr = [];
+  while(!next.done){
+    arr.push(next.value);
+    next = iter.next();
+  }
+  return arr;
+}
+
+function isIterable(value){
+  return (value[symbol] !== undef);
+}
+
+function isIterator(value){
+  return isIterable(value) ||
+    (isFunction(value.next));
+}
+
+function iterable(value){
+  var it;
+  if(isIterable(value)){
+    it = value;
+  } else if(util.isArray(value) || util.isString(value)){
+    it = new ArrayIterable(value);
+  } else if(isFunction(value)){
+    it = new FunctionIterable(value);
+  } else {
+    it = new ObjectIterable(value);
+  }
+  return it;
+}
+
+function iterator(value){
+  var it = iterable(value);
+  if(it !== undef){
+    it = it[symbol]();
+  } else if(isFunction(value.next)){
+    // handle non-well-formed iterators that only have a next method
+    it = value;
+  }
+  return it;
+}
+
+// Wrap an Array into an iterable
+function ArrayIterable(arr){
+  this.arr = arr;
+}
+ArrayIterable.prototype[symbol] = function(){
+  var arr = this.arr,
+      idx = 0;
+  return {
+    next: function(){
+      if(idx >= arr.length){
+        return {done: true};
+      }
+
+      return {done: false, value: arr[idx++]};
+    }
+  };
+};
+
+// Wrap an function into an iterable that calls function on every next
+function FunctionIterable(fn){
+  this.fn = fn;
+}
+FunctionIterable.prototype[symbol] = function(){
+  var fn = this.fn;
+  return {
+    next: function(){
+      return {done: false, value: fn()};
+    }
+  };
+};
+
+// Wrap an Object into an iterable. iterates [key, val]
+function ObjectIterable(obj){
+  this.obj = obj;
+  this.keys = keys(obj);
+}
+ObjectIterable.prototype[symbol] = function(){
+  var obj = this.obj,
+      keys = this.keys,
+      idx = 0;
+  return {
+    next: function(){
+      if(idx >= keys.length){
+        return {done: true};
+      }
+      var key = keys[idx++];
+      return {done: false, value: [key, obj[key]]};
+    }
+  };
+};
+
+function _keys(obj){
+  var prop, keys = [];
+  for(prop in obj){
+    if(obj.hasOwnProperty(prop)){
+      keys.push(prop);
+    }
+  }
+  return keys;
+}
+
 },{}],13:[function(require,module,exports){
 "use strict";
-var comp = require(14),
+module.exports = compose;
+function compose(){
+  var fns = arguments;
+  return function(xf){
+    var i = fns.length;
+    while(i--){
+      xf = fns[i](xf);
+    }
+    return xf;
+  };
+}
+
+},{}],14:[function(require,module,exports){
+"use strict";
+var util = require(16),
+    push = util.arrayPush,
+    undef;
+
+module.exports = transduceImplToArray;
+function transduceImplToArray(impl){
+  return function(xf, coll){
+    var init = [];
+    if(coll === undef){
+      return impl.reduce(push, init, xf);
+    }
+    return impl.transduce(xf, push, init, coll);
+  };
+}
+
+},{}],15:[function(require,module,exports){
+"use strict";
+
+module.exports = {
+  isReduced: isReduced,
+  reduced: reduced,
+  unreduced: unreduced,
+  deref: unreduced,
+};
+
+function isReduced(value){
+  return !!(value instanceof Reduced || value && value.__transducers_reduced__);
+}
+
+function reduced(value, force){
+  if(force || !isReduced(value)){
+    value = new Reduced(value);
+  }
+  return value;
+}
+
+function unreduced(value){
+  if(isReduced(value)){
+    value = value.value;
+  }
+  return value;
+}
+
+function Reduced(value){
+  this.value = value;
+  this.__transducers_reduced__ = true;
+}
+
+},{}],16:[function(require,module,exports){
+"use strict";
+var undef,
+    Arr = Array,
+    toString = Object.prototype.toString,
+    isArray = (isFunction(Arr.isArray) ? Arr.isArray : predicateToString('Array')),
+    /* global Symbol */
+    symbolExists = typeof Symbol !== 'undefined',
+    symIterator = symbolExists ? Symbol.iterator : '@@iterator',
+    /* jshint newcap:false */
+    symTransformer = symbolExists ? Symbol('transformer') : '@@transformer',
+    protocols = {
+      iterator: symIterator,
+      transformer: symTransformer
+    };
+
+module.exports = {
+  protocols: protocols,
+  isFunction: isFunction,
+  isArray: isArray,
+  isString: predicateToString('String'),
+  isRegExp: predicateToString('RegExp'),
+  isNumber: predicateToString('Number'),
+  isUndefined: isUndefined,
+  identity: identity,
+  arrayPush: push,
+  objectMerge: merge,
+  stringAppend: append
+};
+
+function isFunction(value){
+  return typeof value === 'function';
+}
+
+function isUndefined(value){
+  return value === undef;
+}
+
+function predicateToString(type){
+  var str = '[object '+type+']';
+  return function(value){
+    return toString.call(value) === str;
+  };
+}
+
+function identity(result){
+  return result;
+}
+
+function push(result, input){
+  result.push(input);
+  return result;
+}
+
+function merge(result, input){
+  if(isArray(input) && input.length === 2){
+    result[input[0]] = input[1];
+  } else {
+    var prop;
+    for(prop in input){
+      if(input.hasOwnProperty(prop)){
+        result[prop] = input[prop];
+      }
+    }
+  }
+  return result;
+}
+
+function append(result, input){
+  return result + input;
+}
+
+},{}],17:[function(require,module,exports){
+"use strict";
+/* global Symbol */
+var undef,
+    util = require(16),
+    slice = Array.prototype.slice,
+    symTransformer = util.protocols.transformer,
+    isFunction = util.isFunction,
+    identity = util.identity,
+    merge = util.objectMerge;
+
+
+module.exports = {
+  symbol: symTransformer,
+  isTransformer: isTransformer,
+  transformer: transformer
+};
+
+function isTransformer(value){
+  return (value[symTransformer] !== undef) ||
+    (isFunction(value.step) && isFunction(value.result));
+}
+
+function transformer(value){
+  var xf;
+  if(isTransformer(value)){
+    xf = value[symTransformer];
+    if(xf === undef){
+      xf = value;
+    }
+  } else if(isFunction(value)){
+    xf = new FunctionTransformer(value);
+  } else if(util.isArray(value)){
+    xf = new ArrayTransformer(value);
+  } else if(util.isString(value)){
+    xf = new StringTransformer(value);
+  } else {
+    xf = new ObjectTransformer(value);
+  }
+  return xf;
+}
+
+// Pushes value on array, using optional constructor arg as default, or [] if not provided
+// init will clone the default
+// step will push input onto array and return result
+// result is identity
+function ArrayTransformer(arr){
+  this.arrDefault = arr === undef ? [] : arr;
+}
+ArrayTransformer.prototype.init = function(){
+  return slice.call(this.arrDefault);
+};
+ArrayTransformer.prototype.step = util.arrayPush;
+ArrayTransformer.prototype.result = identity;
+
+// Turns a step function into a transfomer with init, step, result (init not supported and will error)
+// Like transducers-js Wrap
+function FunctionTransformer(step){
+  this.step = step;
+}
+FunctionTransformer.prototype.init = function(){
+  throw new Error('Cannot init wrapped function, use proper transformer instead');
+};
+FunctionTransformer.prototype.step = function(result, input){
+  return this.step(result, input);
+};
+FunctionTransformer.prototype.result = identity;
+
+// Appends value onto string, using optional constructor arg as default, or '' if not provided
+// init will return the default
+// step will append input onto string and return result
+// result is identity
+function StringTransformer(str){
+  this.strDefault = str === undef ? '' : str;
+}
+StringTransformer.prototype.init = function(){
+  return this.strDefault;
+};
+StringTransformer.prototype.step = util.stringAppend;
+StringTransformer.prototype.result = identity;
+
+// Merges value into object, using optional constructor arg as default, or {} if not provided
+// init will clone the default
+// step will merge input into object and return result
+// result is identity
+function ObjectTransformer(obj){
+  this.objDefault = obj === undef ? {} : merge({}, obj);
+}
+ObjectTransformer.prototype.init = function(){
+  return merge({}, this.objDefault);
+};
+ObjectTransformer.prototype.step = merge;
+ObjectTransformer.prototype.result = identity;
+
+},{}],18:[function(require,module,exports){
+"use strict";
+var comp = require(13),
     Prom = require(4),
-    ip = require(5),
-    xfp = require(18),
-    red = require(16),
-    transduceToArray = require(15),
+    ip = require(12),
+    xfp = require(17),
+    red = require(15),
+    transduceToArray = require(14),
     transformer = xfp.transformer,
     undef;
 
@@ -994,239 +1224,9 @@ DelayTask.prototype.result = function(value){
   return task.resolved;
 };
 
-},{}],14:[function(require,module,exports){
-"use strict";
-module.exports = compose;
-function compose(){
-  var fns = arguments;
-  return function(xf){
-    var i = fns.length;
-    while(i--){
-      xf = fns[i](xf);
-    }
-    return xf;
-  };
-}
-
-},{}],15:[function(require,module,exports){
-"use strict";
-var util = require(17),
-    push = util.arrayPush,
-    undef;
-
-module.exports = transduceImplToArray;
-function transduceImplToArray(impl){
-  return function(xf, coll){
-    var init = [];
-    if(coll === undef){
-      return impl.reduce(push, init, xf);
-    }
-    return impl.transduce(xf, push, init, coll);
-  };
-}
-
-},{}],16:[function(require,module,exports){
-"use strict";
-
-module.exports = {
-  isReduced: isReduced,
-  reduced: reduced,
-  unreduced: unreduced,
-  deref: unreduced,
-};
-
-function isReduced(value){
-  return !!(value instanceof Reduced || value && value.__transducers_reduced__);
-}
-
-function reduced(value, force){
-  if(force || !isReduced(value)){
-    value = new Reduced(value);
-  }
-  return value;
-}
-
-function unreduced(value){
-  if(isReduced(value)){
-    value = value.value;
-  }
-  return value;
-}
-
-function Reduced(value){
-  this.value = value;
-  this.__transducers_reduced__ = true;
-}
-
-},{}],17:[function(require,module,exports){
-"use strict";
-var undef,
-    Arr = Array,
-    toString = Object.prototype.toString,
-    isArray = (isFunction(Arr.isArray) ? Arr.isArray : predicateToString('Array')),
-    /* global Symbol */
-    symbolExists = typeof Symbol !== 'undefined',
-    symIterator = symbolExists ? Symbol.iterator : '@@iterator',
-    /* jshint newcap:false */
-    symTransformer = symbolExists ? Symbol('transformer') : '@@transformer',
-    protocols = {
-      iterator: symIterator,
-      transformer: symTransformer
-    };
-
-module.exports = {
-  protocols: protocols,
-  isFunction: isFunction,
-  isArray: isArray,
-  isString: predicateToString('String'),
-  isRegExp: predicateToString('RegExp'),
-  isNumber: predicateToString('Number'),
-  isUndefined: isUndefined,
-  identity: identity,
-  arrayPush: push,
-  objectMerge: merge,
-  stringAppend: append
-};
-
-function isFunction(value){
-  return typeof value === 'function';
-}
-
-function isUndefined(value){
-  return value === undef;
-}
-
-function predicateToString(type){
-  var str = '[object '+type+']';
-  return function(value){
-    return toString.call(value) === str;
-  };
-}
-
-function identity(result){
-  return result;
-}
-
-function push(result, input){
-  result.push(input);
-  return result;
-}
-
-function merge(result, input){
-  if(isArray(input) && input.length === 2){
-    result[input[0]] = input[1];
-  } else {
-    var prop;
-    for(prop in input){
-      if(input.hasOwnProperty(prop)){
-        result[prop] = input[prop];
-      }
-    }
-  }
-  return result;
-}
-
-function append(result, input){
-  return result + input;
-}
-
-},{}],18:[function(require,module,exports){
-"use strict";
-/* global Symbol */
-var undef,
-    util = require(17),
-    slice = Array.prototype.slice,
-    symTransformer = util.protocols.transformer,
-    isFunction = util.isFunction,
-    identity = util.identity,
-    merge = util.objectMerge;
-
-
-module.exports = {
-  symbol: symTransformer,
-  isTransformer: isTransformer,
-  transformer: transformer
-};
-
-function isTransformer(value){
-  return (value[symTransformer] !== undef) ||
-    (isFunction(value.step) && isFunction(value.result));
-}
-
-function transformer(value){
-  var xf;
-  if(isTransformer(value)){
-    xf = value[symTransformer];
-    if(xf === undef){
-      xf = value;
-    }
-  } else if(isFunction(value)){
-    xf = new FunctionTransformer(value);
-  } else if(util.isArray(value)){
-    xf = new ArrayTransformer(value);
-  } else if(util.isString(value)){
-    xf = new StringTransformer(value);
-  } else {
-    xf = new ObjectTransformer(value);
-  }
-  return xf;
-}
-
-// Pushes value on array, using optional constructor arg as default, or [] if not provided
-// init will clone the default
-// step will push input onto array and return result
-// result is identity
-function ArrayTransformer(arr){
-  this.arrDefault = arr === undef ? [] : arr;
-}
-ArrayTransformer.prototype.init = function(){
-  return slice.call(this.arrDefault);
-};
-ArrayTransformer.prototype.step = util.arrayPush;
-ArrayTransformer.prototype.result = identity;
-
-// Turns a step function into a transfomer with init, step, result (init not supported and will error)
-// Like transducers-js Wrap
-function FunctionTransformer(step){
-  this.step = step;
-}
-FunctionTransformer.prototype.init = function(){
-  throw new Error('Cannot init wrapped function, use proper transformer instead');
-};
-FunctionTransformer.prototype.step = function(result, input){
-  return this.step(result, input);
-};
-FunctionTransformer.prototype.result = identity;
-
-// Appends value onto string, using optional constructor arg as default, or '' if not provided
-// init will return the default
-// step will append input onto string and return result
-// result is identity
-function StringTransformer(str){
-  this.strDefault = str === undef ? '' : str;
-}
-StringTransformer.prototype.init = function(){
-  return this.strDefault;
-};
-StringTransformer.prototype.step = util.stringAppend;
-StringTransformer.prototype.result = identity;
-
-// Merges value into object, using optional constructor arg as default, or {} if not provided
-// init will clone the default
-// step will merge input into object and return result
-// result is identity
-function ObjectTransformer(obj){
-  this.objDefault = obj === undef ? {} : merge({}, obj);
-}
-ObjectTransformer.prototype.init = function(){
-  return merge({}, this.objDefault);
-};
-ObjectTransformer.prototype.step = merge;
-ObjectTransformer.prototype.result = identity;
-
 },{}],19:[function(require,module,exports){
 "use strict";
-var array = require(31), undef;
+var array = require(33), undef;
 
 module.exports = function(_r){
   // Array Functions
@@ -1312,7 +1312,7 @@ module.exports = function(_r){
 
 },{}],20:[function(require,module,exports){
 "use strict";
-var tr = require(51),
+var tr = require(63),
     merge = tr.objectMerge,
     undef;
 
@@ -1348,7 +1348,7 @@ var _r = function(obj, transform) {
   this._wrapped = _r.wrap.call(this, obj);
 };
 
-_r.VERSION = '0.3.1';
+_r.VERSION = '0.3.2';
 
 // Export for browser or Common-JS
 // Save the previous value of the `_r` variable.
@@ -1403,7 +1403,7 @@ function _method(func){
 
 },{}],21:[function(require,module,exports){
 "use strict";
-var tr = require(51),
+var tr = require(63),
     dispatcher = require(30),
     undef;
 
@@ -1437,6 +1437,25 @@ module.exports = function(_r){
   _r.conj = append;
   _r.conjoin = append;
   _r.dispatch = dispatch;
+
+  _r.compose = tr.compose;
+  _r.isIterable = tr.isIterable;
+  _r.isIterator = tr.isIterator;
+  _r.iterable = tr.iterable;
+  _r.isTransformer = tr.isTransformer;
+  _r.transformer = tr.transformer;
+  _r.protocols = tr.protocols;
+  _r.isFunction = tr.isFunction;
+  _r.isArray = tr.isArray;
+  _r.isString = tr.isString;
+  _r.isRegExp = tr.isRegExp;
+  _r.isNumber = tr.isNumber;
+  _r.isUndefined = tr.isUndefined;
+  _r.arrayPush = tr.arrayPush;
+  _r.objectMerge = tr.objectMerge;
+  _r.stringAppend = tr.stringAppend;
+  _r.identity = tr.identity;
+
 
   // Dispatchers
   // -----------
@@ -1684,7 +1703,7 @@ module.exports = function(_r){
 
 },{}],22:[function(require,module,exports){
 "use strict";
-var transduce = require(51), undef;
+var transduce = require(63), undef;
 
 module.exports = function(_r){
   _r.generate = generate;
@@ -1744,7 +1763,7 @@ module.exports = function(libs, _r){
 // Underscore.js > (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 // Underscore.js > Underscore may be freely distributed under the MIT license.
 
-var tr = require(51), undef;
+var tr = require(63), undef;
 
 module.exports = function(_r){
   var _ = {};
@@ -1814,7 +1833,7 @@ function pairs(value){
 
 },{}],25:[function(require,module,exports){
 "use strict";
-var math = require(32), undef;
+var math = require(34), undef;
 
 module.exports = function(_r){
   // Math Functions
@@ -1844,7 +1863,7 @@ module.exports = function(_r){
 
 },{}],26:[function(require,module,exports){
 "use strict";
-var push = require(33),
+var push = require(36),
     undef;
 
 module.exports = function(_r){
@@ -1919,7 +1938,7 @@ module.exports = function(_r){
 },{}],27:[function(require,module,exports){
 "use strict";
 var undef,
-    string = require(34);
+    string = require(40);
 
 module.exports = function(_r){
   // String Functions
@@ -1942,7 +1961,7 @@ module.exports = function(_r){
 
 },{}],28:[function(require,module,exports){
 "use strict";
-var transduce = require(51),
+var transduce = require(63),
     slice = Array.prototype.slice, undef;
 
 module.exports = function(_r){
@@ -2077,8 +2096,8 @@ module.exports = function(_r){
 
 },{}],29:[function(require,module,exports){
 "use strict";
-var tr = require(51),
-    un = require(35),
+var tr = require(63),
+    un = require(41),
     undef;
 
 module.exports = function(_r){
@@ -2156,9 +2175,13 @@ function dispatch(fns, ctx){
 }
 
 },{}],31:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{}],32:[function(require,module,exports){
+arguments[4][15][0].apply(exports,arguments)
+},{}],33:[function(require,module,exports){
 "use strict";
-var red = require(16),
-    compose = require(14),
+var red = require(32),
+    compose = require(31),
     reduced = red.reduced,
     isReduced = red.isReduced,
     unreduced = red.unreduced,
@@ -2478,7 +2501,7 @@ Last.prototype.step = function(result, input){
   return result;
 };
 
-},{}],32:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 "use strict";
 module.exports = {
   min: min,
@@ -2553,9 +2576,11 @@ Min.prototype.step = function(result, input) {
   return result;
 };
 
-},{}],33:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
+arguments[4][15][0].apply(exports,arguments)
+},{}],36:[function(require,module,exports){
 "use strict";
-var red = require(16),
+var red = require(35),
     isReduced = red.isReduced,
     unreduced = red.unreduced,
     undef;
@@ -2713,11 +2738,17 @@ function asyncCallback(xf, continuation, reducer){
   };
 }
 
-},{}],34:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{}],38:[function(require,module,exports){
+arguments[4][15][0].apply(exports,arguments)
+},{}],39:[function(require,module,exports){
+arguments[4][16][0].apply(exports,arguments)
+},{}],40:[function(require,module,exports){
 "use strict";
-var util = require(17),
-    compose = require(14),
-    reduced = require(16).reduced,
+var util = require(39),
+    compose = require(37),
+    reduced = require(38).reduced,
     isString = util.isString,
     isRegExp = util.isRegExp,
     isNumber = util.isNumber,
@@ -2898,7 +2929,7 @@ function cloneRegExp(regexp){
   return new RegExp(regexp.source, flags.join(''));
 }
 
-},{}],35:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 "use strict";
 module.exports = {
   unique: unique,
@@ -2952,11 +2983,13 @@ Uniq.prototype.step = function(result, input){
   return result;
 };
 
-},{}],36:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{}],43:[function(require,module,exports){
 "use strict";
 
-var tp = require(16),
-    reduce = require(45);
+var tp = require(54),
+    reduce = require(53);
 
 module.exports = cat;
 function cat(xf){
@@ -2992,7 +3025,9 @@ PreserveReduced.prototype.step = function(value, item){
   return value;
 };
 
-},{}],37:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{}],45:[function(require,module,exports){
 "use strict";
 
 module.exports = drop;
@@ -3018,7 +3053,7 @@ Drop.prototype.step = function(value, item){
   return value;
 };
 
-},{}],38:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 "use strict";
 var undef;
 
@@ -3048,7 +3083,7 @@ DropWhile.prototype.step = function(value, item){
   return this.xf.step(value, item);
 };
 
-},{}],39:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 "use strict";
 module.exports = filter;
 
@@ -3074,16 +3109,16 @@ Filter.prototype.step = function(result, input) {
   return result;
 };
 
-},{}],40:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 "use strict";
-var transduce = require(50);
+var transduce = require(60);
 
 module.exports = into;
 function into(to, xf, from){
   return transduce(xf, to, to, from);
 }
 
-},{}],41:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 "use strict";
 module.exports = map;
 function map(callback) {
@@ -3105,17 +3140,17 @@ Map.prototype.step = function(result, input) {
   return this.xf.step(result, this.f(input));
 };
 
-},{}],42:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 "use strict";
-var compose = require(14),
-    map = require(41),
-    cat = require(36);
+var compose = require(44),
+    map = require(49),
+    cat = require(43);
 module.exports = mapcat;
 function mapcat(callback) {
   return compose(map(callback), cat);
 }
 
-},{}],43:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 "use strict";
 module.exports = partitionAll;
 function partitionAll(n) {
@@ -3150,9 +3185,9 @@ PartitionAll.prototype.step = function(result, input) {
   return result;
 };
 
-},{}],44:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 "use strict";
-var tp = require(16),
+var tp = require(54),
     undef;
 
 module.exports = partitionBy;
@@ -3196,12 +3231,12 @@ PartitionBy.prototype.step = function(result, input) {
   return result;
 };
 
-},{}],45:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 "use strict";
-var iter = require(5),
-    trans = require(18),
-    red = require(16),
-    util = require(17),
+var iter = require(42),
+    trans = require(62),
+    red = require(54),
+    util = require(61),
     isReduced = red.isReduced,
     deref = red.deref,
     transformer = trans.transformer,
@@ -3251,9 +3286,11 @@ function iteratorReduce(xf, init, iter){
   return xf.result(value);
 }
 
-},{}],46:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
+arguments[4][15][0].apply(exports,arguments)
+},{}],55:[function(require,module,exports){
 "use strict";
-var filter = require(39);
+var filter = require(47);
 
 module.exports = remove;
 function remove(p){
@@ -3263,10 +3300,10 @@ function remove(p){
 }
 
 
-},{}],47:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 "use strict";
 
-var tp = require(16);
+var tp = require(54);
 
 module.exports = take;
 function take(n){
@@ -3294,9 +3331,9 @@ Take.prototype.step = function(value, item){
   return value;
 };
 
-},{}],48:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 "use strict";
-var reduced = require(16).reduced;
+var reduced = require(54).reduced;
 
 module.exports = takeWhile;
 function takeWhile(p){
@@ -3323,18 +3360,20 @@ TakeWhile.prototype.step = function(value, item){
   return value;
 };
 
-},{}],49:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
+arguments[4][14][0].apply(exports,arguments)
+},{}],59:[function(require,module,exports){
 "use strict";
-var implToArray = require(15);
+var implToArray = require(58);
 module.exports = implToArray({
-  transduce: require(50),
-  reduce: require(45)
+  transduce: require(60),
+  reduce: require(53)
 });
 
-},{}],50:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 "use strict";
-var tp = require(18),
-    reduce = require(45),
+var tp = require(62),
+    reduce = require(53),
     transformer = tp.transformer;
 
 module.exports = transduce;
@@ -3343,30 +3382,34 @@ function transduce(xf, f, init, coll){
   return reduce(xf(f), init, coll);
 }
 
-},{}],51:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
+arguments[4][16][0].apply(exports,arguments)
+},{}],62:[function(require,module,exports){
+arguments[4][17][0].apply(exports,arguments)
+},{}],63:[function(require,module,exports){
 "use strict";
-var util = require(17),
-    compose = require(14),
-    reduced = require(16),
-    iter = require(5),
-    transformer = require(18);
+var util = require(61),
+    compose = require(44),
+    reduced = require(54),
+    iter = require(42),
+    transformer = require(62);
 
 module.exports = {
-  reduce: require(45),
-  transduce: require(50),
-  into: require(40),
-  toArray: require(49),
-  map: require(41),
-  filter: require(39),
-  remove: require(46),
-  take: require(47),
-  takeWhile: require(48),
-  drop: require(37),
-  dropWhile: require(38),
-  cat: require(36),
-  mapcat: require(42),
-  partitionAll: require(43),
-  partitionBy: require(44),
+  reduce: require(53),
+  transduce: require(60),
+  into: require(48),
+  toArray: require(59),
+  map: require(49),
+  filter: require(47),
+  remove: require(55),
+  take: require(56),
+  takeWhile: require(57),
+  drop: require(45),
+  dropWhile: require(46),
+  cat: require(43),
+  mapcat: require(50),
+  partitionAll: require(51),
+  partitionBy: require(52),
   compose: compose,
   isIterable: iter.isIterable,
   isIterator: iter.isIterator,
@@ -3391,7 +3434,7 @@ module.exports = {
   identity: util.identity,
 };
 
-},{}],52:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 module.exports = require(23)([
   require(24),
   require(21),
@@ -3403,11 +3446,11 @@ module.exports = require(23)([
   require(25),
   require(27)]);
 
-},{}],53:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 module.exports = require(23)([
   require(2),
   require(1),
   require(3)],
-  require(52));
+  require(64));
 
-},{}]},{},[53]);
+},{}]},{},[65]);
