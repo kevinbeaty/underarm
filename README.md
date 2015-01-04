@@ -48,8 +48,8 @@ Like a normal transduce when chained transformation is `async`.  If `async`, `in
 ##### into(to?, xf?, from?)
 Like a normal `into` when chained transformation not `async`. If `async`, `to` and `from` can be a Promise and `xf` can be an async transducer. 
 
-##### sequence(xf?, from?)
-Like a normal `sequence` when chained transformation not `async`. If `async`, `coll` can be a Promise and `xf` can be an async transducer. 
+##### toArray(xf?, from?)
+Like a normal `toArray` when chained transformation not `async`. If `async`, `coll` can be a Promise and `xf` can be an async transducer.
 
 ##### defer()
 Create an async transducer that allows wrapped transformer to `step` or `result` a Promise in addition to a value. All items will be queued and processed asap. The wrapped transformer is called with value of resolved Promise.

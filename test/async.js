@@ -50,15 +50,15 @@ test('transduce async', function(t) {
   });
 });
 
-test('sequence async', function(t) {
+test('toArray async', function(t) {
   t.plan(7);
 
-  var arr = _r().async().sequence([1,2,3]);
+  var arr = _r().async().toArray([1,2,3]);
   arr.then(function(value){
     t.deepEqual(value, [1,2,3]);
   });
 
-  var add1 = _r().async().map(add(1)).sequence([1,2,3]);
+  var add1 = _r().async().map(add(1)).toArray([1,2,3]);
   add1.then(function(value){
     t.deepEqual(value, [2,3,4]);
   });
@@ -93,7 +93,7 @@ test('delay', function(t) {
   t.plan(7);
   var items, trans;
   trans = _r().map(deferAdd(1)).delay(10).tap(checkItem)
-    .sequence([1,2,3])
+    .toArray([1,2,3])
     .then(function(result){
       t.deepEqual(result, [2,3,4]);
     });

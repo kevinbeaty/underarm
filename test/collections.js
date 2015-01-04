@@ -18,7 +18,7 @@ test('each', function(t){
     t.equal(num, i+1, 'index passed with item');
   });
 
-  trans.async().sequence([1, 2, 3])
+  trans.async().toArray([1, 2, 3])
     .then(function(result){
       t.deepEqual(result, [1, 2, 3], 'result passed through');
     })
@@ -29,13 +29,13 @@ test('map', function(t){
   t.plan(9);
 
   var doubled = _r().async().map(function(num){ return num * 2; });
-  doubled.sequence([1,2,3])
+  doubled.toArray([1,2,3])
     .then(function(result){
       t.deepEqual([2,4,6], result, 'can double');
     });
 
   var tripled = _r().async().map(function(num){ return num * 3; });
-  tripled.sequence([1,2,3])
+  tripled.toArray([1,2,3])
     .then(function(result){
       t.deepEqual([3,6,9], result, 'can triple');
     });
@@ -43,7 +43,7 @@ test('map', function(t){
   _r()
     .async()
     .map(function(num){ return num * 2; })
-    .sequence([1,2,3])
+    .toArray([1,2,3])
     .then(function(doubled){
       t.deepEqual([2,4,6], doubled, 'can double in chain');
     });
@@ -51,7 +51,7 @@ test('map', function(t){
   _r(resolve([1,2,3]))
     .map(function(num){ return resolve(num * 2);})
     .then(function(doubled){
-      t.deepEqual([2,4,6], doubled, 'can double in chain sequence wrapped');
+      t.deepEqual([2,4,6], doubled, 'can double in chain toArray wrapped');
     });
 
   _r()
