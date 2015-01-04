@@ -156,15 +156,15 @@ module.exports = function(_r){
   }
 
   // Returns a new collection of the empty value of the from collection
-  _r.sequence.register(function(xf, from){
+  _r.toArray.register(function(xf, from){
     if(isAsync(xf)){
       return Prom
         .all([from])
-        .then(_sequence(xf));
+        .then(_toArray(xf));
     }
   });
 
-  function _sequence(xf){
+  function _toArray(xf){
     return function(from){
       from = from[0];
       return intoAsync(empty(from), xf, from);
@@ -773,7 +773,7 @@ DelayTask.prototype.result = function(value){
 
 },{}],10:[function(require,module,exports){
 "use strict";
-var tr = require(37),
+var tr = require(22),
     merge = tr.objectMerge,
     undef;
 
@@ -864,8 +864,8 @@ function _method(func){
 
 },{}],11:[function(require,module,exports){
 "use strict";
-var tr = require(37),
-    dispatcher = require(15),
+var tr = require(22),
+    dispatcher = require(17),
     undef;
 
 module.exports = function(_r){
@@ -886,7 +886,7 @@ module.exports = function(_r){
       into = _r.into = dispatcher(),
       transducer = _r.transducer = dispatcher(),
       iterator = _r.iterator = dispatcher(),
-      sequence = _r.sequence = dispatcher(),
+      toArray = _r.toArray = dispatcher(),
       iteratee = _r.iteratee = dispatcher();
   _r.resolveSingleValue = resolveSingleValue;
   _r.resolveMultipleValues = resolveMultipleValues;
@@ -1037,16 +1037,19 @@ module.exports = function(_r){
   };
 
   // Returns a new collection of the empty value of the from collection
-  sequence.register(function(xf, from){
-    return into(empty(from), xf, from);
+  toArray.register(function(xf, from){
+    if(as(xf)){
+      xf = transducer(xf);
+    }
+    return tr.toArray(xf, from);
   });
 
-  // calls sequence with chained transformation and optional wrapped object
-  _r.prototype.sequence = function(from){
-    if(from == undef){
+  // calls toArray with chained transformation and optional wrapped object
+  _r.prototype.toArray = function(from){
+    if(from === undef){
       from = this._wrapped;
     }
-    return sequence(this, from);
+    return toArray(this, from);
   };
 
   // Wraps a value used as source for use during chained transformation. 
@@ -1192,7 +1195,7 @@ module.exports = function(libs, _r){
 // Underscore.js > (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 // Underscore.js > Underscore may be freely distributed under the MIT license.
 
-var tr = require(37), undef;
+var tr = require(22), undef;
 
 module.exports = function(_r){
   var _ = {};
@@ -1262,7 +1265,7 @@ function pairs(value){
 
 },{}],14:[function(require,module,exports){
 "use strict";
-var transduce = require(37),
+var transduce = require(22),
     slice = Array.prototype.slice, undef;
 
 module.exports = function(_r){
@@ -1396,6 +1399,10 @@ module.exports = function(_r){
 };
 
 },{}],15:[function(require,module,exports){
+arguments[4][3][0].apply(exports,arguments)
+},{}],16:[function(require,module,exports){
+arguments[4][7][0].apply(exports,arguments)
+},{}],17:[function(require,module,exports){
 "use strict";
 var undef;
 
@@ -1441,13 +1448,11 @@ function dispatch(fns, ctx){
   };
 }
 
-},{}],16:[function(require,module,exports){
-arguments[4][3][0].apply(exports,arguments)
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 "use strict";
 
 var tp = require(28),
-    reduce = require(27);
+    reduce = require(33);
 
 module.exports = cat;
 function cat(xf){
@@ -1483,8 +1488,6 @@ PreserveReduced.prototype.step = function(value, item){
   return value;
 };
 
-},{}],18:[function(require,module,exports){
-arguments[4][4][0].apply(exports,arguments)
 },{}],19:[function(require,module,exports){
 "use strict";
 
@@ -1569,14 +1572,62 @@ Filter.prototype.step = function(result, input) {
 
 },{}],22:[function(require,module,exports){
 "use strict";
-var transduce = require(34);
+var util = require(29),
+    compose = require(26),
+    reduced = require(28),
+    iter = require(15),
+    transformer = require(30);
+
+module.exports = {
+  reduce: require(33),
+  transduce: require(38),
+  into: require(23),
+  toArray: require(37),
+  map: require(24),
+  filter: require(21),
+  remove: require(34),
+  take: require(35),
+  takeWhile: require(36),
+  drop: require(19),
+  dropWhile: require(20),
+  cat: require(18),
+  mapcat: require(25),
+  partitionAll: require(31),
+  partitionBy: require(32),
+  compose: compose,
+  isIterable: iter.isIterable,
+  isIterator: iter.isIterator,
+  iterable: iter.iterable,
+  iterator: iter.iterator,
+  isTransformer: transformer.isTransformer,
+  transformer: transformer.transformer,
+  isReduced: reduced.isReduced,
+  reduced: reduced.reduced,
+  unreduced: reduced.unreduced,
+  deref: reduced.unreduced,
+  protocols: util.protocols,
+  isFunction: util.isFunction,
+  isArray: util.isArray,
+  isString: util.isString,
+  isRegExp: util.isRegExp,
+  isNumber: util.isNumber,
+  isUndefined: util.isUndefined,
+  arrayPush: util.arrayPush,
+  objectMerge: util.objectMerge,
+  stringAppend: util.stringAppend,
+  identity: util.identity,
+};
+
+},{}],23:[function(require,module,exports){
+"use strict";
+var transduce = require(38);
 
 module.exports = into;
 function into(to, xf, from){
   return transduce(xf, to, to, from);
 }
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 "use strict";
 module.exports = map;
 function map(callback) {
@@ -1598,17 +1649,27 @@ Map.prototype.step = function(result, input) {
   return this.xf.step(result, this.f(input));
 };
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 "use strict";
-var compose = require(18),
-    map = require(23),
-    cat = require(17);
+var compose = require(26),
+    map = require(24),
+    cat = require(18);
 module.exports = mapcat;
 function mapcat(callback) {
   return compose(map(callback), cat);
 }
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
+arguments[4][4][0].apply(exports,arguments)
+},{}],27:[function(require,module,exports){
+arguments[4][5][0].apply(exports,arguments)
+},{}],28:[function(require,module,exports){
+arguments[4][6][0].apply(exports,arguments)
+},{}],29:[function(require,module,exports){
+arguments[4][7][0].apply(exports,arguments)
+},{}],30:[function(require,module,exports){
+arguments[4][8][0].apply(exports,arguments)
+},{}],31:[function(require,module,exports){
 "use strict";
 module.exports = partitionAll;
 function partitionAll(n) {
@@ -1643,7 +1704,7 @@ PartitionAll.prototype.step = function(result, input) {
   return result;
 };
 
-},{}],26:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 "use strict";
 var tp = require(28),
     undef;
@@ -1689,12 +1750,12 @@ PartitionBy.prototype.step = function(result, input) {
   return result;
 };
 
-},{}],27:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 "use strict";
-var iter = require(16),
-    trans = require(36),
+var iter = require(15),
+    trans = require(30),
     red = require(28),
-    util = require(35),
+    util = require(29),
     isReduced = red.isReduced,
     deref = red.deref,
     transformer = trans.transformer,
@@ -1704,7 +1765,6 @@ var iter = require(16),
 module.exports = reduce;
 
 function reduce(xf, init, coll){
-  var iter = iterator(coll);
   xf = transformer(xf);
   if(isArray(coll)){
     return arrayReduce(xf, init, coll);
@@ -1744,9 +1804,7 @@ function iteratorReduce(xf, init, iter){
   return xf.result(value);
 }
 
-},{}],28:[function(require,module,exports){
-arguments[4][6][0].apply(exports,arguments)
-},{}],29:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 "use strict";
 var filter = require(21);
 
@@ -1758,7 +1816,7 @@ function remove(p){
 }
 
 
-},{}],30:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 "use strict";
 
 var tp = require(28);
@@ -1789,7 +1847,7 @@ Take.prototype.step = function(value, item){
   return value;
 };
 
-},{}],31:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 "use strict";
 var reduced = require(28).reduced;
 
@@ -1818,20 +1876,18 @@ TakeWhile.prototype.step = function(value, item){
   return value;
 };
 
-},{}],32:[function(require,module,exports){
-arguments[4][5][0].apply(exports,arguments)
-},{}],33:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 "use strict";
-var implToArray = require(32);
+var implToArray = require(27);
 module.exports = implToArray({
-  transduce: require(34),
-  reduce: require(27)
+  transduce: require(38),
+  reduce: require(33)
 });
 
-},{}],34:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 "use strict";
-var tp = require(36),
-    reduce = require(27),
+var tp = require(30),
+    reduce = require(33),
     transformer = tp.transformer;
 
 module.exports = transduce;
@@ -1840,67 +1896,15 @@ function transduce(xf, f, init, coll){
   return reduce(xf(f), init, coll);
 }
 
-},{}],35:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{}],36:[function(require,module,exports){
-arguments[4][8][0].apply(exports,arguments)
-},{}],37:[function(require,module,exports){
-"use strict";
-var util = require(35),
-    compose = require(18),
-    reduced = require(28),
-    iter = require(16),
-    transformer = require(36);
-
-module.exports = {
-  reduce: require(27),
-  transduce: require(34),
-  into: require(22),
-  toArray: require(33),
-  map: require(23),
-  filter: require(21),
-  remove: require(29),
-  take: require(30),
-  takeWhile: require(31),
-  drop: require(19),
-  dropWhile: require(20),
-  cat: require(17),
-  mapcat: require(24),
-  partitionAll: require(25),
-  partitionBy: require(26),
-  compose: compose,
-  isIterable: iter.isIterable,
-  isIterator: iter.isIterator,
-  iterable: iter.iterable,
-  iterator: iter.iterator,
-  isTransformer: transformer.isTransformer,
-  transformer: transformer.transformer,
-  isReduced: reduced.isReduced,
-  reduced: reduced.reduced,
-  unreduced: reduced.unreduced,
-  deref: reduced.unreduced,
-  protocols: util.protocols,
-  isFunction: util.isFunction,
-  isArray: util.isArray,
-  isString: util.isString,
-  isRegExp: util.isRegExp,
-  isNumber: util.isNumber,
-  isUndefined: util.isUndefined,
-  arrayPush: util.arrayPush,
-  objectMerge: util.objectMerge,
-  stringAppend: util.stringAppend,
-  identity: util.identity,
-};
-
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 module.exports = require(12)([
   require(13),
   require(11),
   require(14)]);
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 module.exports = require(12)([
   require(1)],
-  require(38));
+  require(39));
 
-},{}]},{},[39]);
+},{}]},{},[40]);
