@@ -1,6 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
-var tr = require(28),
+var tr = require(13),
     merge = tr.objectMerge,
     undef;
 
@@ -91,8 +91,8 @@ function _method(func){
 
 },{}],2:[function(require,module,exports){
 "use strict";
-var tr = require(28),
-    dispatcher = require(6),
+var tr = require(13),
+    dispatcher = require(8),
     undef;
 
 module.exports = function(_r){
@@ -113,7 +113,7 @@ module.exports = function(_r){
       into = _r.into = dispatcher(),
       transducer = _r.transducer = dispatcher(),
       iterator = _r.iterator = dispatcher(),
-      sequence = _r.sequence = dispatcher(),
+      toArray = _r.toArray = dispatcher(),
       iteratee = _r.iteratee = dispatcher();
   _r.resolveSingleValue = resolveSingleValue;
   _r.resolveMultipleValues = resolveMultipleValues;
@@ -264,16 +264,19 @@ module.exports = function(_r){
   };
 
   // Returns a new collection of the empty value of the from collection
-  sequence.register(function(xf, from){
-    return into(empty(from), xf, from);
+  toArray.register(function(xf, from){
+    if(as(xf)){
+      xf = transducer(xf);
+    }
+    return tr.toArray(xf, from);
   });
 
-  // calls sequence with chained transformation and optional wrapped object
-  _r.prototype.sequence = function(from){
-    if(from == undef){
+  // calls toArray with chained transformation and optional wrapped object
+  _r.prototype.toArray = function(from){
+    if(from === undef){
       from = this._wrapped;
     }
-    return sequence(this, from);
+    return toArray(this, from);
   };
 
   // Wraps a value used as source for use during chained transformation. 
@@ -419,7 +422,7 @@ module.exports = function(libs, _r){
 // Underscore.js > (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 // Underscore.js > Underscore may be freely distributed under the MIT license.
 
-var tr = require(28), undef;
+var tr = require(13), undef;
 
 module.exports = function(_r){
   var _ = {};
@@ -489,7 +492,7 @@ function pairs(value){
 
 },{}],5:[function(require,module,exports){
 "use strict";
-var transduce = require(28),
+var transduce = require(13),
     slice = Array.prototype.slice, undef;
 
 module.exports = function(_r){
@@ -624,173 +627,8 @@ module.exports = function(_r){
 
 },{}],6:[function(require,module,exports){
 "use strict";
-var undef;
-
-module.exports = redispatch;
-
-function redispatch(ctx){
-  var fns = [],
-      d = dispatch(fns, ctx);
-
-  d.register = register(fns);
-  d.unregister = unregister(fns);
-
-  return d;
-}
-
-function register(fns){
-  return function(fn){
-    fns.push(fn);
-  };
-}
-
-function unregister(fns){
-  return function(fn){
-    var idx = fns.indexOf(fn);
-    if(idx > -1){
-      fns.splice(idx, 1);
-    }
-  };
-}
-
-function dispatch(fns, ctx){
-  return function(){
-    var args = arguments,
-        self = ctx !== undef ? ctx : this,
-        i = fns.length,
-        result;
-    for(; i-- ;){
-      result = fns[i].apply(self, args);
-      if(result !== undef){
-        return result;
-      }
-    }
-  };
-}
-
-},{}],7:[function(require,module,exports){
-"use strict";
-module.exports = compose;
-function compose(){
-  var fns = arguments;
-  return function(xf){
-    var i = fns.length;
-    while(i--){
-      xf = fns[i](xf);
-    }
-    return xf;
-  };
-}
-
-},{}],8:[function(require,module,exports){
-"use strict";
-
-module.exports = {
-  isReduced: isReduced,
-  reduced: reduced,
-  unreduced: unreduced,
-  deref: unreduced,
-};
-
-function isReduced(value){
-  return !!(value instanceof Reduced || value && value.__transducers_reduced__);
-}
-
-function reduced(value, force){
-  if(force || !isReduced(value)){
-    value = new Reduced(value);
-  }
-  return value;
-}
-
-function unreduced(value){
-  if(isReduced(value)){
-    value = value.value;
-  }
-  return value;
-}
-
-function Reduced(value){
-  this.value = value;
-  this.__transducers_reduced__ = true;
-}
-
-},{}],9:[function(require,module,exports){
-"use strict";
-var undef,
-    Arr = Array,
-    toString = Object.prototype.toString,
-    isArray = (isFunction(Arr.isArray) ? Arr.isArray : predicateToString('Array')),
-    /* global Symbol */
-    symbolExists = typeof Symbol !== 'undefined',
-    symIterator = symbolExists ? Symbol.iterator : '@@iterator',
-    /* jshint newcap:false */
-    symTransformer = symbolExists ? Symbol('transformer') : '@@transformer',
-    protocols = {
-      iterator: symIterator,
-      transformer: symTransformer
-    };
-
-module.exports = {
-  protocols: protocols,
-  isFunction: isFunction,
-  isArray: isArray,
-  isString: predicateToString('String'),
-  isRegExp: predicateToString('RegExp'),
-  isNumber: predicateToString('Number'),
-  isUndefined: isUndefined,
-  identity: identity,
-  arrayPush: push,
-  objectMerge: merge,
-  stringAppend: append
-};
-
-function isFunction(value){
-  return typeof value === 'function';
-}
-
-function isUndefined(value){
-  return value === undef;
-}
-
-function predicateToString(type){
-  var str = '[object '+type+']';
-  return function(value){
-    return toString.call(value) === str;
-  };
-}
-
-function identity(result){
-  return result;
-}
-
-function push(result, input){
-  result.push(input);
-  return result;
-}
-
-function merge(result, input){
-  if(isArray(input) && input.length === 2){
-    result[input[0]] = input[1];
-  } else {
-    var prop;
-    for(prop in input){
-      if(input.hasOwnProperty(prop)){
-        result[prop] = input[prop];
-      }
-    }
-  }
-  return result;
-}
-
-function append(result, input){
-  return result + input;
-}
-
-},{}],10:[function(require,module,exports){
-"use strict";
 /* global Symbol */
-var util = require(9),
+var util = require(7),
     symbol = util.protocols.iterator,
     isFunction = util.isFunction,
     keys = Object.keys || _keys,
@@ -911,11 +749,129 @@ function _keys(obj){
   return keys;
 }
 
-},{}],11:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
+"use strict";
+var undef,
+    Arr = Array,
+    toString = Object.prototype.toString,
+    isArray = (isFunction(Arr.isArray) ? Arr.isArray : predicateToString('Array')),
+    /* global Symbol */
+    symbolExists = typeof Symbol !== 'undefined',
+    symIterator = symbolExists ? Symbol.iterator : '@@iterator',
+    /* jshint newcap:false */
+    symTransformer = symbolExists ? Symbol('transformer') : '@@transformer',
+    protocols = {
+      iterator: symIterator,
+      transformer: symTransformer
+    };
+
+module.exports = {
+  protocols: protocols,
+  isFunction: isFunction,
+  isArray: isArray,
+  isString: predicateToString('String'),
+  isRegExp: predicateToString('RegExp'),
+  isNumber: predicateToString('Number'),
+  isUndefined: isUndefined,
+  identity: identity,
+  arrayPush: push,
+  objectMerge: merge,
+  stringAppend: append
+};
+
+function isFunction(value){
+  return typeof value === 'function';
+}
+
+function isUndefined(value){
+  return value === undef;
+}
+
+function predicateToString(type){
+  var str = '[object '+type+']';
+  return function(value){
+    return toString.call(value) === str;
+  };
+}
+
+function identity(result){
+  return result;
+}
+
+function push(result, input){
+  result.push(input);
+  return result;
+}
+
+function merge(result, input){
+  if(isArray(input) && input.length === 2){
+    result[input[0]] = input[1];
+  } else {
+    var prop;
+    for(prop in input){
+      if(input.hasOwnProperty(prop)){
+        result[prop] = input[prop];
+      }
+    }
+  }
+  return result;
+}
+
+function append(result, input){
+  return result + input;
+}
+
+},{}],8:[function(require,module,exports){
+"use strict";
+var undef;
+
+module.exports = redispatch;
+
+function redispatch(ctx){
+  var fns = [],
+      d = dispatch(fns, ctx);
+
+  d.register = register(fns);
+  d.unregister = unregister(fns);
+
+  return d;
+}
+
+function register(fns){
+  return function(fn){
+    fns.push(fn);
+  };
+}
+
+function unregister(fns){
+  return function(fn){
+    var idx = fns.indexOf(fn);
+    if(idx > -1){
+      fns.splice(idx, 1);
+    }
+  };
+}
+
+function dispatch(fns, ctx){
+  return function(){
+    var args = arguments,
+        self = ctx !== undef ? ctx : this,
+        i = fns.length,
+        result;
+    for(; i-- ;){
+      result = fns[i].apply(self, args);
+      if(result !== undef){
+        return result;
+      }
+    }
+  };
+}
+
+},{}],9:[function(require,module,exports){
 "use strict";
 
-var tp = require(8),
-    reduce = require(20);
+var tp = require(19),
+    reduce = require(24);
 
 module.exports = cat;
 function cat(xf){
@@ -951,7 +907,7 @@ PreserveReduced.prototype.step = function(value, item){
   return value;
 };
 
-},{}],12:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 
 module.exports = drop;
@@ -977,7 +933,7 @@ Drop.prototype.step = function(value, item){
   return value;
 };
 
-},{}],13:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 "use strict";
 var undef;
 
@@ -1007,7 +963,7 @@ DropWhile.prototype.step = function(value, item){
   return this.xf.step(value, item);
 };
 
-},{}],14:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 "use strict";
 module.exports = filter;
 
@@ -1033,16 +989,64 @@ Filter.prototype.step = function(result, input) {
   return result;
 };
 
-},{}],15:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 "use strict";
-var transduce = require(26);
+var util = require(20),
+    compose = require(17),
+    reduced = require(19),
+    iter = require(6),
+    transformer = require(21);
+
+module.exports = {
+  reduce: require(24),
+  transduce: require(29),
+  into: require(14),
+  toArray: require(28),
+  map: require(15),
+  filter: require(12),
+  remove: require(25),
+  take: require(26),
+  takeWhile: require(27),
+  drop: require(10),
+  dropWhile: require(11),
+  cat: require(9),
+  mapcat: require(16),
+  partitionAll: require(22),
+  partitionBy: require(23),
+  compose: compose,
+  isIterable: iter.isIterable,
+  isIterator: iter.isIterator,
+  iterable: iter.iterable,
+  iterator: iter.iterator,
+  isTransformer: transformer.isTransformer,
+  transformer: transformer.transformer,
+  isReduced: reduced.isReduced,
+  reduced: reduced.reduced,
+  unreduced: reduced.unreduced,
+  deref: reduced.unreduced,
+  protocols: util.protocols,
+  isFunction: util.isFunction,
+  isArray: util.isArray,
+  isString: util.isString,
+  isRegExp: util.isRegExp,
+  isNumber: util.isNumber,
+  isUndefined: util.isUndefined,
+  arrayPush: util.arrayPush,
+  objectMerge: util.objectMerge,
+  stringAppend: util.stringAppend,
+  identity: util.identity,
+};
+
+},{}],14:[function(require,module,exports){
+"use strict";
+var transduce = require(29);
 
 module.exports = into;
 function into(to, xf, from){
   return transduce(xf, to, to, from);
 }
 
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 "use strict";
 module.exports = map;
 function map(callback) {
@@ -1064,227 +1068,33 @@ Map.prototype.step = function(result, input) {
   return this.xf.step(result, this.f(input));
 };
 
-},{}],17:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 "use strict";
-var compose = require(7),
-    map = require(16),
-    cat = require(11);
+var compose = require(17),
+    map = require(15),
+    cat = require(9);
 module.exports = mapcat;
 function mapcat(callback) {
   return compose(map(callback), cat);
 }
 
+},{}],17:[function(require,module,exports){
+"use strict";
+module.exports = compose;
+function compose(){
+  var fns = arguments;
+  return function(xf){
+    var i = fns.length;
+    while(i--){
+      xf = fns[i](xf);
+    }
+    return xf;
+  };
+}
+
 },{}],18:[function(require,module,exports){
 "use strict";
-module.exports = partitionAll;
-function partitionAll(n) {
-  return function(xf){
-    return new PartitionAll(n, xf);
-  };
-}
-function PartitionAll(n, xf) {
-  this.xf = xf;
-  this.n = n;
-  this.inputs = [];
-}
-PartitionAll.prototype.init = function(){
-  return this.xf.init();
-};
-PartitionAll.prototype.result = function(result){
-  var ins = this.inputs;
-  if(ins.length){
-    this.inputs = [];
-    result = this.xf.step(result, ins);
-  }
-  return this.xf.result(result);
-};
-PartitionAll.prototype.step = function(result, input) {
-  var ins = this.inputs,
-      n = this.n;
-  ins.push(input);
-  if(n === ins.length){
-    this.inputs = [];
-    result = this.xf.step(result, ins);
-  }
-  return result;
-};
-
-},{}],19:[function(require,module,exports){
-"use strict";
-var tp = require(8),
-    undef;
-
-module.exports = partitionBy;
-function partitionBy(f) {
-  return function(xf){
-    return new PartitionBy(f, xf);
-  };
-}
-function PartitionBy(f, xf) {
-  this.xf = xf;
-  this.f = f;
-}
-PartitionBy.prototype.init = function(){
-  return this.xf.init();
-};
-PartitionBy.prototype.result = function(result){
-  var ins = this.inputs;
-  if(ins.length){
-    this.inputs = [];
-    result = this.xf.step(result, ins);
-  }
-  return this.xf.result(result);
-};
-PartitionBy.prototype.step = function(result, input) {
-  var ins = this.inputs,
-      curr = this.f(input),
-      prev = this.prev;
-  this.prev = curr;
-
-  if(ins === undef){
-    this.inputs = [input];
-  } else if(prev === curr){
-    ins.push(input);
-  } else {
-    this.inputs = [];
-    result = this.xf.step(result, ins);
-    if(!tp.isReduced(result)){
-      this.inputs.push(input);
-    }
-  }
-  return result;
-};
-
-},{}],20:[function(require,module,exports){
-"use strict";
-var iter = require(10),
-    trans = require(27),
-    red = require(8),
-    util = require(9),
-    isReduced = red.isReduced,
-    deref = red.deref,
-    transformer = trans.transformer,
-    iterator = iter.iterator,
-    isArray = util.isArray,
-    undef;
-module.exports = reduce;
-
-function reduce(xf, init, coll){
-  var iter = iterator(coll);
-  xf = transformer(xf);
-  if(isArray(coll)){
-    return arrayReduce(xf, init, coll);
-  }
-  return iteratorReduce(xf, init, coll);
-}
-
-function arrayReduce(xf, init, arr){
-  var value = init,
-      i = 0,
-      len = arr.length;
-  for(; i < len; i++){
-    value = xf.step(value, arr[i]);
-    if(isReduced(value)){
-      value = deref(value);
-      break;
-    }
-  }
-  return xf.result(value);
-}
-
-function iteratorReduce(xf, init, iter){
-  var value = init, next;
-  iter = iterator(iter);
-  while(true){
-    next = iter.next();
-    if(next.done){
-      break;
-    }
-
-    value = xf.step(value, next.value);
-    if(isReduced(value)){
-      value = deref(value);
-      break;
-    }
-  }
-  return xf.result(value);
-}
-
-},{}],21:[function(require,module,exports){
-"use strict";
-var filter = require(14);
-
-module.exports = remove;
-function remove(p){
-  return filter(function(x){
-    return !p(x);
-  });
-}
-
-
-},{}],22:[function(require,module,exports){
-"use strict";
-
-var tp = require(8);
-
-module.exports = take;
-function take(n){
-  return function(xf){
-    return new Take(n, xf);
-  };
-}
-function Take(n, xf){
-  this.xf = xf;
-  this.n = n;
-}
-Take.prototype.init = function(){
-  return this.xf.init();
-};
-Take.prototype.result = function(value){
-  return this.xf.result(value);
-};
-Take.prototype.step = function(value, item){
-  if(this.n-- > 0){
-    value = this.xf.step(value, item);
-  }
-  if(this.n <= 0){
-    value = tp.reduced(value);
-  }
-  return value;
-};
-
-},{}],23:[function(require,module,exports){
-"use strict";
-var reduced = require(8).reduced;
-
-module.exports = takeWhile;
-function takeWhile(p){
-  return function(xf){
-    return new TakeWhile(p, xf);
-  };
-}
-function TakeWhile(p, xf){
-  this.xf = xf;
-  this.p = p;
-}
-TakeWhile.prototype.init = function(){
-  return this.xf.init();
-};
-TakeWhile.prototype.result = function(value){
-  return this.xf.result(value);
-};
-TakeWhile.prototype.step = function(value, item){
-  if(this.p(item)){
-    value = this.xf.step(value, item);
-  } else {
-    value = reduced(value);
-  }
-  return value;
-};
-
-},{}],24:[function(require,module,exports){
-"use strict";
-var util = require(9),
+var util = require(20),
     push = util.arrayPush,
     undef;
 
@@ -1299,31 +1109,46 @@ function transduceImplToArray(impl){
   };
 }
 
-},{}],25:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 "use strict";
-var implToArray = require(24);
-module.exports = implToArray({
-  transduce: require(26),
-  reduce: require(20)
-});
 
-},{}],26:[function(require,module,exports){
-"use strict";
-var tp = require(27),
-    reduce = require(20),
-    transformer = tp.transformer;
+module.exports = {
+  isReduced: isReduced,
+  reduced: reduced,
+  unreduced: unreduced,
+  deref: unreduced,
+};
 
-module.exports = transduce;
-function transduce(xf, f, init, coll){
-  f = transformer(f);
-  return reduce(xf(f), init, coll);
+function isReduced(value){
+  return !!(value instanceof Reduced || value && value.__transducers_reduced__);
 }
 
-},{}],27:[function(require,module,exports){
+function reduced(value, force){
+  if(force || !isReduced(value)){
+    value = new Reduced(value);
+  }
+  return value;
+}
+
+function unreduced(value){
+  if(isReduced(value)){
+    value = value.value;
+  }
+  return value;
+}
+
+function Reduced(value){
+  this.value = value;
+  this.__transducers_reduced__ = true;
+}
+
+},{}],20:[function(require,module,exports){
+arguments[4][7][0].apply(exports,arguments)
+},{}],21:[function(require,module,exports){
 "use strict";
 /* global Symbol */
 var undef,
-    util = require(9),
+    util = require(20),
     slice = Array.prototype.slice,
     symTransformer = util.protocols.transformer,
     isFunction = util.isFunction,
@@ -1413,58 +1238,237 @@ ObjectTransformer.prototype.init = function(){
 ObjectTransformer.prototype.step = merge;
 ObjectTransformer.prototype.result = identity;
 
-},{}],28:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 "use strict";
-var util = require(9),
-    compose = require(7),
-    reduced = require(8),
-    iter = require(10),
-    transformer = require(27);
-
-module.exports = {
-  reduce: require(20),
-  transduce: require(26),
-  into: require(15),
-  toArray: require(25),
-  map: require(16),
-  filter: require(14),
-  remove: require(21),
-  take: require(22),
-  takeWhile: require(23),
-  drop: require(12),
-  dropWhile: require(13),
-  cat: require(11),
-  mapcat: require(17),
-  partitionAll: require(18),
-  partitionBy: require(19),
-  compose: compose,
-  isIterable: iter.isIterable,
-  isIterator: iter.isIterator,
-  iterable: iter.iterable,
-  iterator: iter.iterator,
-  isTransformer: transformer.isTransformer,
-  transformer: transformer.transformer,
-  isReduced: reduced.isReduced,
-  reduced: reduced.reduced,
-  unreduced: reduced.unreduced,
-  deref: reduced.unreduced,
-  protocols: util.protocols,
-  isFunction: util.isFunction,
-  isArray: util.isArray,
-  isString: util.isString,
-  isRegExp: util.isRegExp,
-  isNumber: util.isNumber,
-  isUndefined: util.isUndefined,
-  arrayPush: util.arrayPush,
-  objectMerge: util.objectMerge,
-  stringAppend: util.stringAppend,
-  identity: util.identity,
+module.exports = partitionAll;
+function partitionAll(n) {
+  return function(xf){
+    return new PartitionAll(n, xf);
+  };
+}
+function PartitionAll(n, xf) {
+  this.xf = xf;
+  this.n = n;
+  this.inputs = [];
+}
+PartitionAll.prototype.init = function(){
+  return this.xf.init();
+};
+PartitionAll.prototype.result = function(result){
+  var ins = this.inputs;
+  if(ins.length){
+    this.inputs = [];
+    result = this.xf.step(result, ins);
+  }
+  return this.xf.result(result);
+};
+PartitionAll.prototype.step = function(result, input) {
+  var ins = this.inputs,
+      n = this.n;
+  ins.push(input);
+  if(n === ins.length){
+    this.inputs = [];
+    result = this.xf.step(result, ins);
+  }
+  return result;
 };
 
+},{}],23:[function(require,module,exports){
+"use strict";
+var tp = require(19),
+    undef;
+
+module.exports = partitionBy;
+function partitionBy(f) {
+  return function(xf){
+    return new PartitionBy(f, xf);
+  };
+}
+function PartitionBy(f, xf) {
+  this.xf = xf;
+  this.f = f;
+}
+PartitionBy.prototype.init = function(){
+  return this.xf.init();
+};
+PartitionBy.prototype.result = function(result){
+  var ins = this.inputs;
+  if(ins.length){
+    this.inputs = [];
+    result = this.xf.step(result, ins);
+  }
+  return this.xf.result(result);
+};
+PartitionBy.prototype.step = function(result, input) {
+  var ins = this.inputs,
+      curr = this.f(input),
+      prev = this.prev;
+  this.prev = curr;
+
+  if(ins === undef){
+    this.inputs = [input];
+  } else if(prev === curr){
+    ins.push(input);
+  } else {
+    this.inputs = [];
+    result = this.xf.step(result, ins);
+    if(!tp.isReduced(result)){
+      this.inputs.push(input);
+    }
+  }
+  return result;
+};
+
+},{}],24:[function(require,module,exports){
+"use strict";
+var iter = require(6),
+    trans = require(21),
+    red = require(19),
+    util = require(20),
+    isReduced = red.isReduced,
+    deref = red.deref,
+    transformer = trans.transformer,
+    iterator = iter.iterator,
+    isArray = util.isArray,
+    undef;
+module.exports = reduce;
+
+function reduce(xf, init, coll){
+  xf = transformer(xf);
+  if(isArray(coll)){
+    return arrayReduce(xf, init, coll);
+  }
+  return iteratorReduce(xf, init, coll);
+}
+
+function arrayReduce(xf, init, arr){
+  var value = init,
+      i = 0,
+      len = arr.length;
+  for(; i < len; i++){
+    value = xf.step(value, arr[i]);
+    if(isReduced(value)){
+      value = deref(value);
+      break;
+    }
+  }
+  return xf.result(value);
+}
+
+function iteratorReduce(xf, init, iter){
+  var value = init, next;
+  iter = iterator(iter);
+  while(true){
+    next = iter.next();
+    if(next.done){
+      break;
+    }
+
+    value = xf.step(value, next.value);
+    if(isReduced(value)){
+      value = deref(value);
+      break;
+    }
+  }
+  return xf.result(value);
+}
+
+},{}],25:[function(require,module,exports){
+"use strict";
+var filter = require(12);
+
+module.exports = remove;
+function remove(p){
+  return filter(function(x){
+    return !p(x);
+  });
+}
+
+
+},{}],26:[function(require,module,exports){
+"use strict";
+
+var tp = require(19);
+
+module.exports = take;
+function take(n){
+  return function(xf){
+    return new Take(n, xf);
+  };
+}
+function Take(n, xf){
+  this.xf = xf;
+  this.n = n;
+}
+Take.prototype.init = function(){
+  return this.xf.init();
+};
+Take.prototype.result = function(value){
+  return this.xf.result(value);
+};
+Take.prototype.step = function(value, item){
+  if(this.n-- > 0){
+    value = this.xf.step(value, item);
+  }
+  if(this.n <= 0){
+    value = tp.reduced(value);
+  }
+  return value;
+};
+
+},{}],27:[function(require,module,exports){
+"use strict";
+var reduced = require(19).reduced;
+
+module.exports = takeWhile;
+function takeWhile(p){
+  return function(xf){
+    return new TakeWhile(p, xf);
+  };
+}
+function TakeWhile(p, xf){
+  this.xf = xf;
+  this.p = p;
+}
+TakeWhile.prototype.init = function(){
+  return this.xf.init();
+};
+TakeWhile.prototype.result = function(value){
+  return this.xf.result(value);
+};
+TakeWhile.prototype.step = function(value, item){
+  if(this.p(item)){
+    value = this.xf.step(value, item);
+  } else {
+    value = reduced(value);
+  }
+  return value;
+};
+
+},{}],28:[function(require,module,exports){
+"use strict";
+var implToArray = require(18);
+module.exports = implToArray({
+  transduce: require(29),
+  reduce: require(24)
+});
+
 },{}],29:[function(require,module,exports){
+"use strict";
+var tp = require(21),
+    reduce = require(24),
+    transformer = tp.transformer;
+
+module.exports = transduce;
+function transduce(xf, f, init, coll){
+  f = transformer(f);
+  return reduce(xf(f), init, coll);
+}
+
+},{}],30:[function(require,module,exports){
 module.exports = require(3)([
   require(4),
   require(2),
   require(5)]);
 
-},{}]},{},[29]);
+},{}]},{},[30]);
