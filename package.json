@@ -1,6 +1,6 @@
 {
   "name": "underscore-transducer",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Transducers for Underscore",
   "main": "underscore-transducer.js",
   "scripts": {
@@ -24,14 +24,7 @@
   },
   "homepage": "http://simplectic.com/projects/underscore-transducer/",
   "dependencies": {
-    "transduce": "~0.3.0",
-    "transduce-array": "~0.1.0",
-    "transduce-math": "~0.1.0",
-    "transduce-push": "~0.1.0",
-    "transduce-string": "~0.1.0",
-    "transduce-unique": "~0.1.0",
-    "transduce-sequence": "~0.1.0",
-    "iterator-protocol": "~0.1.0",
+    "transduce": "~0.4.1",
     "redispatch": "0.0.2"
   },
   "devDependencies": {

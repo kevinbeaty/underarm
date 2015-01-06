@@ -178,7 +178,6 @@ Convenience version of a common use case of `map`: fetching a property.
 Convenience version of a common use case of `filter`: selecting only objects containing specific `key:value` pairs.
 
 #### Array
-Array transducers mixing functionality from [transduce-array][15].
 
 ##### forEach(iteratee)
 Passes every item through unchanged, but after executing `callback(item, idx)`.  Can be useful for "tapping into" composed transducer pipelines.   The return value of the callback is ignored, item is passed unchanged. (See [transduce-stream][7] for a use case.)
@@ -252,7 +251,6 @@ Produce a duplicate-free version of the transformation. If the transformation ha
 Alias: uniq
 
 #### Math
-Array transducers mixing functionality from [transduce-math][15].
 
 ##### min(f?)
 Steps the max value on the result of the transformation. if `f` is provided, it is wrapped with `_r.iteratee` and called with each item and the return value is used to compare values. Otherwise, the items are compared as numbers.
@@ -266,7 +264,7 @@ Resolves as single value.
 
 #### Strings
 
-Strings are a sequence of characters, so you can transduce over those as well. Mixes in methods from [transduce-string][8] to lazily process strings.  Particularly useful with [transduce-stream][7].
+Strings are a sequence of characters, so you can transduce over those as well. Particularly useful with [transduce-stream][7].
 
 Functions that `split` over streams are treated as a substring, and splits across the entire transformation.  This allows methods to work with chunks sent through streams.  Methods that `split` over the String are processed lazily and as soon as possible: `lines`, `words` and `chars` will process a line/word/char as they are received, and buffer any intermediate chunks appropriately.
 
@@ -380,8 +378,6 @@ result = trans.value();
 ### Callback Processes
 
 Transducers can be consumed by reduce, but since they are designed to be independent, we can use them in a variety of contexts that consume an input and produce a result, such as [CSP][3]. We can also create a process using a callback where each call advances a step in the process.  These can be used as event handlers (like the [demo][4]).
-
-Uses [transduce-push][17] to create push streams from transducers.
 
 ```javascript
   var $demo = $('#demo3'),
@@ -555,8 +551,6 @@ Finally, adds utils from [transduce][14].
 ##### compose()
 Simple function composition of arguments. Useful for composing (combining) transducers.
 
-From [transduce-compose](https://github.com/transduce/transduce-compose)
-
 ##### isIterable(value)
 Does the parameter conform to the iterable protocol?
 
@@ -603,13 +597,9 @@ MIT
 [5]: http://clojure.org/transducers
 [6]: https://github.com/facebook/immutable-js
 [7]: https://github.com/transduce/transduce-stream
-[8]: https://github.com/transduce/transduce-string
 [12]: https://raw.githubusercontent.com/kevinbeaty/underscore-transducer/master/build/underscore-transducer.js
 [13]: https://raw.githubusercontent.com/kevinbeaty/underscore-transducer/master/build/underscore-transducer.min.js
 [14]: https://github.com/transduce/transduce
-[15]: https://github.com/transduce/transduce-array
-[16]: https://github.com/transduce/transduce-math
-[17]: https://github.com/transduce/transduce-push
 [18]: https://github.com/kevinbeaty/underarm
 [19]: https://github.com/kevinbeaty/underscore-transducer/tree/master/build
 [20]: https://raw.githubusercontent.com/kevinbeaty/underscore-transducer/master/build/underscore-transducer.base.js
