@@ -1,9 +1,14 @@
 "use strict";
 var _r = require('../'),
     test = require('tape'),
-    resolve = require('transduce-then').resolve,
+    Prom = require('any-promise'),
     undef;
 
+function resolve(val){
+  return new Prom(function(resolve){
+    resolve(val);
+  });
+}
 
 function add(x){
   return function(y){
