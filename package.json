@@ -1,6 +1,6 @@
 {
   "name": "underscore-transducer",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Transducers for Underscore",
   "main": "underscore-transducer.js",
   "scripts": {
@@ -24,7 +24,7 @@
   },
   "homepage": "http://simplectic.com/projects/underscore-transducer/",
   "dependencies": {
-    "transduce": "~0.4.1",
+    "transduce": "~0.4.2",
     "redispatch": "0.0.2"
   },
   "devDependencies": {
