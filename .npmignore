@@ -2,5 +2,6 @@
 test/
 build/
 .travis.yml
+.jshintrc
 *.swp
 Makefile

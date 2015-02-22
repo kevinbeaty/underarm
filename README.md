@@ -1,21 +1,25 @@
-# Underscore Transducer
-
-[![Build Status](https://secure.travis-ci.org/kevinbeaty/underscore-transducer.svg)](http://travis-ci.org/kevinbeaty/underscore-transducer)
+# Underarm
+[![Build Status](https://secure.travis-ci.org/kevinbeaty/underarm.png)](http://travis-ci.org/kevinbeaty/underarm)
 
 Use JavaScript transducers with the familiar [Underscore.js][1] API with extra goodies like [lazy generators and callback processes][4].
 
 If you are not familiar with transducers, check out [Transducers Explained][3].
 
-Too much API for you?  Just grab what you need from the [transduce][14] libraries, which underscore-transducer is based.  Want more?  Check out [underarm][18] for asynchronous (reactive) extensions.
+Too much API for you?  Just grab what you need from the [transduce][14] libraries, which underarm is based.
 
 ## Install
+Works with [any-promise][8] library (a pollyfill, es6-promise, promise, native-promise-only, bluebird, rsvp, when, q ... your choice) for asynchronous execution.  Underarm allows any transducer to become asynchronous: Promises can be used and returned in `init`, `step` and `result`. 
+
+Install your Promise library preference before underarm and it will be auto detected and used.
 
 ```bash
-$ npm install underscore-transducer
-$ bower install underscore-transducer
+$ npm install promise # or es6-promise, bluebird, q, when, rsvp ... see any-promise
+$ npm install underarm
+$ bower install underarm
 ```
 
 ### Browser
+Include an ES6 Promise Pollyfill.  Then include the browser version of underarm.
 
 * [Development][12]
 * [Minified][13]
@@ -33,7 +37,7 @@ First some helper functions and imports.
 
 ```javascript
 // import, mixin and helper functions
-var _r = require('underscore-transducer');
+var _r = require('underarm');
 
 function isEven(x){
   return x % 2 !== 1;
@@ -331,6 +335,44 @@ Alias: foldl, inject
 ##### reduced
 Ensures values are reduced to signal early termination when stepping through a transformation. Probably only useful if you want to mixin custom transducers.  Use `_r.isReduced` to check if a value is wrapped as `reduced`.  Use generic dispatch `_r.unwrap` to unwrap reduced values.
 
+### Async
+Uses [transduce-async][15] to support promises in transducer `init`, `step` and `result`.
+
+##### prototype.async()
+Marks chained transformation as asynchronous.  See below for changes to API when `async`.
+
+##### prototype.value()
+If chained transformation is `async` returns a promise for the value of the transformation
+
+##### prototype.then(resolve, reject)
+Marks chained transformation as `async` and adds Promise listeners to Promise `value`.  This means that any chained transformation is a promise.
+
+##### compose(\*fns)
+Like a normal compose when chained transformation not `async`. If `async` all arguments are interleaved with `defer`.  This allows any transducer in composed pipeline to `step` or `result` a Promise in addition to a value.  The wrapped transformer is called with value of resolved Promise.
+
+#### transduce(xf?, f, init, coll?)
+Like a normal transduce when chained transformation is `async`.  If `async`, `init` and `coll` can be a Promise and `xf` can be an async transducer. The value of `coll` can be anything that can be converted to an iterator using [transduce-protocol][16]. The return value is a Promise for the result of the transformation.
+
+##### into(to?, xf?, from?)
+Like a normal `into` when chained transformation not `async`. If `async`, `to` and `from` can be a Promise and `xf` can be an async transducer. 
+
+##### toArray(xf?, from?)
+Like a normal `toArray` when chained transformation not `async`. If `async`, `coll` can be a Promise and `xf` can be an async transducer.
+
+##### defer()
+Create an async transducer that allows wrapped transformer to `step` or `result` a Promise in addition to a value. All items will be queued and processed asap. The wrapped transformer is called with value of resolved Promise.
+
+##### delay(wait)
+Create an async transducer that delays step of wrapped transformer by `wait` milliseconds. All items will be queued and delayed and `step` will return a promise that will resolve after `wait` milliseconds for each item.
+
+### Sample
+
+##### throttle(wait, options)
+Only steps results when [Underscore.js][1] throttle calls the function.  Accepts same arguments (and uses same function) as underscore.
+
+##### debounce(wait, options)
+Only steps results when [Underscore.js][1] debounce calls the function.  Accepts same arguments (and uses same function) as underscore.
+
 
 ### Iterators
 
@@ -424,7 +466,7 @@ You can transduce over Node.js Streams with [transduce-stream][7].
 
 ```javascript
 // test.js
-var _r = require('underscore-transducer');
+var _r = require('underarm');
     stream = require('transduce-stream');
 
 var transducer = _r()
@@ -478,7 +520,7 @@ When chaining transducers, the object passed to `_r(obj)` is dispatched to `_r.w
 You can dispatch to custom objects by registering supporting dispatch functions. Say, for example, you love using [immutable][6] collections.
 
 ```javascript
-var _r = require('underscore-transducer'),
+var _r = require('underarm'),
     _ = require('underscore'),
     Immutable = require('immutable'),
     Vector = Immutable.Vector;
@@ -584,15 +626,18 @@ MIT
 
 [1]: http://underscorejs.org/
 [3]: http://simplectic.com/blog/2014/transducers-explained-1/
-[4]: http://simplectic.com/projects/underscore-transducer/
+[4]: http://simplectic.com/projects/underarm/
 [5]: http://clojure.org/transducers
 [6]: https://github.com/facebook/immutable-js
 [7]: https://github.com/transduce/transduce-stream
-[12]: https://raw.githubusercontent.com/kevinbeaty/underscore-transducer/master/build/underscore-transducer.js
-[13]: https://raw.githubusercontent.com/kevinbeaty/underscore-transducer/master/build/underscore-transducer.min.js
+[8]: https://github.com/kevinbeaty/any-promise
+[12]: https://raw.githubusercontent.com/kevinbeaty/underarm/master/build/underarm.js
+[13]: https://raw.githubusercontent.com/kevinbeaty/underarm/master/build/underarm.min.js
 [14]: https://github.com/transduce/transduce
+[15]: https://github.com/transduce/transduce-async
+[16]: https://github.com/transduce/transduce-protocol
 [18]: https://github.com/kevinbeaty/underarm
 [19]: https://github.com/kevinbeaty/underscore-transducer/tree/master/build
-[20]: https://raw.githubusercontent.com/kevinbeaty/underscore-transducer/master/build/underscore-transducer.base.js
-[21]: https://raw.githubusercontent.com/kevinbeaty/underscore-transducer/master/build/underscore-transducer.base.min.js
-[22]: https://github.com/kevinbeaty/underscore-transducer/tree/master/underscore-transducer.base.js
+[20]: https://raw.githubusercontent.com/kevinbeaty/underarm/master/build/underarm.base.js
+[21]: https://raw.githubusercontent.com/kevinbeaty/underarm/master/build/underarm.base.min.js
+[22]: https://github.com/kevinbeaty/underarm/tree/master/underarm.base.js
