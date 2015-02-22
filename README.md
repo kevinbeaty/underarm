@@ -351,7 +351,7 @@ Marks chained transformation as `async` and adds Promise listeners to Promise `v
 Like a normal compose when chained transformation not `async`. If `async` all arguments are interleaved with `defer`.  This allows any transducer in composed pipeline to `step` or `result` a Promise in addition to a value.  The wrapped transformer is called with value of resolved Promise.
 
 #### transduce(xf?, f, init, coll?)
-Like a normal transduce when chained transformation is `async`.  If `async`, `init` and `coll` can be a Promise and `xf` can be an async transducer. The value of `coll` can be anything that can be converted to an iterator using [transduce-protocol][16]. The return value is a Promise for the result of the transformation.
+Like a normal transduce when chained transformation is `async`.  If `async`, `init` and `coll` can be a Promise and `xf` can be an async transducer. The value of `coll` can be anything that can be converted to an iterator using [transduce][14]. The return value is a Promise for the result of the transformation.
 
 ##### into(to?, xf?, from?)
 Like a normal `into` when chained transformation not `async`. If `async`, `to` and `from` can be a Promise and `xf` can be an async transducer. 
@@ -635,9 +635,7 @@ MIT
 [13]: https://raw.githubusercontent.com/kevinbeaty/underarm/master/build/underarm.min.js
 [14]: https://github.com/transduce/transduce
 [15]: https://github.com/transduce/transduce-async
-[16]: https://github.com/transduce/transduce-protocol
 [18]: https://github.com/kevinbeaty/underarm
-[19]: https://github.com/kevinbeaty/underscore-transducer/tree/master/build
 [20]: https://raw.githubusercontent.com/kevinbeaty/underarm/master/build/underarm.base.js
 [21]: https://raw.githubusercontent.com/kevinbeaty/underarm/master/build/underarm.base.min.js
 [22]: https://github.com/kevinbeaty/underarm/tree/master/underarm.base.js
