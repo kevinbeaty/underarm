@@ -551,21 +551,12 @@ Finally, adds utils from [transduce][14].
 ##### compose()
 Simple function composition of arguments. Useful for composing (combining) transducers.
 
-##### isIterable(value)
-Does the parameter conform to the iterable protocol?
-
 ##### iterable(value)
 Returns the iterable for the parameter.  Returns value if conforms to iterable protocol. Returns `undefined` if cannot return en iterable.
 
 The return value will either conform to iterator protocol that can be invoked for iteration or will be undefined.
 
 Supports anything that returns true for `isIterable` and converts arrays to iterables over each indexed item. Converts to functions to infinite iterables that always call function on next
-
-##### isIterator(value)
-Does the parameter have an iterator protocol or have a next method?
-
-##### isTransformer(value)
-Does the parameter have a [transformer protocol][10] or have `init`, `step`, `result` methods?
 
 ##### transformer(value)
 Attempts to convert the parameter into a transformer.  If cannot be converted, returns `undefined`.  If defined, the return value will have `init`, `step`, `result` methods that can be used for transformation.  Converts arrays (`arrayPush`), strings (`stringAppend`), objects (`objectMerge`), functions (wrap as reducing function) or anything that `isTransformer` into a transformer.

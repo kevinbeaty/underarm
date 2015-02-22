@@ -289,7 +289,7 @@ test('dispatch', function(t){
     return this.strings.join('')
   }
 
-  StringBuilder.prototype[tr.iterator.symbol] = function(){
+  StringBuilder.prototype[tr.protocols.iterator] = function(){
     var done = false, self = this
     return {
       next: function(){
@@ -402,13 +402,13 @@ test('_riteratee', function(t){
 })
 
 test('sequence', function(t){
-  result = _r.into([], _r([1,2,3,4]))
+  result = _r.into([], _r([1,2,3,4]).sequence())
   t.deepEqual(result, [1,2,3,4], 'into empty array')
 
-  result = _r.into([], _r([1,2,3,4]).map(inc))
+  result = _r.into([], _r([1,2,3,4]).map(inc).sequence())
   t.deepEqual(result, [2,3,4,5], 'into empty array')
 
-  result = _r.into([], _r([1,2,3,4]).filter(isEven))
+  result = _r.into([], _r([1,2,3,4]).filter(isEven).sequence())
   t.deepEqual(result, [2,4], 'into empty array')
   t.end()
 })
