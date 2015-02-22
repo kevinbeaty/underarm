@@ -37,7 +37,7 @@ var _r = function(obj, transform) {
   this._wrapped = _r.wrap.call(this, obj)
 }
 
-_r.VERSION = '0.4.3'
+_r.VERSION = '0.6.0'
 
 // Export for browser or Common-JS
 // Save the previous value of the `_r` variable.
@@ -421,89 +421,6 @@ module.exports = function(libs, _r){
 
 },{"1":1}],4:[function(require,module,exports){
 'use strict'
-
-// Based on Underscore.js 1.7.0
-// http://underscorejs.org
-//
-// Which is distributed under MIT License:
-// Underscore.js > (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
-// Underscore.js > Underscore may be freely distributed under the MIT license.
-
-var util = require(19),
-    isFunction = util.isFunction,
-    isArray = util.isArray,
-    isString = util.isString,
-    isNumber = util.isNumber,
-    identity = util.identity
-
-module.exports = function(_r){
-  var _ = {}
-  _r._ = _
-  _.iteratee = iteratee
-  _.matches = matches
-  _.property = property
-}
-
-function iteratee(value){
-  var f
-  if(isNull(value)){
-    f = identity
-  } else if(isFunction(value)){
-    f = value
-  } else if(isKey(value)){
-    f = property(value)
-  } else {
-    f = matches(value)
-  }
-  return f
-}
-
-function property(key){
-  return function(value){
-    return value[key]
-  }
-}
-
-function matches(attrs){
-  var ps = pairs(attrs),
-      len = ps.length
-  return function(value){
-    if(isNull(value)){
-      return len === 0
-    }
-    var i = 0, p, k, v
-    for(; i < len; i++){
-      p = ps[i]
-      k = p[0]
-      v = p[1]
-      if(v !== value[k] || !(k in value)){
-        return false
-      }
-    }
-    return true
-  }
-}
-
-function isNull(value){
-  return value === void 0 || value === null
-}
-
-function isKey(value){
-  return isString(value) || isNumber(value)
-}
-
-function pairs(value){
-  var key, ps = []
-  for(key in value){
-    if(value.hasOwnProperty(key)){
-      ps.push([key, value[key]])
-    }
-  }
-  return ps
-}
-
-},{"19":19}],5:[function(require,module,exports){
-'use strict'
 var slice = Array.prototype.slice
 
 module.exports = function(_r){
@@ -651,7 +568,89 @@ module.exports = function(_r){
   }
 }
 
-},{"19":19,"20":20,"21":21,"22":22,"23":23,"24":24,"25":25,"26":26,"27":27,"28":28,"29":29,"30":30}],6:[function(require,module,exports){
+},{"19":19,"20":20,"21":21,"22":22,"23":23,"24":24,"25":25,"26":26,"27":27,"28":28,"29":29,"30":30}],5:[function(require,module,exports){
+'use strict'
+// Based on Underscore.js 1.7.0
+// http://underscorejs.org
+//
+// Which is distributed under MIT License:
+// Underscore.js > (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+// Underscore.js > Underscore may be freely distributed under the MIT license.
+
+var util = require(19),
+    isFunction = util.isFunction,
+    isArray = util.isArray,
+    isString = util.isString,
+    isNumber = util.isNumber,
+    identity = util.identity
+
+module.exports = function(_r){
+  var _ = _r._ || {}
+  _r._ = _
+  _.iteratee = iteratee
+  _.matches = matches
+  _.property = property
+}
+
+function iteratee(value){
+  var f
+  if(isNull(value)){
+    f = identity
+  } else if(isFunction(value)){
+    f = value
+  } else if(isKey(value)){
+    f = property(value)
+  } else {
+    f = matches(value)
+  }
+  return f
+}
+
+function property(key){
+  return function(value){
+    return value[key]
+  }
+}
+
+function matches(attrs){
+  var ps = pairs(attrs),
+      len = ps.length
+  return function(value){
+    if(isNull(value)){
+      return len === 0
+    }
+    var i = 0, p, k, v
+    for(; i < len; i++){
+      p = ps[i]
+      k = p[0]
+      v = p[1]
+      if(v !== value[k] || !(k in value)){
+        return false
+      }
+    }
+    return true
+  }
+}
+
+function isNull(value){
+  return value === void 0 || value === null
+}
+
+function isKey(value){
+  return isString(value) || isNumber(value)
+}
+
+function pairs(value){
+  var key, ps = []
+  for(key in value){
+    if(value.hasOwnProperty(key)){
+      ps.push([key, value[key]])
+    }
+  }
+  return ps
+}
+
+},{"19":19}],6:[function(require,module,exports){
 "use strict";
 var undef;
 
@@ -1474,8 +1473,8 @@ TakeWhile.prototype.step = function(value, item){
 
 },{"15":15}],31:[function(require,module,exports){
 module.exports = require(3)([
-  require(4),
+  require(5),
   require(2),
-  require(5)])
+  require(4)])
 
 },{"2":2,"3":3,"4":4,"5":5}]},{},[31]);

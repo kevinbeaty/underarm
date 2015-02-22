@@ -3,3 +3,9 @@ node_js:
   - "0.10"
   - "0.12"
   - "iojs"
+env:
+  - PROMISE_IMPL=promise
+  - PROMISE_IMPL=bluebird
+  - PROMISE_IMPL=rsvp
+  - PROMISE_IMPL=when
+  - PROMISE_IMPL=q

@@ -1,12 +1,12 @@
 {
-  "name": "underscore-transducer",
-  "main": "build/underscore-transducer.min.js",
-  "version": "0.3.2",
-  "homepage": "https://github.com/kevinbeaty/underscore-transducer",
+  "name": "underarm",
+  "main": "build/underarm.min.js",
+  "version": "0.6.0",
+  "homepage": "https://github.com/kevinbeaty/underarm",
   "authors": [
     "Kevin Beaty <kevin@simplectic.com>"
   ],
-  "description": "Transducers for JavaScript with Underscore API",
+  "description": "Transducers for JavaScript with Underscore API and Async extensions",
   "moduleType": [
     "amd",
     "globals"
@@ -15,14 +15,15 @@
     "transducer",
     "underscore",
     "reactive",
-    "reducer"
+    "reducer",
+    "async",
+    "promise"
   ],
   "license": "MIT",
   "ignore": [
     "**/.*",
     "node_modules",
     "bower_components",
-    "test",
-    "tests"
+    "test"
   ]
 }
