@@ -1,6 +1,6 @@
 {
   "name": "underarm",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Transducers for JavaScript with Underscore API and Async extensions",
   "main": "underarm.js",
   "homepage": "https://github.com/kevinbeaty/underarm",
@@ -24,9 +24,8 @@
     "url": "https://github.com/kevinbeaty/underarm/issues"
   },
   "dependencies": {
-    "transduce": "~0.6.0",
+    "transduce": "~0.7.0",
     "redispatch": "0.0.2",
-    "transduce-async": "~0.3.0",
     "any-promise": "~0.1.0",
     "lodash-node": "~3.3.0"
   },

@@ -1,7 +1,7 @@
 {
   "name": "underarm",
   "main": "build/underarm.min.js",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "homepage": "https://github.com/kevinbeaty/underarm",
   "authors": [
     "Kevin Beaty <kevin@simplectic.com>"
