@@ -1,6 +1,6 @@
 {
   "name": "underarm",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Transducers for JavaScript with Underscore API and Async extensions",
   "main": "underarm.js",
   "homepage": "https://github.com/kevinbeaty/underarm",
@@ -24,23 +24,22 @@
     "url": "https://github.com/kevinbeaty/underarm/issues"
   },
   "dependencies": {
-    "transduce": "~0.7.0",
+    "any-promise": "^0.1.0",
+    "lodash-node": "^3.6.0",
     "redispatch": "0.0.2",
-    "any-promise": "~0.1.0",
-    "lodash-node": "~3.3.0"
+    "transduce": "^0.8.0"
   },
   "devDependencies": {
-    "tape": "~3.5.0",
-    "uglify-js": "~2.4.16",
+    "bluebird": "^2.9.24",
+    "browserify": "^9.0.7",
+    "bundle-collapser": "^1.1.4",
+    "promise": "^6.1.0",
+    "q": "^1.2.0",
+    "rsvp": "^3.0.18",
+    "tap": "^0.7.1",
     "tap-bail": "0.0.0",
-    "lodash-node": "~3.3.0",
-    "bundle-collapser": "~1.1.4",
-    "tap": "~0.6.0",
-    "browserify": "~9.0.3",
-    "promise": "~6.1.0",
-    "rsvp": "~3.0.17",
-    "bluebird": "~2.9.12",
-    "when": "~3.7.2",
-    "q": "~1.2.0"
+    "tape": "^4.0.0",
+    "uglify-js": "^2.4.19",
+    "when": "^3.7.2"
   }
 }
