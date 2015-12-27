@@ -62,8 +62,8 @@ result = _r.into([], _r.compose(_r.filter(isEven), _r.map(inc)), [1,2,3,4]);
 // [ 3, 5 ]
 
 // these are also the same
-trans = _r().filter(isEven).map(inc).value();
-result = _r.into([], trans, [1,2,3,4, 5]);
+trans = _r().filter(isEven).map(inc).compose();
+result = _r.into([], trans, [1,2,3,4,5]);
 result = _r().filter(isEven).map(inc).toArray([1,2,3,4,5]);
 // [ 3, 5 ]
 ```
