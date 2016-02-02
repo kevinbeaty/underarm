@@ -1,6 +1,6 @@
 'use strict'
 var _r = require('../'),
-    _ = require('lodash-node'),
+    _ = require('lodash'),
     test = require('tape')
 
 test('split', function(t){

@@ -365,14 +365,6 @@ Create an async transducer that allows wrapped transformer to `step` or `result`
 ##### delay(wait)
 Create an async transducer that delays step of wrapped transformer by `wait` milliseconds. All items will be queued and delayed and `step` will return a promise that will resolve after `wait` milliseconds for each item.
 
-### Sample
-
-##### throttle(wait, options)
-Only steps results when [Underscore.js][1] throttle calls the function.  Accepts same arguments (and uses same function) as underscore.
-
-##### debounce(wait, options)
-Only steps results when [Underscore.js][1] debounce calls the function.  Accepts same arguments (and uses same function) as underscore.
-
 
 ### Iterators
 

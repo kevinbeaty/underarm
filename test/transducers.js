@@ -1,10 +1,11 @@
 'use strict'
 var _r = require('../'),
-    _ = require('lodash-node'),
+    _ = require('lodash'),
     tr = require('transduce'),
     test = require('tape'),
-    isString = tr.util.isString,
-    isArray = tr.util.isArray
+    _util = require('../lib/util-internal'),
+    isString = _util.isString,
+    isArray = _util.isArray
 
 function isEven(x){
   return +x == x && (x % 2 === 0)
