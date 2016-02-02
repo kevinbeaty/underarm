@@ -1,6 +1,6 @@
 {
   "name": "underarm",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Transducers for JavaScript with Underscore API and Async extensions",
   "main": "underarm.js",
   "homepage": "https://github.com/kevinbeaty/underarm",
